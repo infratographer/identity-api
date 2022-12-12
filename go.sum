@@ -320,6 +320,8 @@ github.com/oklog/ulid v1.3.1/go.mod h1:CirwcVhetQ6Lv90oh/F+FBtV6XMibvdAFo93nm5qn
 github.com/oleiade/reflections v1.0.1 h1:D1XO3LVEYroYskEsoSiGItp9RUxG6jWnCVvrqH0HHQM=
 github.com/ory/fosite v0.43.0 h1:9H1O3I7CFxS2Y6j9FDAx2W3I5uAyEubc9hECS0UTOgI=
 github.com/ory/fosite v0.43.0/go.mod h1:BTd8+oG1mRtezZbQq0S4D2HBc815bedZHjjs2KRs39Y=
+github.com/ory/fosite v0.44.0 h1:Z3UjyO11/wlIoa3BotOqcTkfm7kUNA8F7dd8mOMfx0o=
+github.com/ory/fosite v0.44.0/go.mod h1:o/G4kAeNn65l6MCod2+KmFfU6JQBSojS7eXys6lKGzM=
 github.com/ory/go-acc v0.2.8 h1:rOHHAPQjf0u7eHFGWpiXK+gIu/e0GRSJNr9pDukdNC4=
 github.com/ory/go-acc v0.2.8/go.mod h1:iCRZUdGb/7nqvSn8xWZkhfVrtXRZ9Wru2E5rabCjFPI=
 github.com/ory/go-convenience v0.1.0 h1:zouLKfF2GoSGnJwGq+PE/nJAE6dj2Zj5QlTgmMTsTS8=
