@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command:
+    - serve
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    depends_on:
+      - audit
+
+    volumes:
+      - type: bind
+        source: ./dmv.example.yaml
+        target: /etc/dmv/dmv.yaml
+        read_only: true
+      - type: volume
+        source: audit-log
+        target: /tmp
+        read_only: false
+
+  audit:
+    image: ghcr.io/metal-toolbox/audittail:v0.5.1
+    command: -f /tmp/audit.log
+    volumes:
+      - type: volume
+        source: audit-log
+        target: /tmp
+        read_only: false
+    restart: unless-stopped
+
+
+volumes:
+  audit-log:
+

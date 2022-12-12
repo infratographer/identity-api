@@ -1,0 +1,18 @@
+server:
+  listen: ":8000"
+oauth:
+  issuer: "https://dmv.infratographer.com/"
+  accessTokenLifespan: 100
+  subjectTokenIssuers:
+    - name: "https://auth.example.com/"
+      jwksURI: "https://auth.example.com/.well-known/jwks.json"
+  secret: abcd1234abcd1234abcd1234abcd1234
+  privateKeys:
+    - keyId: "test"
+      algorithm: RS256
+      path: /etc/dmv/privkey.pem
+otel:
+  enabled: false
+  provider: stdout
+  stdout:
+    prettyPrint: true

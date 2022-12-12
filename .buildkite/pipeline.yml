@@ -1,0 +1,33 @@
+env:
+  # APP_NAME is normally the same as your pipeline slug
+  # if that isn't true, update here
+  APP_NAME: ${BUILDKITE_PIPELINE_SLUG}
+
+steps:
+  - label: ":golangci-lint: lint :lint-roller:"
+    key: "lint"
+    plugins:
+      - docker#v5.3.0:
+          image: "registry.hub.docker.com/golangci/golangci-lint:v1.43-alpine"
+          command: ["golangci-lint", "run", "-v"]
+
+  - label: ":test_tube: test"
+    key: "gotest"
+    plugins:
+      - docker#v5.3.0:
+          image: "golang:1.19"
+          environment:
+            - CGO_ENABLED=0
+            - GOOS=linux
+          command: ["go", "test", "-cover", "-race", "./..."]
+
+  - label: ":golang: build"
+    key: "gobuild"
+    artifact_paths: "bin/${APP_NAME}"
+    plugins:
+      - docker#v5.3.0:
+          image: "golang:1.19"
+          environment:
+            - CGO_ENABLED=0
+            - GOOS=linux
+          command: ["go", "build", "-mod=mod", "-a", "-o", "bin/$APP_NAME"]
