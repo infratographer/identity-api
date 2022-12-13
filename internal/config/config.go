@@ -1,3 +1,4 @@
+// Package config provides the configuration for the server.
 package config
 
 import (
@@ -8,6 +9,7 @@ import (
 	"go.infratographer.com/dmv/pkg/fositex"
 )
 
+// Config is the configuration for the application.
 var Config struct {
 	Server  ginx.Config
 	Logging loggingx.Config

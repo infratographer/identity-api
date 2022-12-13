@@ -12,6 +12,7 @@ type tokenHandler struct {
 	provider fosite.OAuth2Provider
 }
 
+// Handle processes the request for the token handler.
 func (h *tokenHandler) Handle(ctx *gin.Context) {
 	var session oauth2.JWTSession
 

@@ -1,3 +1,4 @@
+// Package cmd provides the root command for the application.
 package cmd
 
 import (
@@ -53,6 +54,7 @@ func initConfig() {
 	}
 }
 
+// Execute executes the root command.
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {

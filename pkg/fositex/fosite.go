@@ -1,3 +1,5 @@
+// Package fositex provides a wrapper around the fosite library to more easily
+// use the parts that are relevant for us.
 package fositex
 
 import (
@@ -121,6 +123,7 @@ func parsePrivateKeys(keys []PrivateKey) (*jose.JSONWebKey, *jose.JSONWebKeySet,
 	return &signingKey, &jwks, nil
 }
 
+// NewOAuth2Config builds a new OAuth2Config from the given Config.
 func NewOAuth2Config(config Config) (*OAuth2Config, error) {
 	signingKey, jwks, err := parsePrivateKeys(config.PrivateKeys)
 	if err != nil {
@@ -143,6 +146,8 @@ func NewOAuth2Config(config Config) (*OAuth2Config, error) {
 	return out, nil
 }
 
+// NewOAuth2Provider creates a new fosite.OAuth2Provider given an OAuth2Configurator instance
+// and a storage config.
 func NewOAuth2Provider(config OAuth2Configurator, store fosite.Storage) fosite.OAuth2Provider {
 	provider := fosite.NewOAuth2Provider(store, config)
 	return provider

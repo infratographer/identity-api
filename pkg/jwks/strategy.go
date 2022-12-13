@@ -1,3 +1,4 @@
+// Package jwks provides a fosite.IssuerJWKSURIStrategy implementation.
 package jwks
 
 import (
@@ -11,6 +12,7 @@ type issuerJWKSURIStrategy struct {
 	issuerURIs map[string]string
 }
 
+// NewIssuerJWKSURIStrategy creates a new fosite.IssuerJWKSURIStrategy.
 func NewIssuerJWKSURIStrategy(issuers []fositex.Issuer) fositex.IssuerJWKSURIStrategy {
 	issuerURIs := make(map[string]string)
 	for _, iss := range issuers {
