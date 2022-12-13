@@ -1,11 +1,13 @@
 package routes
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
-	"go.infratographer.com/dmv/pkg/fositex"
 	"go.uber.org/zap"
 	"gopkg.in/square/go-jose.v2"
-	"net/http"
+
+	"go.infratographer.com/dmv/pkg/fositex"
 )
 
 type jwksHandler struct {

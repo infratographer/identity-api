@@ -1,12 +1,14 @@
 package cmd
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"go.infratographer.com/dmv/internal/config"
 	"go.infratographer.com/x/loggingx"
 	"go.uber.org/zap"
-	"os"
+
+	"go.infratographer.com/dmv/internal/config"
 )
 
 var (

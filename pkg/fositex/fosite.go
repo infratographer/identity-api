@@ -6,11 +6,12 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"github.com/ory/fosite"
-	"gopkg.in/square/go-jose.v2"
 	"io"
 	"os"
 	"time"
+
+	"github.com/ory/fosite"
+	"gopkg.in/square/go-jose.v2"
 )
 
 func readSymmetricKey(path string) ([]byte, error) {

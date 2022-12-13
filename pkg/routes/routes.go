@@ -3,8 +3,9 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/ory/fosite"
-	"go.infratographer.com/dmv/pkg/fositex"
 	"go.uber.org/zap"
+
+	"go.infratographer.com/dmv/pkg/fositex"
 )
 
 type Router struct {

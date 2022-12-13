@@ -2,18 +2,20 @@ package cmd
 
 import (
 	"context"
+
 	"github.com/ory/fosite/compose"
 	"github.com/ory/fosite/storage"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"go.infratographer.com/x/ginx"
+	"go.infratographer.com/x/otelx"
+	"go.infratographer.com/x/versionx"
+
 	"go.infratographer.com/dmv/internal/config"
 	"go.infratographer.com/dmv/pkg/fositex"
 	"go.infratographer.com/dmv/pkg/jwks"
 	"go.infratographer.com/dmv/pkg/rfc8693"
 	"go.infratographer.com/dmv/pkg/routes"
-	"go.infratographer.com/x/ginx"
-	"go.infratographer.com/x/otelx"
-	"go.infratographer.com/x/versionx"
 )
 
 var serveCmd = &cobra.Command{

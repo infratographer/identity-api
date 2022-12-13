@@ -2,6 +2,7 @@ package fositex
 
 import (
 	"context"
+
 	"github.com/ory/fosite"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"

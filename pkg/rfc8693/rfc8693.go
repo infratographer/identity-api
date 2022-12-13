@@ -3,12 +3,14 @@ package rfc8693
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/ory/fosite"
 	"github.com/ory/fosite/handler/oauth2"
 	"github.com/ory/fosite/token/jwt"
 	"github.com/ory/x/errorsx"
+
 	"go.infratographer.com/dmv/pkg/fositex"
-	"time"
 )
 
 const (
