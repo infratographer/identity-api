@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/gin-gonic/gin v1.8.1
-	github.com/ory/fosite v0.43.0
+	github.com/ory/fosite v0.44.0
 	github.com/ory/x v0.0.520
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
