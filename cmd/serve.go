@@ -44,6 +44,7 @@ func serve(ctx context.Context) {
 	}
 
 	jwksStrategy := jwks.NewIssuerJWKSURIStrategy(config.Config.OAuth.SubjectTokenIssuers)
+
 	oauth2Config, err := fositex.NewOAuth2Config(config.Config.OAuth)
 	if err != nil {
 		logger.Fatalf("error loading config: %s", err)

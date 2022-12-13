@@ -38,49 +38,45 @@ var (
 
 func findMatchingKey(ctx context.Context, config fositex.OAuth2Configurator, token *jwt.Token) (interface{}, error) {
 	var claims jwt.JWTClaims
+
 	claims.FromMapClaims(token.Claims)
 
 	issuer := claims.Issuer
 	if len(issuer) == 0 {
-		err := &jwt.ValidationError{
+		return nil, &jwt.ValidationError{
 			Errors: jwt.ValidationErrorIssuer,
 		}
-		return nil, err
 	}
 
 	jwksURIStrategy := config.GetIssuerJWKSURIStrategy(ctx)
 	if jwksURIStrategy == nil {
-		err := &jwt.ValidationError{
+		return nil, &jwt.ValidationError{
 			Errors: jwt.ValidationErrorUnverifiable,
 			Inner:  ErrJWKSURIStrategyNotDefined,
 		}
-		return nil, err
 	}
 
 	jwksURI, err := jwksURIStrategy.GetIssuerJWKSURI(ctx, issuer)
 	if err != nil {
-		wrappedErr := &jwt.ValidationError{
+		return nil, &jwt.ValidationError{
 			Errors: jwt.ValidationErrorIssuer,
 			Inner:  err,
 		}
-		return nil, wrappedErr
 	}
 
 	jwks, err := config.GetJWKSFetcherStrategy(ctx).Resolve(ctx, jwksURI, false)
 	if err != nil {
-		wrappedErr := &jwt.ValidationError{
+		return nil, &jwt.ValidationError{
 			Errors: jwt.ValidationErrorUnverifiable,
 			Inner:  err,
 		}
-		return nil, wrappedErr
 	}
 
 	kid, ok := token.Header["kid"].(string)
 	if !ok {
-		err := &jwt.ValidationError{
+		return nil, &jwt.ValidationError{
 			Errors: jwt.ValidationErrorMalformed,
 		}
-		return nil, err
 	}
 
 	keys := jwks.Key(kid)

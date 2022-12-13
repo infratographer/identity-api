@@ -38,10 +38,12 @@ func readSymmetricKey(path string) ([]byte, error) {
 
 func readAsymmetricKey[T crypto.Signer](path string) (T, error) {
 	var empty T
+
 	f, err := os.Open(path)
 	if err != nil {
 		return empty, err
 	}
+
 	defer f.Close()
 
 	bytes, err := io.ReadAll(f)
@@ -50,6 +52,7 @@ func readAsymmetricKey[T crypto.Signer](path string) (T, error) {
 	}
 
 	block, rest := pem.Decode(bytes)
+
 	switch {
 	case block == nil, block.Type != "PRIVATE KEY":
 		return empty, fmt.Errorf("%w: invalid private key", ErrInvalidKey)
