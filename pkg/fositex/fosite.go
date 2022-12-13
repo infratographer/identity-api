@@ -16,6 +16,11 @@ import (
 	"gopkg.in/square/go-jose.v2"
 )
 
+var (
+	// ErrInvalidKey is returned when the key is not valid.
+	ErrInvalidKey = fmt.Errorf("invalid key")
+)
+
 func readSymmetricKey(path string) ([]byte, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -47,9 +52,9 @@ func readAsymmetricKey[T crypto.Signer](path string) (T, error) {
 	block, rest := pem.Decode(bytes)
 	switch {
 	case block == nil, block.Type != "PRIVATE KEY":
-		return empty, fmt.Errorf("malformed private key")
+		return empty, fmt.Errorf("%w: invalid private key", ErrInvalidKey)
 	case len(rest) > 0:
-		return empty, fmt.Errorf("extra data in private key")
+		return empty, fmt.Errorf("%w: extra data in private key", ErrInvalidKey)
 	default:
 	}
 
@@ -60,7 +65,7 @@ func readAsymmetricKey[T crypto.Signer](path string) (T, error) {
 
 	signer, ok := key.(T)
 	if !ok {
-		return empty, fmt.Errorf("key is not a valid signing key")
+		return empty, fmt.Errorf("%w: key is not a valid signing key", ErrInvalidKey)
 	}
 
 	return signer, nil
@@ -78,7 +83,8 @@ func readPrivateKey(key PrivateKey) (jose.JSONWebKey, error) {
 	case jose.HS256, jose.HS384, jose.HS512:
 		rawKey, err = readSymmetricKey(key.Path)
 	default:
-		return jose.JSONWebKey{}, fmt.Errorf("unsupported private key type %s", key.Algorithm)
+		return jose.JSONWebKey{}, fmt.Errorf("%w: unsupported private key type %s",
+			ErrInvalidKey, key.Algorithm)
 	}
 
 	if err != nil {
@@ -96,10 +102,11 @@ func readPrivateKey(key PrivateKey) (jose.JSONWebKey, error) {
 
 func parsePrivateKeys(keys []PrivateKey) (*jose.JSONWebKey, *jose.JSONWebKeySet, error) {
 	if len(keys) == 0 {
-		return nil, nil, fmt.Errorf("no private keys provided")
+		return nil, nil, fmt.Errorf("%w: no private keys provided", ErrInvalidKey)
 	}
 
 	first := keys[0]
+
 	signingKey, err := readPrivateKey(first)
 	if err != nil {
 		return nil, nil, err

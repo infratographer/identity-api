@@ -3,7 +3,7 @@ package rfc8693
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"time"
 
 	"github.com/ory/fosite"
@@ -31,6 +31,11 @@ const (
 	ClaimClientID = "client_id"
 )
 
+var (
+	// ErrJWKSURIStrategyNotDefined is returned when the issuer JWKS URI strategy is not defined.
+	ErrJWKSURIStrategyNotDefined = errors.New("no issuer JWKS URI strategy defined")
+)
+
 func findMatchingKey(ctx context.Context, config fositex.OAuth2Configurator, token *jwt.Token) (interface{}, error) {
 	var claims jwt.JWTClaims
 	claims.FromMapClaims(token.Claims)
@@ -47,7 +52,7 @@ func findMatchingKey(ctx context.Context, config fositex.OAuth2Configurator, tok
 	if jwksURIStrategy == nil {
 		err := &jwt.ValidationError{
 			Errors: jwt.ValidationErrorUnverifiable,
-			Inner:  fmt.Errorf("No issuer JWKS URI strategy defined"),
+			Inner:  ErrJWKSURIStrategyNotDefined,
 		}
 		return nil, err
 	}

@@ -8,6 +8,11 @@ import (
 	"go.infratographer.com/dmv/pkg/fositex"
 )
 
+var (
+	// ErrUnknownIssuer is returned when the issuer is unknown.
+	ErrUnknownIssuer = fmt.Errorf("unknown JWT issuer")
+)
+
 type issuerJWKSURIStrategy struct {
 	issuerURIs map[string]string
 }
@@ -29,7 +34,7 @@ func NewIssuerJWKSURIStrategy(issuers []fositex.Issuer) fositex.IssuerJWKSURIStr
 func (s issuerJWKSURIStrategy) GetIssuerJWKSURI(ctx context.Context, iss string) (string, error) {
 	jwksURI, ok := s.issuerURIs[iss]
 	if !ok {
-		return "", fmt.Errorf("Unknown JWT issuer '%s'.", iss)
+		return "", fmt.Errorf("%w: %s", ErrUnknownIssuer, iss)
 	}
 
 	return jwksURI, nil
