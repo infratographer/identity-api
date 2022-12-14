@@ -12,6 +12,7 @@ type tokenHandler struct {
 	provider fosite.OAuth2Provider
 }
 
+// Handle processes the request for the token handler.
 func (h *tokenHandler) Handle(ctx *gin.Context) {
 	var session oauth2.JWTSession
 
@@ -19,6 +20,7 @@ func (h *tokenHandler) Handle(ctx *gin.Context) {
 	if err != nil {
 		h.logger.Errorf("Error occurred in NewAccessRequest: %+v", err)
 		h.provider.WriteAccessError(ctx, ctx.Writer, accessRequest, err)
+
 		return
 	}
 
@@ -26,6 +28,7 @@ func (h *tokenHandler) Handle(ctx *gin.Context) {
 	if err != nil {
 		h.logger.Errorf("Error occurred in NewAccessResponse: %+v", err)
 		h.provider.WriteAccessError(ctx, ctx.Writer, accessRequest, err)
+
 		return
 	}
 

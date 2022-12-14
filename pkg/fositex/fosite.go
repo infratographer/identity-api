@@ -1,3 +1,5 @@
+// Package fositex provides a wrapper around the fosite library to more easily
+// use the parts that are relevant for us.
 package fositex
 
 import (
@@ -6,11 +8,17 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"github.com/ory/fosite"
-	"gopkg.in/square/go-jose.v2"
 	"io"
 	"os"
 	"time"
+
+	"github.com/ory/fosite"
+	"gopkg.in/square/go-jose.v2"
+)
+
+var (
+	// ErrInvalidKey is returned when the key is not valid.
+	ErrInvalidKey = fmt.Errorf("invalid key")
 )
 
 func readSymmetricKey(path string) ([]byte, error) {
@@ -30,10 +38,12 @@ func readSymmetricKey(path string) ([]byte, error) {
 
 func readAsymmetricKey[T crypto.Signer](path string) (T, error) {
 	var empty T
+
 	f, err := os.Open(path)
 	if err != nil {
 		return empty, err
 	}
+
 	defer f.Close()
 
 	bytes, err := io.ReadAll(f)
@@ -42,11 +52,12 @@ func readAsymmetricKey[T crypto.Signer](path string) (T, error) {
 	}
 
 	block, rest := pem.Decode(bytes)
+
 	switch {
 	case block == nil, block.Type != "PRIVATE KEY":
-		return empty, fmt.Errorf("malformed private key")
+		return empty, fmt.Errorf("%w: invalid private key", ErrInvalidKey)
 	case len(rest) > 0:
-		return empty, fmt.Errorf("extra data in private key")
+		return empty, fmt.Errorf("%w: extra data in private key", ErrInvalidKey)
 	default:
 	}
 
@@ -57,7 +68,7 @@ func readAsymmetricKey[T crypto.Signer](path string) (T, error) {
 
 	signer, ok := key.(T)
 	if !ok {
-		return empty, fmt.Errorf("key is not a valid signing key")
+		return empty, fmt.Errorf("%w: key is not a valid signing key", ErrInvalidKey)
 	}
 
 	return signer, nil
@@ -75,7 +86,8 @@ func readPrivateKey(key PrivateKey) (jose.JSONWebKey, error) {
 	case jose.HS256, jose.HS384, jose.HS512:
 		rawKey, err = readSymmetricKey(key.Path)
 	default:
-		return jose.JSONWebKey{}, fmt.Errorf("unsupported private key type %s", key.Algorithm)
+		return jose.JSONWebKey{}, fmt.Errorf("%w: unsupported private key type %s",
+			ErrInvalidKey, key.Algorithm)
 	}
 
 	if err != nil {
@@ -93,10 +105,11 @@ func readPrivateKey(key PrivateKey) (jose.JSONWebKey, error) {
 
 func parsePrivateKeys(keys []PrivateKey) (*jose.JSONWebKey, *jose.JSONWebKeySet, error) {
 	if len(keys) == 0 {
-		return nil, nil, fmt.Errorf("no private keys provided")
+		return nil, nil, fmt.Errorf("%w: no private keys provided", ErrInvalidKey)
 	}
 
 	first := keys[0]
+
 	signingKey, err := readPrivateKey(first)
 	if err != nil {
 		return nil, nil, err
@@ -120,6 +133,7 @@ func parsePrivateKeys(keys []PrivateKey) (*jose.JSONWebKey, *jose.JSONWebKeySet,
 	return &signingKey, &jwks, nil
 }
 
+// NewOAuth2Config builds a new OAuth2Config from the given Config.
 func NewOAuth2Config(config Config) (*OAuth2Config, error) {
 	signingKey, jwks, err := parsePrivateKeys(config.PrivateKeys)
 	if err != nil {
@@ -142,6 +156,8 @@ func NewOAuth2Config(config Config) (*OAuth2Config, error) {
 	return out, nil
 }
 
+// NewOAuth2Provider creates a new fosite.OAuth2Provider given an OAuth2Configurator instance
+// and a storage config.
 func NewOAuth2Provider(config OAuth2Configurator, store fosite.Storage) fosite.OAuth2Provider {
 	provider := fosite.NewOAuth2Provider(store, config)
 	return provider

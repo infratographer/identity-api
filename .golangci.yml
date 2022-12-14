@@ -1,6 +1,6 @@
 linters-settings:
   goimports:
-    local-prefixes: go.metalkube.net/gov-github-addon
+    local-prefixes: go.infratographer.com/dmv
   gofumpt:
     extra-rules: true
 

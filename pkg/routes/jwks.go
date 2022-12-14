@@ -1,11 +1,13 @@
 package routes
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
-	"go.infratographer.com/dmv/pkg/fositex"
 	"go.uber.org/zap"
 	"gopkg.in/square/go-jose.v2"
-	"net/http"
+
+	"go.infratographer.com/dmv/pkg/fositex"
 )
 
 type jwksHandler struct {
@@ -13,6 +15,7 @@ type jwksHandler struct {
 	config fositex.OAuth2Configurator
 }
 
+// Handle processes the request for the JWKS handler.
 func (h *jwksHandler) Handle(ctx *gin.Context) {
 	jwks := h.config.GetSigningJWKS(ctx)
 

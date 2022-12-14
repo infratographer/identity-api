@@ -1,71 +1,82 @@
+// Package rfc8693 implements the token exchange grant type per RFC 8693.
 package rfc8693
 
 import (
 	"context"
-	"fmt"
+	"errors"
+	"time"
+
 	"github.com/ory/fosite"
 	"github.com/ory/fosite/handler/oauth2"
 	"github.com/ory/fosite/token/jwt"
 	"github.com/ory/x/errorsx"
+
 	"go.infratographer.com/dmv/pkg/fositex"
-	"time"
 )
 
 const (
+	// GrantTypeTokenExchange is the grant type for token exchange per RFC 8693.
 	GrantTypeTokenExchange = "urn:ietf:params:oauth:grant-type:token-exchange"
-	TokenTypeJWT           = "urn:ietf:params:oauth:token-type:jwt"
-	ParamSubjectToken      = "subject_token"
-	ParamSubjectTokenType  = "subject_token_type"
-	ParamActorToken        = "actor_token"
-	ParamActorTokenType    = "actor_token_type"
-	ClaimClientID          = "client_id"
+	// TokenTypeJWT is the token type for JWT per RFC 8693.
+	TokenTypeJWT = "urn:ietf:params:oauth:token-type:jwt"
+	// ParamSubjectToken is the OAuth 2.0 request parameter for the subject token.
+	ParamSubjectToken = "subject_token"
+	// ParamSubjectTokenType is the OAuth 2.0 request parameter for the subject token type.
+	ParamSubjectTokenType = "subject_token_type"
+	// ParamActorToken is the OAuth 2.0 request parameter for the actor token.
+	ParamActorToken = "actor_token"
+	// ParamActorTokenType is the OAuth 2.0 request parameter for the actor token type.
+	ParamActorTokenType = "actor_token_type"
+	// ClaimClientID is the claim for the client ID.
+	ClaimClientID = "client_id"
+)
+
+var (
+	// ErrJWKSURIStrategyNotDefined is returned when the issuer JWKS URI strategy is not defined.
+	ErrJWKSURIStrategyNotDefined = errors.New("no issuer JWKS URI strategy defined")
 )
 
 func findMatchingKey(ctx context.Context, config fositex.OAuth2Configurator, token *jwt.Token) (interface{}, error) {
 	var claims jwt.JWTClaims
+
 	claims.FromMapClaims(token.Claims)
 
 	issuer := claims.Issuer
 	if len(issuer) == 0 {
-		err := &jwt.ValidationError{
+		return nil, &jwt.ValidationError{
 			Errors: jwt.ValidationErrorIssuer,
 		}
-		return nil, err
 	}
 
 	jwksURIStrategy := config.GetIssuerJWKSURIStrategy(ctx)
 	if jwksURIStrategy == nil {
-		err := &jwt.ValidationError{
+		return nil, &jwt.ValidationError{
 			Errors: jwt.ValidationErrorUnverifiable,
-			Inner:  fmt.Errorf("No issuer JWKS URI strategy defined"),
+			Inner:  ErrJWKSURIStrategyNotDefined,
 		}
-		return nil, err
 	}
 
 	jwksURI, err := jwksURIStrategy.GetIssuerJWKSURI(ctx, issuer)
 	if err != nil {
-		wrappedErr := &jwt.ValidationError{
+		return nil, &jwt.ValidationError{
 			Errors: jwt.ValidationErrorIssuer,
 			Inner:  err,
 		}
-		return nil, wrappedErr
 	}
 
 	jwks, err := config.GetJWKSFetcherStrategy(ctx).Resolve(ctx, jwksURI, false)
 	if err != nil {
-		wrappedErr := &jwt.ValidationError{
+		return nil, &jwt.ValidationError{
 			Errors: jwt.ValidationErrorUnverifiable,
 			Inner:  err,
 		}
-		return nil, wrappedErr
 	}
 
 	kid, ok := token.Header["kid"].(string)
 	if !ok {
-		err := &jwt.ValidationError{
+		return nil, &jwt.ValidationError{
 			Errors: jwt.ValidationErrorMalformed,
 		}
-		return nil, err
 	}
 
 	keys := jwks.Key(kid)
@@ -83,12 +94,18 @@ func findMatchingKey(ctx context.Context, config fositex.OAuth2Configurator, tok
 	return nil, err
 }
 
+// TokenExchangeHandler contains the logic for the token exchange grant type.
+// it implements the fosite.TokenEndpointHandler interface.
 type TokenExchangeHandler struct {
 	accessTokenStrategy oauth2.AccessTokenStrategy
 	accessTokenStorage  oauth2.AccessTokenStorage
 	config              fositex.OAuth2Configurator
 }
 
+// implement the fosite.TokenEndpointHandler interface
+var _ fosite.TokenEndpointHandler = new(TokenExchangeHandler)
+
+// NewTokenExchangeHandler creates a new TokenExchangeHandler.
 func NewTokenExchangeHandler(config fositex.OAuth2Configurator, strategy oauth2.AccessTokenStrategy, storage oauth2.AccessTokenStorage) *TokenExchangeHandler {
 	return &TokenExchangeHandler{
 		accessTokenStrategy: strategy,
@@ -130,12 +147,13 @@ func (s *TokenExchangeHandler) getSubjectClaims(ctx context.Context, token strin
 	}
 
 	var claims jwt.JWTClaims
+
 	claims.FromMapClaims(validated.Claims)
 
 	return claims, nil
 }
 
-// HandleTokenExchangeRequest handles a RFC 8693 token request and provides a response that can be used to
+// HandleTokenEndpointRequest handles a RFC 8693 token request and provides a response that can be used to
 // generate a token. Currently only supports JWT subject tokens and impersonation semantics.
 func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, requester fosite.AccessRequester) error {
 	form := requester.GetRequestForm()
@@ -197,6 +215,7 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 	return nil
 }
 
+// PopulateTokenEndpointResponse populates the response with a token.
 func (s *TokenExchangeHandler) PopulateTokenEndpointResponse(ctx context.Context, requester fosite.AccessRequester, responder fosite.AccessResponder) error {
 	token, _, err := s.accessTokenStrategy.GenerateAccessToken(ctx, requester)
 	if err != nil {
@@ -210,10 +229,13 @@ func (s *TokenExchangeHandler) PopulateTokenEndpointResponse(ctx context.Context
 	return nil
 }
 
+// CanSkipClientAuth is currently not supported by this handler.
+// It returns false.
 func (s *TokenExchangeHandler) CanSkipClientAuth(ctx context.Context, requester fosite.AccessRequester) bool {
 	return false
 }
 
+// CanHandleTokenEndpointRequest returns true if the grant type is token exchange.
 func (s *TokenExchangeHandler) CanHandleTokenEndpointRequest(ctx context.Context, requester fosite.AccessRequester) bool {
 	return requester.GetGrantTypes().ExactOne(GrantTypeTokenExchange)
 }

@@ -2,6 +2,7 @@ package fositex
 
 import (
 	"context"
+
 	"github.com/ory/fosite"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -10,7 +11,9 @@ import (
 )
 
 const (
-	PrivateKeyTypePublic    PrivateKeyType = "public"
+	// PrivateKeyTypePublic represents a public key type.
+	PrivateKeyTypePublic PrivateKeyType = "public"
+	// PrivateKeyTypeSymmetric represents a symmetric key type.
 	PrivateKeyTypeSymmetric PrivateKeyType = "symmetric"
 )
 
@@ -87,7 +90,7 @@ func (c *OAuth2Config) GetSigningKey(ctx context.Context) *jose.JSONWebKey {
 	return c.SigningKey
 }
 
-// GetSigningKey returns the config's signing JWKS. This includes private keys.
+// GetSigningJWKS returns the config's signing JWKS. This includes private keys.
 func (c *OAuth2Config) GetSigningJWKS(ctx context.Context) *jose.JSONWebKeySet {
 	return c.SigningJWKS
 }
