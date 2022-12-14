@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/ory/fosite"
+	"github.com/ory/fosite/token/jwt"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"go.infratographer.com/x/viperx"
@@ -41,7 +42,8 @@ type Config struct {
 	Secret              string
 	// When configuring an OAuth provider, the first private key will be used to sign
 	// JWTs.
-	PrivateKeys []PrivateKey
+	PrivateKeys   []PrivateKey
+	ClaimMappings map[string]string
 }
 
 // IssuerJWKSURIStrategy represents a strategy for getting the JWKS URI for a given issuer.
@@ -64,12 +66,23 @@ type SigningJWKSProvider interface {
 	GetSigningJWKS(ctx context.Context) *jose.JSONWebKeySet
 }
 
+// ClaimMappingStrategy represents a strategy for mapping token claims to other claims.
+type ClaimMappingStrategy interface {
+	MapClaims(claims jwt.JWTClaims) (jwt.JWTClaims, error)
+}
+
+// ClaimMappingStrategyProvider represents a provider of a claims mapping strategy.
+type ClaimMappingStrategyProvider interface {
+	GetClaimMappingStrategy(ctx context.Context) ClaimMappingStrategy
+}
+
 // OAuth2Configurator represents an OAuth2 configuration.
 type OAuth2Configurator interface {
 	fosite.Configurator
 	IssuerJWKSURIStrategyProvider
 	SigningKeyProvider
 	SigningJWKSProvider
+	ClaimMappingStrategyProvider
 }
 
 // OAuth2Config represents a Fosite OAuth 2.0 provider configuration.
@@ -78,6 +91,7 @@ type OAuth2Config struct {
 	SigningKey            *jose.JSONWebKey
 	SigningJWKS           *jose.JSONWebKeySet
 	IssuerJWKSURIStrategy IssuerJWKSURIStrategy
+	ClaimMappingStrategy  ClaimMappingStrategy
 }
 
 // GetIssuerJWKSURIStrategy returns the config's IssuerJWKSURIStrategy.
@@ -93,6 +107,11 @@ func (c *OAuth2Config) GetSigningKey(ctx context.Context) *jose.JSONWebKey {
 // GetSigningJWKS returns the config's signing JWKS. This includes private keys.
 func (c *OAuth2Config) GetSigningJWKS(ctx context.Context) *jose.JSONWebKeySet {
 	return c.SigningJWKS
+}
+
+// GetClaimMappingStrategy returns the config's claims mapping strategy.
+func (c *OAuth2Config) GetClaimMappingStrategy(ctx context.Context) ClaimMappingStrategy {
+	return c.ClaimMappingStrategy
 }
 
 // MustViperFlags sets the flags needed for Fosite to work.

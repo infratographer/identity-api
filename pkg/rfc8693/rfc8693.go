@@ -153,6 +153,17 @@ func (s *TokenExchangeHandler) getSubjectClaims(ctx context.Context, token strin
 	return claims, nil
 }
 
+func (s *TokenExchangeHandler) getMappedSubjectClaims(ctx context.Context, claims jwt.JWTClaims) (jwt.JWTClaims, error) {
+	mappingStrategy := s.config.GetClaimMappingStrategy(ctx)
+
+	mappedClaims, err := mappingStrategy.MapClaims(claims)
+	if err != nil {
+		return jwt.JWTClaims{}, err
+	}
+
+	return mappedClaims, nil
+}
+
 // HandleTokenEndpointRequest handles a RFC 8693 token request and provides a response that can be used to
 // generate a token. Currently only supports JWT subject tokens and impersonation semantics.
 func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, requester fosite.AccessRequester) error {
@@ -185,18 +196,21 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 		return err
 	}
 
+	mappedClaims, err := s.getMappedSubjectClaims(ctx, claims)
+	if err != nil {
+		return errorsx.WithStack(fosite.ErrInvalidRequest.WithHintf("error mapping claims: %s", err))
+	}
+
+	mappedClaims.Subject = claims.Subject
+	mappedClaims.Issuer = s.config.GetAccessTokenIssuer(ctx)
+
 	expiry := time.Now().Add(s.config.GetAccessTokenLifespan(ctx))
 	expiryMap := map[fosite.TokenType]time.Time{
 		fosite.AccessToken: expiry,
 	}
 
-	newClaims := jwt.JWTClaims{
-		Subject: claims.Subject,
-		Issuer:  s.config.GetAccessTokenIssuer(ctx),
-	}
-
 	clientID := requester.GetClient().GetID()
-	newClaims.Add(ClaimClientID, clientID)
+	mappedClaims.Add(ClaimClientID, clientID)
 
 	kid := s.config.GetSigningKey(ctx).KeyID
 
@@ -205,7 +219,7 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 
 	session := oauth2.JWTSession{
 		JWTHeader: &headers,
-		JWTClaims: &newClaims,
+		JWTClaims: &mappedClaims,
 		ExpiresAt: expiryMap,
 		Subject:   claims.Subject,
 	}
