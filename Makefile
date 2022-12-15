@@ -4,6 +4,8 @@ GOOS=linux
 # use the working dir as the app name, this should be the repo name
 APP_NAME=$(shell basename $(CURDIR))
 
+TEST_PRIVKEY_FILE?=tests/data/privkey.pem
+
 test: | unit-test
 
 unit-test: | lint
@@ -37,7 +39,7 @@ vendor:
 	@go mod download
 	@go mod tidy
 
-docker-up:
+docker-up: $(TEST_PRIVKEY_FILE)
 	@docker-compose build
 	@docker-compose  -f docker-compose.yml up -d app
 
@@ -46,3 +48,6 @@ docker-down:
 
 docker-clean:
 	@docker-compose -f docker-compose.yml down --volumes
+
+$(TEST_PRIVKEY_FILE):
+	openssl genpkey -out $(TEST_PRIVKEY_FILE) -algorithm RSA -pkeyopt rsa_keygen_bits:4096
