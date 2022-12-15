@@ -70,8 +70,8 @@ func NewClaimMappingStrategy(mappingExprs map[string]string) (ClaimMappingStrate
 }
 
 // MapClaims consumes a set of JWT claims and produces a new set of mapped claims.
-func (m ClaimMappingStrategy) MapClaims(claims jwt.JWTClaims) (jwt.JWTClaims, error) {
-	inputMap := claims.ToMap()
+func (m ClaimMappingStrategy) MapClaims(claims *jwt.JWTClaims) (jwt.JWTClaimsContainer, error) {
+	inputMap := claims.ToMapClaims()
 	outputMap := make(map[string]any, len(m.mappings))
 
 	subSHA256Bytes := sha256.Sum256([]byte(claims.Subject))
@@ -89,7 +89,8 @@ func (m ClaimMappingStrategy) MapClaims(claims jwt.JWTClaims) (jwt.JWTClaims, er
 			wrapped := ErrorCELEval{
 				inner: err,
 			}
-			return jwt.JWTClaims{}, &wrapped
+
+			return nil, &wrapped
 		}
 
 		outputMap[k] = out.Value()
@@ -99,5 +100,5 @@ func (m ClaimMappingStrategy) MapClaims(claims jwt.JWTClaims) (jwt.JWTClaims, er
 
 	outputClaims.FromMap(outputMap)
 
-	return outputClaims, nil
+	return &outputClaims, nil
 }

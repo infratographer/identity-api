@@ -68,7 +68,7 @@ type SigningJWKSProvider interface {
 
 // ClaimMappingStrategy represents a strategy for mapping token claims to other claims.
 type ClaimMappingStrategy interface {
-	MapClaims(claims jwt.JWTClaims) (jwt.JWTClaims, error)
+	MapClaims(claims *jwt.JWTClaims) (jwt.JWTClaimsContainer, error)
 }
 
 // ClaimMappingStrategyProvider represents a provider of a claims mapping strategy.

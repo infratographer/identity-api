@@ -9,6 +9,7 @@ func (ErrorCELParse) Error() string {
 	return "error parsing CEL expression"
 }
 
+// Is returns true if target is a *ErrorCELParse.
 func (e *ErrorCELParse) Is(target error) bool {
 	_, ok := target.(*ErrorCELParse)
 
@@ -29,6 +30,7 @@ func (ErrorCELEval) Error() string {
 	return "error evaluating CEL expression"
 }
 
+// Is returns true if target is a *ErrorCELEval.
 func (e *ErrorCELEval) Is(target error) bool {
 	_, ok := target.(*ErrorCELEval)
 

@@ -75,37 +75,38 @@ func TestClaimMappingEval(t *testing.T) {
 	strategy, err := NewClaimMappingStrategy(mappingExprs)
 	assert.Nil(t, err)
 
-	runFn := func(ctx context.Context, claims jwt.JWTClaims) testResult[jwt.JWTClaims] {
+	runFn := func(ctx context.Context, claims *jwt.JWTClaims) testResult[jwt.JWTClaimsContainer] {
 		out, err := strategy.MapClaims(claims)
-		return testResult[jwt.JWTClaims]{
+
+		return testResult[jwt.JWTClaimsContainer]{
 			success: out,
 			err:     err,
 		}
 	}
 
-	testCases := []testCase[jwt.JWTClaims, jwt.JWTClaims]{
+	testCases := []testCase[*jwt.JWTClaims, jwt.JWTClaimsContainer]{
 		{
 			name: "RuntimeError",
-			input: jwt.JWTClaims{
+			input: &jwt.JWTClaims{
 				Subject: "foo",
 				Extra:   map[string]any{},
 			},
-			checkFn: func(t *testing.T, result testResult[jwt.JWTClaims]) {
+			checkFn: func(t *testing.T, result testResult[jwt.JWTClaimsContainer]) {
 				assert.NotNil(t, result.err)
 				assert.ErrorIs(t, result.err, &ErrorCELEval{})
 			},
 		},
 		{
 			name: "Success",
-			input: jwt.JWTClaims{
+			input: &jwt.JWTClaims{
 				Subject: "foo",
 				Extra: map[string]any{
 					"num": 2,
 				},
 			},
-			checkFn: func(t *testing.T, result testResult[jwt.JWTClaims]) {
+			checkFn: func(t *testing.T, result testResult[jwt.JWTClaimsContainer]) {
 				assert.Nil(t, result.err)
-				expected := jwt.JWTClaims{
+				expected := &jwt.JWTClaims{
 					Extra: map[string]any{
 						"plusone":            int64(3),
 						"infratographer:sub": "infratographer://example.com/2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",

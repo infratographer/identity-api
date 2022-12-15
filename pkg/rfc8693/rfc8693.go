@@ -139,26 +139,26 @@ func (s *TokenExchangeHandler) validateJWT(ctx context.Context, token string, st
 	}
 }
 
-func (s *TokenExchangeHandler) getSubjectClaims(ctx context.Context, token string) (jwt.JWTClaims, error) {
+func (s *TokenExchangeHandler) getSubjectClaims(ctx context.Context, token string) (*jwt.JWTClaims, error) {
 	validated, err := s.validateJWT(ctx, token, s.config.GetJWKSFetcherStrategy(ctx))
 
 	if err != nil {
-		return jwt.JWTClaims{}, err
+		return nil, err
 	}
 
 	var claims jwt.JWTClaims
 
 	claims.FromMapClaims(validated.Claims)
 
-	return claims, nil
+	return &claims, nil
 }
 
-func (s *TokenExchangeHandler) getMappedSubjectClaims(ctx context.Context, claims jwt.JWTClaims) (jwt.JWTClaims, error) {
+func (s *TokenExchangeHandler) getMappedSubjectClaims(ctx context.Context, claims *jwt.JWTClaims) (jwt.JWTClaimsContainer, error) {
 	mappingStrategy := s.config.GetClaimMappingStrategy(ctx)
 
 	mappedClaims, err := mappingStrategy.MapClaims(claims)
 	if err != nil {
-		return jwt.JWTClaims{}, err
+		return nil, err
 	}
 
 	return mappedClaims, nil
@@ -201,8 +201,13 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 		return errorsx.WithStack(fosite.ErrInvalidRequest.WithHintf("error mapping claims: %s", err))
 	}
 
-	mappedClaims.Subject = claims.Subject
-	mappedClaims.Issuer = s.config.GetAccessTokenIssuer(ctx)
+	var newClaims jwt.JWTClaims
+	newClaims.Subject = claims.Subject
+	newClaims.Issuer = s.config.GetAccessTokenIssuer(ctx)
+
+	for k, v := range mappedClaims.ToMapClaims() {
+		newClaims.Add(k, v)
+	}
 
 	expiry := time.Now().Add(s.config.GetAccessTokenLifespan(ctx))
 	expiryMap := map[fosite.TokenType]time.Time{
@@ -210,7 +215,7 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 	}
 
 	clientID := requester.GetClient().GetID()
-	mappedClaims.Add(ClaimClientID, clientID)
+	newClaims.Add(ClaimClientID, clientID)
 
 	kid := s.config.GetSigningKey(ctx).KeyID
 
@@ -219,7 +224,7 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 
 	session := oauth2.JWTSession{
 		JWTHeader: &headers,
-		JWTClaims: &mappedClaims,
+		JWTClaims: &newClaims,
 		ExpiresAt: expiryMap,
 		Subject:   claims.Subject,
 	}
