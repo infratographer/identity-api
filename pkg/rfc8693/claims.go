@@ -25,12 +25,20 @@ func parseCEL(input string) (cel.Program, error) {
 
 	ast, issues := env.Compile(input)
 	if err := issues.Err(); err != nil {
-		return nil, err
+		wrapped := ErrorCELParse{
+			inner: err,
+		}
+
+		return nil, &wrapped
 	}
 
 	prog, err := env.Program(ast)
 	if err != nil {
-		return nil, err
+		wrapped := ErrorCELParse{
+			inner: err,
+		}
+
+		return nil, &wrapped
 	}
 
 	return prog, nil
@@ -78,7 +86,10 @@ func (m ClaimMappingStrategy) MapClaims(claims jwt.JWTClaims) (jwt.JWTClaims, er
 		out, _, err := prog.Eval(inputEnv)
 
 		if err != nil {
-			return jwt.JWTClaims{}, err
+			wrapped := ErrorCELEval{
+				inner: err,
+			}
+			return jwt.JWTClaims{}, &wrapped
 		}
 
 		outputMap[k] = out.Value()
