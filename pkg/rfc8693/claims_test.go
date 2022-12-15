@@ -97,6 +97,19 @@ func TestClaimMappingEval(t *testing.T) {
 			},
 		},
 		{
+			name: "MissingSub",
+			input: &jwt.JWTClaims{
+				Extra: map[string]any{
+					"num": 1,
+				},
+			},
+			checkFn: func(t *testing.T, result testResult[jwt.JWTClaimsContainer]) {
+				assert.NotNil(t, result.err)
+				assert.ErrorIs(t, result.err, ErrorMissingSub)
+			},
+		},
+
+		{
 			name: "Success",
 			input: &jwt.JWTClaims{
 				Subject: "foo",

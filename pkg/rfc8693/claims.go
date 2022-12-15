@@ -71,6 +71,10 @@ func NewClaimMappingStrategy(mappingExprs map[string]string) (ClaimMappingStrate
 
 // MapClaims consumes a set of JWT claims and produces a new set of mapped claims.
 func (m ClaimMappingStrategy) MapClaims(claims *jwt.JWTClaims) (jwt.JWTClaimsContainer, error) {
+	if claims.Subject == "" {
+		return nil, ErrorMissingSub
+	}
+
 	inputMap := claims.ToMapClaims()
 	outputMap := make(map[string]any, len(m.mappings))
 

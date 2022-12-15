@@ -1,5 +1,16 @@
 package rfc8693
 
+import (
+	"fmt"
+)
+
+var (
+	// ErrorMissingSub represents an error where the 'sub' claim is missing from the input claims.
+	ErrorMissingSub = &ErrorMissingClaim{
+		claim: "sub",
+	}
+)
+
 // ErrorCELParse represents an error during CEL parsing.
 type ErrorCELParse struct {
 	inner error
@@ -40,4 +51,13 @@ func (e *ErrorCELEval) Is(target error) bool {
 // Unwrap returns the inner error from CEL evaluation.
 func (e *ErrorCELEval) Unwrap() error {
 	return e.inner
+}
+
+// ErrorMissingClaim represents an error where a required claim is missing.
+type ErrorMissingClaim struct {
+	claim string
+}
+
+func (e *ErrorMissingClaim) Error() string {
+	return fmt.Sprintf("missing required claim '%s'", e.claim)
 }
