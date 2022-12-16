@@ -18,6 +18,10 @@ services:
         source: ./dmv.example.yaml
         target: /etc/dmv/dmv.yaml
         read_only: true
+      - type: bind
+        source: ./tests/data/privkey.pem
+        target: /etc/dmv/privkey.pem
+        read_only: true
       - type: volume
         source: audit-log
         target: /tmp
