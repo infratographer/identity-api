@@ -139,18 +139,29 @@ func (s *TokenExchangeHandler) validateJWT(ctx context.Context, token string, st
 	}
 }
 
-func (s *TokenExchangeHandler) getSubjectClaims(ctx context.Context, token string) (jwt.JWTClaims, error) {
+func (s *TokenExchangeHandler) getSubjectClaims(ctx context.Context, token string) (*jwt.JWTClaims, error) {
 	validated, err := s.validateJWT(ctx, token, s.config.GetJWKSFetcherStrategy(ctx))
 
 	if err != nil {
-		return jwt.JWTClaims{}, err
+		return nil, err
 	}
 
 	var claims jwt.JWTClaims
 
 	claims.FromMapClaims(validated.Claims)
 
-	return claims, nil
+	return &claims, nil
+}
+
+func (s *TokenExchangeHandler) getMappedSubjectClaims(ctx context.Context, claims *jwt.JWTClaims) (jwt.JWTClaimsContainer, error) {
+	mappingStrategy := s.config.GetClaimMappingStrategy(ctx)
+
+	mappedClaims, err := mappingStrategy.MapClaims(claims)
+	if err != nil {
+		return nil, err
+	}
+
+	return mappedClaims, nil
 }
 
 // HandleTokenEndpointRequest handles a RFC 8693 token request and provides a response that can be used to
@@ -185,14 +196,22 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 		return err
 	}
 
+	mappedClaims, err := s.getMappedSubjectClaims(ctx, claims)
+	if err != nil {
+		return errorsx.WithStack(fosite.ErrInvalidRequest.WithHintf("error mapping claims: %s", err))
+	}
+
+	var newClaims jwt.JWTClaims
+	newClaims.Subject = claims.Subject
+	newClaims.Issuer = s.config.GetAccessTokenIssuer(ctx)
+
+	for k, v := range mappedClaims.ToMapClaims() {
+		newClaims.Add(k, v)
+	}
+
 	expiry := time.Now().Add(s.config.GetAccessTokenLifespan(ctx))
 	expiryMap := map[fosite.TokenType]time.Time{
 		fosite.AccessToken: expiry,
-	}
-
-	newClaims := jwt.JWTClaims{
-		Subject: claims.Subject,
-		Issuer:  s.config.GetAccessTokenIssuer(ctx),
 	}
 
 	clientID := requester.GetClient().GetID()

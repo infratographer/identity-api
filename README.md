@@ -49,6 +49,23 @@ $ echo "$ACCESS_TOKEN" | jq '.access_token | split(".") | .[1] | @base64d | from
 
 [jq]: https://stedolan.github.io/jq/
 
+### Claim mapping
+
+DMV supports mapping of subject token claims to issued token claims using [CEL][cel]. `oauth.claimMappings` in the config file defines the mappings of issued token claims to CEL expressions. For example, the following config snippet will map the `infratographer:group` claim based on the `sub` claim:
+
+```yaml
+oauth:
+  claimMappings:
+    "infratographer:group": "claims.sub == '1234' ? 'admin' : 'user'"
+```
+
+The following variables are predefined in the CEL runtime environment:
+
+* `claims`: A dynamic map containing all claims in the subject token JWT. Accessible using `claims.*` (e.g., `claims.sub`)
+* `subSHA256`: The hex-encoded SHA256 sum of the `sub` claim
+
+[cel]: https://github.com/google/cel-go
+
 ### JWKS
 
 The [JSON Web Key Set][jwks] (JWKS) used for signing dmv JWTs is available at `/jwks.json`.

@@ -43,6 +43,11 @@ func serve(ctx context.Context) {
 		logger.Fatalf("error initializing tracing: %s", err)
 	}
 
+	mappingStrategy, err := rfc8693.NewClaimMappingStrategy(config.Config.OAuth.ClaimMappings)
+	if err != nil {
+		logger.Fatalf("error initializing claims mappings: %s", err)
+	}
+
 	jwksStrategy := jwks.NewIssuerJWKSURIStrategy(config.Config.OAuth.SubjectTokenIssuers)
 
 	oauth2Config, err := fositex.NewOAuth2Config(config.Config.OAuth)
@@ -51,6 +56,7 @@ func serve(ctx context.Context) {
 	}
 
 	oauth2Config.IssuerJWKSURIStrategy = jwksStrategy
+	oauth2Config.ClaimMappingStrategy = mappingStrategy
 
 	keyGetter := func(ctx context.Context) (any, error) {
 		return oauth2Config.GetSigningKey(ctx), nil
