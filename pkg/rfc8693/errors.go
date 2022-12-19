@@ -9,6 +9,10 @@ var (
 	ErrorMissingSub = &ErrorMissingClaim{
 		claim: "sub",
 	}
+
+	// ErrorUnknownIssuer represents an error where the issuer is not configured
+	// in the mapping.
+	ErrorUnknownIssuer = fmt.Errorf("unknown issuer")
 )
 
 // ErrorCELParse represents an error during CEL parsing.

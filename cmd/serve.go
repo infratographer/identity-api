@@ -43,7 +43,7 @@ func serve(ctx context.Context) {
 		logger.Fatalf("error initializing tracing: %s", err)
 	}
 
-	mappingStrategy, err := rfc8693.NewClaimMappingStrategy(config.Config.OAuth.ClaimMappings)
+	mappingStrategy, err := rfc8693.NewClaimMappingStrategy(config.Config.OAuth.SubjectTokenIssuers)
 	if err != nil {
 		logger.Fatalf("error initializing claims mappings: %s", err)
 	}

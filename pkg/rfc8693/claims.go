@@ -6,6 +6,8 @@ import (
 
 	"github.com/google/cel-go/cel"
 	"github.com/ory/fosite/token/jwt"
+
+	"go.infratographer.com/dmv/pkg/fositex"
 )
 
 const (
@@ -44,35 +46,54 @@ func parseCEL(input string) (cel.Program, error) {
 	return prog, nil
 }
 
+type subToCEL map[string]cel.Program
+
 // ClaimMappingStrategy represents a mapping from external identity claims to DMV claims.
 type ClaimMappingStrategy struct {
-	mappings map[string]cel.Program
+	mappings map[string]subToCEL
 }
 
 // NewClaimMappingStrategy creates a ClaimMappingStrategy given a mapping of desired DMV claims to CEL expressions.
-func NewClaimMappingStrategy(mappingExprs map[string]string) (ClaimMappingStrategy, error) {
-	mappings := make(map[string]cel.Program, len(mappingExprs))
+func NewClaimMappingStrategy(issuers []fositex.Issuer) (ClaimMappingStrategy, error) {
+	itom := make(map[string]subToCEL, len(issuers))
 
-	for k, e := range mappingExprs {
-		prog, err := parseCEL(e)
-		if err != nil {
-			return ClaimMappingStrategy{}, err
+	for _, issuer := range issuers {
+		mappingExprs := issuer.ClaimMappings
+
+		// If there are no mappings, skip this issuer.
+		// Should we have a default mapping?
+		if len(mappingExprs) == 0 {
+			continue
 		}
 
-		mappings[k] = prog
+		itom[issuer.Name] = make(map[string]cel.Program, len(mappingExprs))
+
+		for k, e := range mappingExprs {
+			prog, err := parseCEL(e)
+			if err != nil {
+				return ClaimMappingStrategy{}, err
+			}
+
+			itom[issuer.Name][k] = prog
+		}
 	}
 
 	out := ClaimMappingStrategy{
-		mappings: mappings,
+		mappings: itom,
 	}
 
 	return out, nil
 }
 
 // MapClaims consumes a set of JWT claims and produces a new set of mapped claims.
-func (m ClaimMappingStrategy) MapClaims(claims *jwt.JWTClaims) (jwt.JWTClaimsContainer, error) {
+func (m ClaimMappingStrategy) MapClaims(claims *jwt.JWTClaims, iss string) (jwt.JWTClaimsContainer, error) {
 	if claims.Subject == "" {
 		return nil, ErrorMissingSub
+	}
+
+	issmappings, ok := m.mappings[iss]
+	if !ok {
+		return nil, ErrorUnknownIssuer
 	}
 
 	inputMap := claims.ToMapClaims()
@@ -86,7 +107,7 @@ func (m ClaimMappingStrategy) MapClaims(claims *jwt.JWTClaims) (jwt.JWTClaimsCon
 		celVariableSubSHA256: subSHA256,
 	}
 
-	for k, prog := range m.mappings {
+	for k, prog := range issmappings {
 		out, _, err := prog.Eval(inputEnv)
 
 		if err != nil {

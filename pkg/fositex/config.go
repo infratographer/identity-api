@@ -20,8 +20,9 @@ const (
 
 // Issuer represents a configurable JWT issuer.
 type Issuer struct {
-	Name    string
-	JWKSURI string
+	Name          string
+	JWKSURI       string
+	ClaimMappings map[string]string
 }
 
 // PrivateKeyType represents a key type (public or symmetric)
@@ -42,8 +43,7 @@ type Config struct {
 	Secret              string
 	// When configuring an OAuth provider, the first private key will be used to sign
 	// JWTs.
-	PrivateKeys   []PrivateKey
-	ClaimMappings map[string]string
+	PrivateKeys []PrivateKey
 }
 
 // IssuerJWKSURIStrategy represents a strategy for getting the JWKS URI for a given issuer.
@@ -68,7 +68,7 @@ type SigningJWKSProvider interface {
 
 // ClaimMappingStrategy represents a strategy for mapping token claims to other claims.
 type ClaimMappingStrategy interface {
-	MapClaims(claims *jwt.JWTClaims) (jwt.JWTClaimsContainer, error)
+	MapClaims(claims *jwt.JWTClaims, iss string) (jwt.JWTClaimsContainer, error)
 }
 
 // ClaimMappingStrategyProvider represents a provider of a claims mapping strategy.

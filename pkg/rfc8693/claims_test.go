@@ -7,6 +7,8 @@ import (
 	"github.com/google/cel-go/cel"
 	"github.com/ory/fosite/token/jwt"
 	"github.com/stretchr/testify/assert"
+
+	"go.infratographer.com/dmv/pkg/fositex"
 )
 
 type testFunc[T, U any] func(context.Context, T) testResult[U]
@@ -72,11 +74,18 @@ func TestClaimMappingEval(t *testing.T) {
 		"infratographer:sub": "'infratographer://example.com/' + subSHA256",
 	}
 
-	strategy, err := NewClaimMappingStrategy(mappingExprs)
+	issuers := []fositex.Issuer{
+		{
+			Name:          "some-issuer",
+			ClaimMappings: mappingExprs,
+		},
+	}
+
+	strategy, err := NewClaimMappingStrategy(issuers)
 	assert.Nil(t, err)
 
 	runFn := func(ctx context.Context, claims *jwt.JWTClaims) testResult[jwt.JWTClaimsContainer] {
-		out, err := strategy.MapClaims(claims)
+		out, err := strategy.MapClaims(claims, "some-issuer")
 
 		return testResult[jwt.JWTClaimsContainer]{
 			success: out,
