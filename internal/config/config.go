@@ -7,6 +7,7 @@ import (
 	"go.infratographer.com/x/otelx"
 
 	"go.infratographer.com/dmv/pkg/fositex"
+	"go.infratographer.com/dmv/pkg/storage"
 )
 
 // Config is the configuration for the application.
@@ -15,4 +16,5 @@ var Config struct {
 	Logging loggingx.Config
 	OAuth   fositex.Config
 	OTel    otelx.Config
+	Storage storage.Config
 }

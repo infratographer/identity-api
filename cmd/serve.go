@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/ory/fosite/compose"
-	"github.com/ory/fosite/storage"
+	fositestorage "github.com/ory/fosite/storage"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.infratographer.com/x/ginx"
@@ -16,6 +16,7 @@ import (
 	"go.infratographer.com/dmv/pkg/jwks"
 	"go.infratographer.com/dmv/pkg/rfc8693"
 	"go.infratographer.com/dmv/pkg/routes"
+	"go.infratographer.com/dmv/pkg/storage"
 )
 
 var serveCmd = &cobra.Command{
@@ -43,12 +44,17 @@ func serve(ctx context.Context) {
 		logger.Fatalf("error initializing tracing: %s", err)
 	}
 
+	storageEngine, err := storage.NewEngine(config.Config.Storage)
+	if err != nil {
+		logger.Fatalf("error initializing storage: %s", err)
+	}
+
 	mappingStrategy, err := rfc8693.NewClaimMappingStrategy(config.Config.OAuth.ClaimMappings)
 	if err != nil {
 		logger.Fatalf("error initializing claims mappings: %s", err)
 	}
 
-	jwksStrategy := jwks.NewIssuerJWKSURIStrategy(config.Config.OAuth.SubjectTokenIssuers)
+	jwksStrategy := jwks.NewIssuerJWKSURIStrategy(storageEngine)
 
 	oauth2Config, err := fositex.NewOAuth2Config(config.Config.OAuth)
 	if err != nil {
@@ -64,7 +70,7 @@ func serve(ctx context.Context) {
 
 	hmacStrategy := compose.NewOAuth2HMACStrategy(oauth2Config)
 	jwtStrategy := compose.NewOAuth2JWTStrategy(keyGetter, hmacStrategy, oauth2Config)
-	store := storage.NewExampleStore()
+	store := fositestorage.NewExampleStore()
 	tokenExchangeHandler := rfc8693.NewTokenExchangeHandler(oauth2Config, jwtStrategy, store)
 	oauth2Config.TokenEndpointHandlers.Append(tokenExchangeHandler)
 	provider := fositex.NewOAuth2Provider(oauth2Config, store)

@@ -18,12 +18,6 @@ const (
 	PrivateKeyTypeSymmetric PrivateKeyType = "symmetric"
 )
 
-// Issuer represents a configurable JWT issuer.
-type Issuer struct {
-	Name    string
-	JWKSURI string
-}
-
 // PrivateKeyType represents a key type (public or symmetric)
 type PrivateKeyType string
 
@@ -38,7 +32,6 @@ type PrivateKey struct {
 type Config struct {
 	Issuer              string
 	AccessTokenLifespan int
-	SubjectTokenIssuers []Issuer
 	Secret              string
 	// When configuring an OAuth provider, the first private key will be used to sign
 	// JWTs.

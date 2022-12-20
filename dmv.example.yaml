@@ -3,9 +3,6 @@ server:
 oauth:
   issuer: "https://dmv.infratographer.com/"
   accessTokenLifespan: 100
-  subjectTokenIssuers:
-    - name: "https://auth.example.com/"
-      jwksURI: "https://auth.example.com/.well-known/jwks.json"
   secret: abcd1234abcd1234abcd1234abcd1234
   privateKeys:
     - keyId: "test"
@@ -18,3 +15,10 @@ otel:
   provider: stdout
   stdout:
     prettyPrint: true
+storage:
+  type: memory
+  memory:
+    issuers:
+      - name: "Example"
+        uri: "https://auth.example.com/"
+        jwksURI: "https://auth.example.com/.well-known/jwks.json"
