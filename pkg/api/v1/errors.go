@@ -7,6 +7,6 @@ type ErrorIssuerNotFound struct {
 	URI string
 }
 
-func (e *ErrorIssuerNotFound) Error() string {
+func (e ErrorIssuerNotFound) Error() string {
 	return fmt.Sprintf("issuer '%s' not found", e.URI)
 }

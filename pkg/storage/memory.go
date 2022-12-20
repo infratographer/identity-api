@@ -33,7 +33,7 @@ func newMemoryIssuerService(config MemoryConfig) (*memoryIssuerService, error) {
 func (s *memoryIssuerService) GetByURI(ctx context.Context, uri string) (*v1.Issuer, error) {
 	iss, ok := s.issuers[uri]
 	if !ok {
-		err := &v1.ErrorIssuerNotFound{
+		err := v1.ErrorIssuerNotFound{
 			URI: uri,
 		}
 
