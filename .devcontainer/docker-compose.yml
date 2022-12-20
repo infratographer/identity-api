@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: sleep infinity
+    restart: unless-stopped
+    environment:
+      - SSH_AUTH_SOCK=${SSH_AUTH_SOCK}
+    volumes:
+      - type: bind
+        source: ${SSH_AUTH_SOCK}
+        target: ${SSH_AUTH_SOCK}
+      - type: bind
+        source: ..
+        target: /workspace
+    networks:
+      dmvnet:
+
+networks:
+  dmvnet:

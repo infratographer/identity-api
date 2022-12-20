@@ -1,0 +1,15 @@
+{
+    "name": "dmv",
+    "dockerComposeFile": "docker-compose.yml",
+    "service": "app",
+    "workspaceFolder": "/workspace",
+    "shutdownAction": "stopCompose",
+    "customizations": {
+	"vscode": {
+	    "extensions": [
+		"golang.Go"
+	    ]
+	}
+    },
+    "remoteUser": "vscode"
+}
