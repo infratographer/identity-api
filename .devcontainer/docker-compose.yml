@@ -7,15 +7,15 @@ services:
       dockerfile: Dockerfile
     command: sleep infinity
     restart: unless-stopped
-    environment:
-      - SSH_AUTH_SOCK=${SSH_AUTH_SOCK}
+    ports:
+      - "127.0.0.1:2222:2222"
     volumes:
-      - type: bind
-        source: ${SSH_AUTH_SOCK}
-        target: ${SSH_AUTH_SOCK}
       - type: bind
         source: ..
         target: /workspace
+      - type: bind
+        source: ~/.ssh/authorized_keys
+        target: /home/vscode/.ssh/authorized_keys
     networks:
       dmvnet:
 

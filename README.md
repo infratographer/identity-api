@@ -88,7 +88,7 @@ Update the config file and/or Docker Compose volume mounts accordingly.
 
 ## Development
 
-DMV includes a [Dev Container][dev-container] for facilitating service development. Using the Dev Container is not required, but provides a consistent environment for all contributors as well as a few perks like:
+DMV includes a [dev container][dev-container] for facilitating service development. Using the dev container is not required, but provides a consistent environment for all contributors as well as a few perks like:
 
 * [gopls][gopls] integration out of the box
 * Host SSH auth socket mount
@@ -103,18 +103,21 @@ To get started, you can use either [VS Code][vs-code] or the official [CLI][cli]
 
 ### Manually setting up SSH agent forwarding
 
-In order to perform Git operations (i.e., committing code in the container), you will need to enable SSH agent forwarding from your machine to the Dev Container. While VS Code handles this automatically, for other editors you will need to set this up manually.
+The provided dev container listens for SSH connections on port 2222 and bind mounts `~/.ssh/authorized_keys` from the host to facilitate SSH. In order to perform Git operations (i.e., committing code in the container), you will need to enable SSH agent forwarding from your machine to the dev container. While VS Code handles this automatically, for other editors you will need to set this up manually.
 
-To do so, update your `~/.ssh/config` to support agent forwarding and `ControlMaster`. The following config snippet should accomplish this for you (remember to create `~/.ssh/sockets` first):
+To do so, update your `~/.ssh/config` to support agent forwarding. The following config snippet should accomplish this for you:
 
 ```
-Host YOUR_HOST_HERE
+Host dmv-devcontainer
+  ProxyJump YOUR_HOST_HERE
+  Port 2222
+  User vscode
   ForwardAgent yes
-  ControlMaster auto
-  ControlPersist yes
-  ControlPath ~/.ssh/sockets/%C
+
+Host YOUR_HOST_HERE
+  User YOUR_USER_HERE
+  ForwardAgent yes
 ```
 
 See the man page for `ssh_config` for more information on what these options do.
 
-Following an initial connection (i.e., via a terminal) to start your Dev Container, `SSH_AUTH_SOCK` should be passed through from the container's host to the container itself.
