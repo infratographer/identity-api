@@ -88,6 +88,33 @@ Update the config file and/or Docker Compose volume mounts accordingly.
 
 ## Development
 
-This repo includes a `docker-compose.yml` and a `Makefile` to make getting started easy.
+DMV includes a [Dev Container][dev-container] for facilitating service development. Using the Dev Container is not required, but provides a consistent environment for all contributors as well as a few perks like:
 
-`make docker-up` will start dmv using Docker Compose.
+* [gopls][gopls] integration out of the box
+* Host SSH auth socket mount
+* Git support
+
+To get started, you can use either [VS Code][vs-code] or the official [CLI][cli].
+
+[dev-container]: https://containers.dev/
+[gopls]: https://pkg.go.dev/golang.org/x/tools/gopls
+[vs-code]: https://code.visualstudio.com/docs/devcontainers/containers
+[cli]: https://github.com/devcontainers/cli
+
+### Manually setting up SSH agent forwarding
+
+In order to perform Git operations (i.e., committing code in the container), you will need to enable SSH agent forwarding from your machine to the Dev Container. While VS Code handles this automatically, for other editors you will need to set this up manually.
+
+To do so, update your `~/.ssh/config` to support agent forwarding and `ControlMaster`. The following config snippet should accomplish this for you (remember to create `~/.ssh/sockets` first):
+
+```
+Host YOUR_HOST_HERE
+  ForwardAgent yes
+  ControlMaster auto
+  ControlPersist yes
+  ControlPath ~/.ssh/sockets/%C
+```
+
+See the man page for `ssh_config` for more information on what these options do.
+
+Following an initial connection (i.e., via a terminal) to start your Dev Container, `SSH_AUTH_SOCK` should be passed through from the container's host to the container itself.
