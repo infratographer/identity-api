@@ -8,9 +8,9 @@ dmv is an OAuth service that supports the following grant types:
 
 ## Usage
 
-dmv is a Go service. To build it, you can either use `make build` to build a Go binary or `make docker-up` to start the Docker Compose service.
+dmv is a Go service. To build it, you can either use `make build` to build a Go binary or `make up` to both build and start the service.
 
-The `docker-up` Makefile target will auto-generate a private key and mount it in the container for testing purposes. Note that this is not recommended for actual production use, and is merely a handy feature to allow developers to test.
+The `up` Makefile target will auto-generate a private key and mount it in the container for testing purposes. Note that this is not recommended for actual production use, and is merely a handy feature to allow developers to test.
 
 ### Exchanging tokens
 

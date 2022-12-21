@@ -5,6 +5,7 @@ GOOS=linux
 APP_NAME=$(shell basename $(CURDIR))
 
 TEST_PRIVKEY_FILE?=tests/data/privkey.pem
+CONFIG_FILE?=dmv.example.yaml
 
 test: | unit-test
 
@@ -39,15 +40,8 @@ vendor:
 	@go mod download
 	@go mod tidy
 
-docker-up: $(TEST_PRIVKEY_FILE)
-	@docker-compose build
-	@docker-compose  -f docker-compose.yml up -d app
-
-docker-down:
-	@docker-compose -f docker-compose.yml down
-
-docker-clean:
-	@docker-compose -f docker-compose.yml down --volumes
+up: build $(TEST_PRIVKEY_FILE)
+	bin/${APP_NAME} serve --config ${CONFIG_FILE}
 
 $(TEST_PRIVKEY_FILE):
 	openssl genpkey -out $(TEST_PRIVKEY_FILE) -algorithm RSA -pkeyopt rsa_keygen_bits:4096
