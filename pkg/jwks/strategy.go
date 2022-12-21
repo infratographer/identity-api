@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 
+	v1 "go.infratographer.com/dmv/pkg/api/v1"
 	"go.infratographer.com/dmv/pkg/fositex"
 )
 
@@ -14,28 +15,23 @@ var (
 )
 
 type issuerJWKSURIStrategy struct {
-	issuerURIs map[string]string
+	issuerSvc v1.IssuerService
 }
 
 // NewIssuerJWKSURIStrategy creates a new fosite.IssuerJWKSURIStrategy.
-func NewIssuerJWKSURIStrategy(issuers []fositex.Issuer) fositex.IssuerJWKSURIStrategy {
-	issuerURIs := make(map[string]string)
-	for _, iss := range issuers {
-		issuerURIs[iss.Name] = iss.JWKSURI
-	}
-
+func NewIssuerJWKSURIStrategy(issuerSvc v1.IssuerService) fositex.IssuerJWKSURIStrategy {
 	out := issuerJWKSURIStrategy{
-		issuerURIs: issuerURIs,
+		issuerSvc: issuerSvc,
 	}
 
 	return out
 }
 
 func (s issuerJWKSURIStrategy) GetIssuerJWKSURI(ctx context.Context, iss string) (string, error) {
-	jwksURI, ok := s.issuerURIs[iss]
-	if !ok {
-		return "", fmt.Errorf("%w: %s", ErrUnknownIssuer, iss)
+	issuer, err := s.issuerSvc.GetByURI(ctx, iss)
+	if err != nil {
+		return "", err
 	}
 
-	return jwksURI, nil
+	return issuer.JWKSURI, nil
 }
