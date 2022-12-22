@@ -8,9 +8,9 @@ dmv is an OAuth service that supports the following grant types:
 
 ## Usage
 
-dmv is a Go service. To build it, you can either use `make build` to build a Go binary or `make docker-up` to start the Docker Compose service.
+dmv is a Go service. To build it, you can either use `make build` to build a Go binary or `make up` to both build and start the service.
 
-The `docker-up` Makefile target will auto-generate a private key and mount it in the container for testing purposes. Note that this is not recommended for actual production use, and is merely a handy feature to allow developers to test.
+The `up` Makefile target will auto-generate a private key and mount it in the container for testing purposes. Note that this is not recommended for actual production use, and is merely a handy feature to allow developers to test.
 
 ### Exchanging tokens
 
@@ -88,6 +88,36 @@ Update the config file and/or Docker Compose volume mounts accordingly.
 
 ## Development
 
-This repo includes a `docker-compose.yml` and a `Makefile` to make getting started easy.
+DMV includes a [dev container][dev-container] for facilitating service development. Using the dev container is not required, but provides a consistent environment for all contributors as well as a few perks like:
 
-`make docker-up` will start dmv using Docker Compose.
+* [gopls][gopls] integration out of the box
+* Host SSH auth socket mount
+* Git support
+
+To get started, you can use either [VS Code][vs-code] or the official [CLI][cli].
+
+[dev-container]: https://containers.dev/
+[gopls]: https://pkg.go.dev/golang.org/x/tools/gopls
+[vs-code]: https://code.visualstudio.com/docs/devcontainers/containers
+[cli]: https://github.com/devcontainers/cli
+
+### Manually setting up SSH agent forwarding
+
+The provided dev container listens for SSH connections on port 2222 and bind mounts `~/.ssh/authorized_keys` from the host to facilitate SSH. In order to perform Git operations (i.e., committing code in the container), you will need to enable SSH agent forwarding from your machine to the dev container. While VS Code handles this automatically, for other editors you will need to set this up manually.
+
+To do so, update your `~/.ssh/config` to support agent forwarding. The following config snippet should accomplish this for you:
+
+```
+Host dmv-devcontainer
+  ProxyJump YOUR_HOST_HERE
+  Port 2222
+  User vscode
+  ForwardAgent yes
+
+Host YOUR_HOST_HERE
+  User YOUR_USER_HERE
+  ForwardAgent yes
+```
+
+See the man page for `ssh_config` for more information on what these options do.
+

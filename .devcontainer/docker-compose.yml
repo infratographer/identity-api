@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: sleep infinity
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:2222:2222"
+    volumes:
+      - type: bind
+        source: ..
+        target: /workspace
+      - type: bind
+        source: ~/.ssh/authorized_keys
+        target: /home/vscode/.ssh/authorized_keys
+    networks:
+      dmvnet:
+
+networks:
+  dmvnet:
