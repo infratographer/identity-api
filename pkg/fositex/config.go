@@ -35,8 +35,7 @@ type Config struct {
 	Secret              string
 	// When configuring an OAuth provider, the first private key will be used to sign
 	// JWTs.
-	PrivateKeys   []PrivateKey
-	ClaimMappings map[string]string
+	PrivateKeys []PrivateKey
 }
 
 // IssuerJWKSURIStrategy represents a strategy for getting the JWKS URI for a given issuer.
@@ -61,7 +60,7 @@ type SigningJWKSProvider interface {
 
 // ClaimMappingStrategy represents a strategy for mapping token claims to other claims.
 type ClaimMappingStrategy interface {
-	MapClaims(claims *jwt.JWTClaims) (jwt.JWTClaimsContainer, error)
+	MapClaims(ctx context.Context, claims *jwt.JWTClaims) (jwt.JWTClaimsContainer, error)
 }
 
 // ClaimMappingStrategyProvider represents a provider of a claims mapping strategy.

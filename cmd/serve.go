@@ -49,10 +49,7 @@ func serve(ctx context.Context) {
 		logger.Fatalf("error initializing storage: %s", err)
 	}
 
-	mappingStrategy, err := rfc8693.NewClaimMappingStrategy(config.Config.OAuth.ClaimMappings)
-	if err != nil {
-		logger.Fatalf("error initializing claims mappings: %s", err)
-	}
+	mappingStrategy := rfc8693.NewClaimMappingStrategy(storageEngine)
 
 	jwksStrategy := jwks.NewIssuerJWKSURIStrategy(storageEngine)
 

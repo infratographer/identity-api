@@ -156,7 +156,7 @@ func (s *TokenExchangeHandler) getSubjectClaims(ctx context.Context, token strin
 func (s *TokenExchangeHandler) getMappedSubjectClaims(ctx context.Context, claims *jwt.JWTClaims) (jwt.JWTClaimsContainer, error) {
 	mappingStrategy := s.config.GetClaimMappingStrategy(ctx)
 
-	mappedClaims, err := mappingStrategy.MapClaims(claims)
+	mappedClaims, err := mappingStrategy.MapClaims(ctx, claims)
 	if err != nil {
 		return nil, err
 	}
