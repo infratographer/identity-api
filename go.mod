@@ -3,7 +3,7 @@ module go.infratographer.com/dmv
 go 1.19
 
 require (
-	github.com/gin-gonic/gin v1.8.1
+	github.com/gin-gonic/gin v1.8.2
 	github.com/google/cel-go v0.13.0
 	github.com/ory/fosite v0.44.0
 	github.com/ory/x v0.0.523
