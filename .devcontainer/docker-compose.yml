@@ -16,6 +16,7 @@ services:
       - type: bind
         source: ~/.ssh/authorized_keys
         target: /home/vscode/.ssh/authorized_keys
+        read_only: true
     networks:
       dmvnet:
 

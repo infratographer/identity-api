@@ -25,7 +25,11 @@ type testCase[T, U any] struct {
 
 func runTests[T, U any](ctx context.Context, t *testing.T, cases []testCase[T, U], testFn testFunc[T, U]) {
 	for _, testCase := range cases {
+		testCase := testCase
+
 		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
 			result := testFn(ctx, testCase.input)
 			testCase.checkFn(t, result)
 		})
@@ -34,6 +38,8 @@ func runTests[T, U any](ctx context.Context, t *testing.T, cases []testCase[T, U
 
 // TestClaimMappingEval checks that claim mapping expressions evaluate correctly.
 func TestClaimMappingEval(t *testing.T) {
+	t.Parallel()
+
 	cm := map[string]string{
 		"plusone":            "1 + claims.num",
 		"infratographer:sub": "'infratographer://example.com/' + subSHA256",

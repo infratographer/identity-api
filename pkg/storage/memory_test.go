@@ -10,6 +10,8 @@ import (
 )
 
 func TestMemoryIssuerService(t *testing.T) {
+	t.Parallel()
+
 	type testResult struct {
 		iss *v1.Issuer
 		err error
@@ -68,13 +70,19 @@ func TestMemoryIssuerService(t *testing.T) {
 	assert.Nil(t, err)
 
 	for _, testCase := range testCases {
-		iss, err := issSvc.GetByURI(context.Background(), testCase.input)
+		testCase := testCase
 
-		result := testResult{
-			iss: iss,
-			err: err,
-		}
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
 
-		testCase.checkFn(t, result)
+			iss, err := issSvc.GetByURI(context.Background(), testCase.input)
+
+			result := testResult{
+				iss: iss,
+				err: err,
+			}
+
+			testCase.checkFn(t, result)
+		})
 	}
 }
