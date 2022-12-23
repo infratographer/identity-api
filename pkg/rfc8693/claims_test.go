@@ -4,9 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/google/cel-go/cel"
 	"github.com/ory/fosite/token/jwt"
 	"github.com/stretchr/testify/assert"
+
+	"go.infratographer.com/dmv/pkg/storage"
 )
 
 type testFunc[T, U any] func(context.Context, T) testResult[U]
@@ -35,56 +36,37 @@ func runTests[T, U any](ctx context.Context, t *testing.T, cases []testCase[T, U
 	}
 }
 
-// TestClaimMappingParse checks that claim mapping expressions parse correctly.
-func TestClaimMappingParse(t *testing.T) {
-	t.Parallel()
-
-	runFn := func(ctx context.Context, prog string) testResult[cel.Program] {
-		out, err := parseCEL(prog)
-
-		return testResult[cel.Program]{
-			success: out,
-			err:     err,
-		}
-	}
-
-	testCases := []testCase[string, cel.Program]{
-		{
-			name:  "ParseError",
-			input: "'hello",
-			checkFn: func(t *testing.T, result testResult[cel.Program]) {
-				assert.Nil(t, result.success)
-				assert.NotNil(t, result.err)
-				assert.ErrorIs(t, result.err, &ErrorCELParse{})
-			},
-		},
-		{
-			name:  "Success",
-			input: "'hello! ' + subSHA256",
-			checkFn: func(t *testing.T, result testResult[cel.Program]) {
-				assert.Nil(t, result.err)
-				assert.NotNil(t, result.success)
-			},
-		},
-	}
-
-	runTests(context.Background(), t, testCases, runFn)
-}
-
 // TestClaimMappingEval checks that claim mapping expressions evaluate correctly.
 func TestClaimMappingEval(t *testing.T) {
 	t.Parallel()
 
-	mappingExprs := map[string]string{
+	cm := map[string]string{
 		"plusone":            "1 + claims.num",
 		"infratographer:sub": "'infratographer://example.com/' + subSHA256",
 	}
 
-	strategy, err := NewClaimMappingStrategy(mappingExprs)
-	assert.Nil(t, err)
+	cfg := storage.Config{
+		Type: storage.EngineTypeMemory,
+		SeedData: storage.SeedData{
+			Issuers: []storage.SeedIssuer{
+				{
+					ID:            "abcd1234",
+					Name:          "Example",
+					URI:           "https://example.com/",
+					JWKSURI:       "https://example.com/.well-known/jwks.json",
+					ClaimMappings: cm,
+				},
+			},
+		},
+	}
+
+	storageEngine, err := storage.NewEngine(cfg)
+	assert.NoError(t, err, "failed to create storage engine")
+
+	strategy := NewClaimMappingStrategy(storageEngine)
 
 	runFn := func(ctx context.Context, claims *jwt.JWTClaims) testResult[jwt.JWTClaimsContainer] {
-		out, err := strategy.MapClaims(claims)
+		out, err := strategy.MapClaims(ctx, claims)
 
 		return testResult[jwt.JWTClaimsContainer]{
 			success: out,
@@ -97,6 +79,7 @@ func TestClaimMappingEval(t *testing.T) {
 			name: "RuntimeError",
 			input: &jwt.JWTClaims{
 				Subject: "foo",
+				Issuer:  "https://example.com/",
 				Extra:   map[string]any{},
 			},
 			checkFn: func(t *testing.T, result testResult[jwt.JWTClaimsContainer]) {
@@ -107,6 +90,7 @@ func TestClaimMappingEval(t *testing.T) {
 		{
 			name: "MissingSub",
 			input: &jwt.JWTClaims{
+				Issuer: "https://example.com/",
 				Extra: map[string]any{
 					"num": 1,
 				},
@@ -116,11 +100,24 @@ func TestClaimMappingEval(t *testing.T) {
 				assert.ErrorIs(t, result.err, ErrorMissingSub)
 			},
 		},
-
+		{
+			name: "MissingISS",
+			input: &jwt.JWTClaims{
+				Subject: "foo",
+				Extra: map[string]any{
+					"num": 1,
+				},
+			},
+			checkFn: func(t *testing.T, result testResult[jwt.JWTClaimsContainer]) {
+				assert.NotNil(t, result.err)
+				assert.ErrorIs(t, result.err, ErrorMissingIss)
+			},
+		},
 		{
 			name: "Success",
 			input: &jwt.JWTClaims{
 				Subject: "foo",
+				Issuer:  "https://example.com/",
 				Extra: map[string]any{
 					"num": 2,
 				},

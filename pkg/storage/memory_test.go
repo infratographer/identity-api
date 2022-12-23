@@ -24,10 +24,11 @@ func TestMemoryIssuerService(t *testing.T) {
 	}
 
 	issuer := v1.Issuer{
-		ID:      "abcd1234",
-		Name:    "Example",
-		URI:     "https://example.com/",
-		JWKSURI: "https://example.com/.well-known/jwks.json",
+		ID:            "abcd1234",
+		Name:          "Example",
+		URI:           "https://example.com/",
+		JWKSURI:       "https://example.com/.well-known/jwks.json",
+		ClaimMappings: v1.ClaimsMapping{},
 	}
 
 	testCases := []testCase{
@@ -52,9 +53,16 @@ func TestMemoryIssuerService(t *testing.T) {
 		},
 	}
 
-	config := MemoryConfig{
-		Issuers: []v1.Issuer{
-			issuer,
+	config := Config{
+		SeedData: SeedData{
+			Issuers: []SeedIssuer{
+				{
+					ID:      issuer.ID,
+					Name:    issuer.Name,
+					URI:     issuer.URI,
+					JWKSURI: issuer.JWKSURI,
+				},
+			},
 		},
 	}
 
