@@ -10,15 +10,38 @@ type memoryEngine struct {
 	*memoryIssuerService
 }
 
+func buildIssuerFromSeed(seed SeedIssuer) (v1.Issuer, error) {
+	claimMappings, err := v1.BuildClaimsMappingFromMap(seed.ClaimMappings)
+	if err != nil {
+		return v1.Issuer{}, err
+	}
+
+	out := v1.Issuer{
+		ID:            seed.ID,
+		Name:          seed.Name,
+		URI:           seed.URI,
+		JWKSURI:       seed.JWKSURI,
+		ClaimMappings: claimMappings,
+	}
+
+	return out, nil
+}
+
 // memoryIssuerService represents an in-memory issuer service.
 type memoryIssuerService struct {
 	issuers map[string]v1.Issuer
 }
 
-// newMemoryIssuerService creates a new in-memory issuer service.
-func newMemoryIssuerService(config MemoryConfig) (*memoryIssuerService, error) {
-	issuerMap := make(map[string]v1.Issuer, len(config.Issuers))
-	for _, iss := range config.Issuers {
+// newMemoryEngine creates a new in-memory storage engine.
+func newMemoryIssuerService(config Config) (*memoryIssuerService, error) {
+	issuerMap := make(map[string]v1.Issuer, len(config.SeedData.Issuers))
+
+	for _, seed := range config.SeedData.Issuers {
+		iss, err := buildIssuerFromSeed(seed)
+		if err != nil {
+			return nil, err
+		}
+
 		issuerMap[iss.URI] = iss
 	}
 

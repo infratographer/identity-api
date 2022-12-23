@@ -23,7 +23,7 @@ func NewEngine(config Config) (Engine, error) {
 	case "":
 		return nil, ErrorMissingEngineType
 	case EngineTypeMemory:
-		issSvc, err := newMemoryIssuerService(config.Memory)
+		issSvc, err := newMemoryIssuerService(config)
 		if err != nil {
 			return nil, err
 		}

@@ -7,7 +7,6 @@ import (
 	"github.com/ory/fosite/token/jwt"
 	"github.com/stretchr/testify/assert"
 
-	apiv1 "go.infratographer.com/dmv/pkg/api/v1"
 	"go.infratographer.com/dmv/pkg/storage"
 )
 
@@ -35,16 +34,15 @@ func runTests[T, U any](ctx context.Context, t *testing.T, cases []testCase[T, U
 
 // TestClaimMappingEval checks that claim mapping expressions evaluate correctly.
 func TestClaimMappingEval(t *testing.T) {
-	cm, parseErr := apiv1.BuildClaimsMappingFromMap(map[string]string{
+	cm := map[string]string{
 		"plusone":            "1 + claims.num",
 		"infratographer:sub": "'infratographer://example.com/' + subSHA256",
-	})
-	assert.Nil(t, parseErr)
+	}
 
 	cfg := storage.Config{
 		Type: storage.EngineTypeMemory,
-		Memory: storage.MemoryConfig{
-			Issuers: []apiv1.Issuer{
+		SeedData: storage.SeedData{
+			Issuers: []storage.SeedIssuer{
 				{
 					ID:            "abcd1234",
 					Name:          "Example",
