@@ -6,7 +6,7 @@ require (
 	github.com/gin-gonic/gin v1.8.2
 	github.com/google/cel-go v0.13.0
 	github.com/ory/fosite v0.44.0
-	github.com/ory/x v0.0.524
+	github.com/ory/x v0.0.527
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.14.0
