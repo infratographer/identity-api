@@ -18,7 +18,7 @@ services:
         target: /home/vscode/.ssh/authorized_keys
         read_only: true
     networks:
-      dmvnet:
+      stsnet:
 
 networks:
-  dmvnet:
+  stsnet:

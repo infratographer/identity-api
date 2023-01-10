@@ -5,8 +5,8 @@ import (
 	"context"
 	"fmt"
 
-	v1 "go.infratographer.com/dmv/pkg/api/v1"
-	"go.infratographer.com/dmv/pkg/fositex"
+	v1 "go.infratographer.com/identity-manager-sts/pkg/api/v1"
+	"go.infratographer.com/identity-manager-sts/pkg/fositex"
 )
 
 var (

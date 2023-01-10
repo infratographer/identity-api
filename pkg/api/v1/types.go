@@ -6,18 +6,18 @@ import (
 
 	"github.com/google/cel-go/cel"
 
-	"go.infratographer.com/dmv/pkg/celutils"
+	"go.infratographer.com/identity-manager-sts/pkg/celutils"
 )
 
 // Issuer represents a token issuer.
 type Issuer struct {
-	// ID represents the ID of the issuer in DMV.
+	// ID represents the ID of the issuer in identity-manager-sts.
 	ID string
 	// Name represents the human-readable name of the issuer.
 	Name string
 	// URI represents the issuer URI as found in the "iss" claim of a JWT.
 	URI string
-	// JWKSURI represents the URI where the issuer's JWKS lives. Must be accessible by DMV.
+	// JWKSURI represents the URI where the issuer's JWKS lives. Must be accessible by identity-manager-sts.
 	JWKSURI string
 	// ClaimMappings represents a map of claims to a CEL expression that will be evaluated
 	ClaimMappings ClaimsMapping

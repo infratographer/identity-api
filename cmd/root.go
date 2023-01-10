@@ -9,14 +9,14 @@ import (
 	"go.infratographer.com/x/loggingx"
 	"go.uber.org/zap"
 
-	"go.infratographer.com/dmv/internal/config"
+	"go.infratographer.com/identity-manager-sts/internal/config"
 )
 
 var (
-	appName = "dmv"
+	appName = "identity-manager-sts"
 	rootCmd = &cobra.Command{
-		Use:   "dmv",
-		Short: "DMV authorization server",
+		Use:   "identity-manager-sts",
+		Short: "identity-manager-sts authorization server",
 	}
 
 	cfgFile string
@@ -26,16 +26,16 @@ var (
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is /etc/dmv/dmv.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is /etc/identity-manager-sts/identity-manager-sts.yaml)")
 }
 
 func initConfig() {
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
 	} else {
-		viper.AddConfigPath("/etc/dmv")
+		viper.AddConfigPath("/etc/identity-manager-sts")
 		viper.SetConfigType("yaml")
-		viper.SetConfigName("dmv")
+		viper.SetConfigName("identity-manager-sts")
 	}
 
 	err := viper.ReadInConfig()

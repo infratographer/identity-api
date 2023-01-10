@@ -1,5 +1,5 @@
 {
-    "name": "dmv",
+    "name": "identity-manager-sts",
     "dockerComposeFile": "docker-compose.yml",
     "service": "app",
     "workspaceFolder": "/workspace",

@@ -1,7 +1,7 @@
 package storage
 
 import (
-	v1 "go.infratographer.com/dmv/pkg/api/v1"
+	v1 "go.infratographer.com/identity-manager-sts/pkg/api/v1"
 )
 
 const (
@@ -9,7 +9,7 @@ const (
 	EngineTypeMemory EngineType = "memory"
 )
 
-// EngineType represents the type of DMV storage engine.
+// EngineType represents the type of identity-manager-sts storage engine.
 type EngineType string
 
 // Engine represents a storage engine.

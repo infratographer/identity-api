@@ -5,7 +5,7 @@ GOOS=linux
 APP_NAME=$(shell basename $(CURDIR))
 
 TEST_PRIVKEY_FILE?=tests/data/privkey.pem
-CONFIG_FILE?=dmv.example.yaml
+CONFIG_FILE?=sts.example.yaml
 
 test: | unit-test
 

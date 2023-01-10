@@ -11,17 +11,17 @@ import (
 	"go.infratographer.com/x/otelx"
 	"go.infratographer.com/x/versionx"
 
-	"go.infratographer.com/dmv/internal/config"
-	"go.infratographer.com/dmv/pkg/fositex"
-	"go.infratographer.com/dmv/pkg/jwks"
-	"go.infratographer.com/dmv/pkg/rfc8693"
-	"go.infratographer.com/dmv/pkg/routes"
-	"go.infratographer.com/dmv/pkg/storage"
+	"go.infratographer.com/identity-manager-sts/internal/config"
+	"go.infratographer.com/identity-manager-sts/pkg/fositex"
+	"go.infratographer.com/identity-manager-sts/pkg/jwks"
+	"go.infratographer.com/identity-manager-sts/pkg/rfc8693"
+	"go.infratographer.com/identity-manager-sts/pkg/routes"
+	"go.infratographer.com/identity-manager-sts/pkg/storage"
 )
 
 var serveCmd = &cobra.Command{
 	Use:   "serve",
-	Short: "starts DMV",
+	Short: "starts identity-manager-sts",
 	Run: func(cmd *cobra.Command, args []string) {
 		serve(cmd.Context())
 	},

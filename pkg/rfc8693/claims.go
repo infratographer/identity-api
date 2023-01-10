@@ -7,11 +7,11 @@ import (
 
 	"github.com/ory/fosite/token/jwt"
 
-	v1 "go.infratographer.com/dmv/pkg/api/v1"
-	"go.infratographer.com/dmv/pkg/celutils"
+	v1 "go.infratographer.com/identity-manager-sts/pkg/api/v1"
+	"go.infratographer.com/identity-manager-sts/pkg/celutils"
 )
 
-// ClaimMappingStrategy represents a mapping from external identity claims to DMV claims.
+// ClaimMappingStrategy represents a mapping from external identity claims to identity-manager-sts claims.
 type ClaimMappingStrategy struct {
 	issuerSvc v1.IssuerService
 }
