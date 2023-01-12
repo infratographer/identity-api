@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	v1 "go.infratographer.com/dmv/pkg/api/v1"
+	v1 "go.infratographer.com/identity-manager-sts/pkg/api/v1"
 )
 
 func TestMemoryIssuerService(t *testing.T) {

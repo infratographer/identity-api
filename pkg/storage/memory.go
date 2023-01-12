@@ -3,7 +3,7 @@ package storage
 import (
 	"context"
 
-	v1 "go.infratographer.com/dmv/pkg/api/v1"
+	v1 "go.infratographer.com/identity-manager-sts/pkg/api/v1"
 )
 
 type memoryEngine struct {

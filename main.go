@@ -2,7 +2,7 @@
 package main
 
 import (
-	"go.infratographer.com/dmv/cmd"
+	"go.infratographer.com/identity-manager-sts/cmd"
 )
 
 func main() {

@@ -1,4 +1,4 @@
-module go.infratographer.com/dmv
+module go.infratographer.com/identity-manager-sts
 
 go 1.19
 

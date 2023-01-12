@@ -1,6 +1,6 @@
 linters-settings:
   goimports:
-    local-prefixes: go.infratographer.com/dmv
+    local-prefixes: go.infratographer.com/identity-manager-sts
   gofumpt:
     extra-rules: true
 

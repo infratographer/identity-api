@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/square/go-jose.v2"
 
-	"go.infratographer.com/dmv/pkg/fositex"
+	"go.infratographer.com/identity-manager-sts/pkg/fositex"
 )
 
 type jwksHandler struct {

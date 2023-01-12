@@ -6,8 +6,8 @@ import (
 	"go.infratographer.com/x/loggingx"
 	"go.infratographer.com/x/otelx"
 
-	"go.infratographer.com/dmv/pkg/fositex"
-	"go.infratographer.com/dmv/pkg/storage"
+	"go.infratographer.com/identity-manager-sts/pkg/fositex"
+	"go.infratographer.com/identity-manager-sts/pkg/storage"
 )
 
 // Config is the configuration for the application.
