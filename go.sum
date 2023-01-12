@@ -437,6 +437,8 @@ github.com/zsais/go-gin-prometheus v0.1.0/go.mod h1:Slirjzuz8uM8Cw0jmPNqbneoqcUt
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.infratographer.com/x v0.0.1 h1:Qky1OcdnoD3S1DdZtvQAcqWaeQBbHqw1aq/gzn2hcjc=
 go.infratographer.com/x v0.0.1/go.mod h1:X87s1QHNKOrY2W3VowdoOK2OtXeR8o9kaJp1P5NCbDE=
+go.infratographer.com/x v0.0.2 h1:x/vjD4k8qBgHUdP92oBzPOkh54K8HTh6Rjm03rY+Txw=
+go.infratographer.com/x v0.0.2/go.mod h1:X87s1QHNKOrY2W3VowdoOK2OtXeR8o9kaJp1P5NCbDE=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
 go.opencensus.io v0.22.0/go.mod h1:+kGneAE2xo2IficOXnaByMWTGM9T73dGwxeWcUqIpI8=
 go.opencensus.io v0.22.2/go.mod h1:yxeiOL68Rb0Xd1ddK5vPZ/oVn4vY4Ynel7k9FzqtOIw=
