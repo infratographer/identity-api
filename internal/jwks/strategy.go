@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	v1 "go.infratographer.com/identity-manager-sts/pkg/api/v1"
-	"go.infratographer.com/identity-manager-sts/pkg/fositex"
+	"go.infratographer.com/identity-manager-sts/internal/fositex"
 )
 
 var (

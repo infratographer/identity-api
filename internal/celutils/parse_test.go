@@ -7,7 +7,7 @@ import (
 	"github.com/google/cel-go/cel"
 	"github.com/stretchr/testify/assert"
 
-	"go.infratographer.com/identity-manager-sts/pkg/celutils"
+	"go.infratographer.com/identity-manager-sts/internal/celutils"
 )
 
 type testResult[U any] struct {

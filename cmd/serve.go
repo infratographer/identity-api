@@ -12,11 +12,11 @@ import (
 	"go.infratographer.com/x/versionx"
 
 	"go.infratographer.com/identity-manager-sts/internal/config"
-	"go.infratographer.com/identity-manager-sts/pkg/fositex"
-	"go.infratographer.com/identity-manager-sts/pkg/jwks"
-	"go.infratographer.com/identity-manager-sts/pkg/rfc8693"
-	"go.infratographer.com/identity-manager-sts/pkg/routes"
-	"go.infratographer.com/identity-manager-sts/pkg/storage"
+	"go.infratographer.com/identity-manager-sts/internal/fositex"
+	"go.infratographer.com/identity-manager-sts/internal/jwks"
+	"go.infratographer.com/identity-manager-sts/internal/rfc8693"
+	"go.infratographer.com/identity-manager-sts/internal/routes"
+	"go.infratographer.com/identity-manager-sts/internal/storage"
 )
 
 var serveCmd = &cobra.Command{

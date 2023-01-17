@@ -7,7 +7,7 @@ import (
 	"github.com/ory/fosite/token/jwt"
 	"github.com/stretchr/testify/assert"
 
-	"go.infratographer.com/identity-manager-sts/pkg/storage"
+	"go.infratographer.com/identity-manager-sts/internal/storage"
 )
 
 type testFunc[T, U any] func(context.Context, T) testResult[U]

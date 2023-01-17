@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/cel-go/cel"
 
-	"go.infratographer.com/identity-manager-sts/pkg/celutils"
+	"go.infratographer.com/identity-manager-sts/internal/celutils"
 )
 
 // Issuer represents a token issuer.

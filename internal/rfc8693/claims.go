@@ -8,7 +8,7 @@ import (
 	"github.com/ory/fosite/token/jwt"
 
 	v1 "go.infratographer.com/identity-manager-sts/pkg/api/v1"
-	"go.infratographer.com/identity-manager-sts/pkg/celutils"
+	"go.infratographer.com/identity-manager-sts/internal/celutils"
 )
 
 // ClaimMappingStrategy represents a mapping from external identity claims to identity-manager-sts claims.
