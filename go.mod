@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/gin-gonic/gin v1.8.2
 	github.com/google/cel-go v0.13.0
+	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/ory/fosite v0.44.0
 	github.com/ory/x v0.0.533
 	github.com/spf13/cobra v1.6.1
