@@ -42,24 +42,26 @@ func newMemoryIssuerService(config Config) (*memoryIssuerService, error) {
 		return nil, err
 	}
 
-	createTables(db)
+	svc := &memoryIssuerService{db: db}
+	err = svc.createTables()
+	if err != nil {
+		return nil, err
+	}
+
 	for _, seed := range config.SeedData.Issuers {
 		iss, err := buildIssuerFromSeed(seed)
 		if err != nil {
 			return nil, err
 		}
 
-		err = insertIssuer(db, iss)
+		err = svc.insertIssuer(iss)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	out := &memoryIssuerService{
-		db: db,
-	}
 
-	return out, nil
+	return svc, nil
 }
 
 // GetByURI looks up the given issuer by URI, returning the issuer if one exists.
@@ -87,7 +89,7 @@ func (s *memoryIssuerService) GetByURI(ctx context.Context, uri string) (*v1.Iss
 	return &iss, nil
 }
 
-func createTables(db *sql.DB) error {
+func (s *memoryIssuerService) createTables() error {
 	stmt := `
         CREATE TABLE IF NOT EXISTS issuers (
             uri      TEXT NOT NULL PRIMARY KEY,
@@ -97,11 +99,11 @@ func createTables(db *sql.DB) error {
             mappings TEXT
         );
         `
-	_, err := db.Exec(stmt)
+	_, err := s.db.Exec(stmt)
 	return err
 }
 
-func insertIssuer(db *sql.DB, iss v1.Issuer) error {
+func (s *memoryIssuerService) insertIssuer(iss v1.Issuer) error {
 	q := `
         INSERT INTO issuers (
             id, name, uri, jwksuri, mappings
@@ -109,7 +111,7 @@ func insertIssuer(db *sql.DB, iss v1.Issuer) error {
         (?, ?, ?, ?, ?);
         `
 
-	tx, err := db.Begin()
+	tx, err := s.db.Begin()
 	if err != nil {
 		return err
 	}
