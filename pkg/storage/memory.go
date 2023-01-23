@@ -5,7 +5,6 @@ import (
 	"database/sql"
 
 	"github.com/cockroachdb/cockroach-go/v2/testserver"
-	_ "github.com/mattn/go-sqlite3"
 	v1 "go.infratographer.com/identity-manager-sts/pkg/api/v1"
 )
 
