@@ -37,13 +37,8 @@ type memoryIssuerService struct {
 
 // newMemoryEngine creates a new in-memory storage engine.
 func newMemoryIssuerService(config Config) (*memoryIssuerService, error) {
-	db, err := sql.Open("sqlite3", "file::memory:?cache=shared")
-	if err != nil {
-		return nil, err
-	}
-
-	svc := &memoryIssuerService{db: db}
-	err = svc.createTables()
+	svc := &memoryIssuerService{db: config.db}
+	err := svc.createTables()
 	if err != nil {
 		return nil, err
 	}
@@ -60,13 +55,12 @@ func newMemoryIssuerService(config Config) (*memoryIssuerService, error) {
 		}
 	}
 
-
 	return svc, nil
 }
 
 // GetByURI looks up the given issuer by URI, returning the issuer if one exists.
 func (s *memoryIssuerService) GetByURI(ctx context.Context, uri string) (*v1.Issuer, error) {
-	row := s.db.QueryRow(`SELECT id, name, uri, jwksuri, mappings FROM issuers WHERE uri = ?;`, uri)
+	row := s.db.QueryRow(`SELECT id, name, uri, jwksuri, mappings FROM issuers WHERE uri = $1;`, uri)
 
 	var iss v1.Issuer
 	var mapping string
@@ -92,11 +86,11 @@ func (s *memoryIssuerService) GetByURI(ctx context.Context, uri string) (*v1.Iss
 func (s *memoryIssuerService) createTables() error {
 	stmt := `
         CREATE TABLE IF NOT EXISTS issuers (
-            uri      TEXT NOT NULL PRIMARY KEY,
-            id       TEXT,
-            name     TEXT,
-            jwksuri  TEXT,
-            mappings TEXT
+            id       uuid PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
+            uri      STRING NOT NULL,
+            name     STRING NOT NULL,
+            jwksuri  STRING NOT NULL,
+            mappings STRING
         );
         `
 	_, err := s.db.Exec(stmt)
@@ -108,7 +102,7 @@ func (s *memoryIssuerService) insertIssuer(iss v1.Issuer) error {
         INSERT INTO issuers (
             id, name, uri, jwksuri, mappings
         ) VALUES
-        (?, ?, ?, ?, ?);
+        ($1, $2, $3, $4, $5);
         `
 
 	tx, err := s.db.Begin()
@@ -117,18 +111,13 @@ func (s *memoryIssuerService) insertIssuer(iss v1.Issuer) error {
 	}
 	defer tx.Commit()
 
-	stmt, err := tx.Prepare(q)
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
 	mappings, err := iss.ClaimMappings.MarshalJSON()
 	if err != nil {
 		return err
 	}
 
-	_, err = stmt.Exec(
+	_, err = tx.Exec(
+		q,
 		iss.ID,
 		iss.Name,
 		iss.URI,

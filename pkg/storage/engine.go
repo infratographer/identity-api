@@ -1,6 +1,9 @@
 package storage
 
 import (
+	"database/sql"
+
+	"github.com/cockroachdb/cockroach-go/v2/testserver"
 	v1 "go.infratographer.com/identity-manager-sts/pkg/api/v1"
 )
 
@@ -23,6 +26,13 @@ func NewEngine(config Config) (Engine, error) {
 	case "":
 		return nil, ErrorMissingEngineType
 	case EngineTypeMemory:
+		db, err := inMemoryCRDB()
+		if err != nil {
+			return nil, err
+		}
+
+		config.db = db
+
 		issSvc, err := newMemoryIssuerService(config)
 		if err != nil {
 			return nil, err
@@ -40,4 +50,18 @@ func NewEngine(config Config) (Engine, error) {
 
 		return nil, err
 	}
+}
+
+func inMemoryCRDB() (*sql.DB, error) {
+	ts, err := testserver.NewTestServer()
+	if err != nil {
+		return nil, err
+	}
+
+	db, err := sql.Open("postgres", ts.PGURL().String())
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
 }
