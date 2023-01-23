@@ -4,12 +4,14 @@ import (
 	"context"
 	"testing"
 
+	"github.com/cockroachdb/cockroach-go/v2/testserver"
 	"github.com/stretchr/testify/assert"
 
 	v1 "go.infratographer.com/identity-manager-sts/pkg/api/v1"
 )
 
 func TestMemoryIssuerService(t *testing.T) {
+	db, _ := testserver.NewDBForTest(t)
 	t.Parallel()
 
 	type testResult struct {
@@ -24,7 +26,7 @@ func TestMemoryIssuerService(t *testing.T) {
 	}
 
 	issuer := v1.Issuer{
-		ID:            "abcd1234",
+		ID:            "e495a393-ae79-4a02-a78d-9798c7d9d252",
 		Name:          "Example",
 		URI:           "https://example.com/",
 		JWKSURI:       "https://example.com/.well-known/jwks.json",
@@ -54,6 +56,7 @@ func TestMemoryIssuerService(t *testing.T) {
 	}
 
 	config := Config{
+		db: db,
 		SeedData: SeedData{
 			Issuers: []SeedIssuer{
 				{

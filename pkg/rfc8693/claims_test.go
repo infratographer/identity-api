@@ -50,7 +50,7 @@ func TestClaimMappingEval(t *testing.T) {
 		SeedData: storage.SeedData{
 			Issuers: []storage.SeedIssuer{
 				{
-					ID:            "abcd1234",
+					ID:            "e495a393-ae79-4a02-a78d-9798c7d9d252",
 					Name:          "Example",
 					URI:           "https://example.com/",
 					JWKSURI:       "https://example.com/.well-known/jwks.json",
