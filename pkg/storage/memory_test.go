@@ -11,7 +11,10 @@ import (
 )
 
 func TestMemoryIssuerService(t *testing.T) {
-	db, _ := testserver.NewDBForTest(t)
+	db, err := testserver.NewDBForTest(t)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	t.Parallel()
 
