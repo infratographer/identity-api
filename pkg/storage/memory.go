@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"github.com/cockroachdb/cockroach-go/v2/testserver"
 	v1 "go.infratographer.com/identity-manager-sts/pkg/api/v1"
@@ -36,13 +37,13 @@ func buildIssuerFromSeed(seed SeedIssuer) (v1.Issuer, error) {
 
 // memoryIssuerService represents an in-memory issuer service.
 type memoryIssuerService struct {
-	db      *sql.DB
-	issuers map[string]v1.Issuer
+	db *sql.DB
 }
 
 // newMemoryEngine creates a new in-memory storage engine.
 func newMemoryIssuerService(config Config) (*memoryIssuerService, error) {
 	svc := &memoryIssuerService{db: config.db}
+
 	err := svc.createTables()
 	if err != nil {
 		return nil, err
@@ -68,10 +69,12 @@ func (s *memoryIssuerService) GetByURI(ctx context.Context, uri string) (*v1.Iss
 	row := s.db.QueryRow(`SELECT id, name, uri, jwksuri, mappings FROM issuers WHERE uri = $1;`, uri)
 
 	var iss v1.Issuer
+
 	var mapping string
+
 	err := row.Scan(&iss.ID, &iss.Name, &iss.URI, &iss.JWKSURI, &mapping)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		err := v1.ErrorIssuerNotFound{
 			URI: uri,
 		}
@@ -82,7 +85,12 @@ func (s *memoryIssuerService) GetByURI(ctx context.Context, uri string) (*v1.Iss
 	}
 
 	c := v1.ClaimsMapping{}
-	c.UnmarshalJSON([]byte(mapping))
+
+	err = c.UnmarshalJSON([]byte(mapping))
+	if err != nil {
+		return nil, err
+	}
+
 	iss.ClaimMappings = c
 
 	return &iss, nil
@@ -99,6 +107,7 @@ func (s *memoryIssuerService) createTables() error {
         );
         `
 	_, err := s.db.Exec(stmt)
+
 	return err
 }
 
@@ -110,18 +119,12 @@ func (s *memoryIssuerService) insertIssuer(iss v1.Issuer) error {
         ($1, $2, $3, $4, $5);
         `
 
-	tx, err := s.db.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Commit()
-
 	mappings, err := iss.ClaimMappings.MarshalJSON()
 	if err != nil {
 		return err
 	}
 
-	_, err = tx.Exec(
+	_, err = s.db.Exec(
 		q,
 		iss.ID,
 		iss.Name,
@@ -142,5 +145,6 @@ func inMemoryCRDB() (testserver.TestServer, error) {
 	if err := ts.Start(); err != nil {
 		return nil, err
 	}
+
 	return ts, nil
 }

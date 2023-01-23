@@ -11,11 +11,7 @@ import (
 )
 
 func TestMemoryIssuerService(t *testing.T) {
-	db, err := testserver.NewDBForTest(t)
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	db, _ := testserver.NewDBForTest(t)
 	t.Parallel()
 
 	type testResult struct {
@@ -92,5 +88,4 @@ func TestMemoryIssuerService(t *testing.T) {
 			testCase.checkFn(t, result)
 		})
 	}
-
 }
