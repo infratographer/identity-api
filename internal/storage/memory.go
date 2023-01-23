@@ -3,8 +3,11 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/cockroachdb/cockroach-go/v2/testserver"
@@ -89,6 +92,7 @@ func issuerUpdateToColBindings(update types.IssuerUpdate) ([]colBinding, error) 
 
 type memoryEngine struct {
 	*memoryIssuerService
+	*memoryUserInfoService
 	crdb testserver.TestServer
 	db   *sql.DB
 }
@@ -360,4 +364,134 @@ func inMemoryCRDB() (testserver.TestServer, error) {
 	}
 
 	return ts, nil
+}
+
+type memoryUserInfoService struct {
+	db         *sql.DB
+	httpClient *http.Client
+}
+
+type userInfoServiceOpt func(*memoryUserInfoService)
+
+func newUserInfoService(config Config, opts ...userInfoServiceOpt) (*memoryUserInfoService, error) {
+	s := &memoryUserInfoService{
+		db:         config.db,
+		httpClient: http.DefaultClient,
+	}
+
+	for _, opt := range opts {
+		opt(s)
+	}
+
+	err := s.createTables()
+
+	return s, err
+}
+
+// WithHTTPClient allows configuring the HTTP client used by
+// memoryUserInfoService to call out to userinfo endpoints.
+func WithHTTPClient(client *http.Client) func(svc *memoryUserInfoService) {
+	return func(svc *memoryUserInfoService) {
+		svc.httpClient = client
+	}
+}
+
+func (s *memoryUserInfoService) createTables() error {
+	_, err := s.db.Exec(`
+        CREATE TABLE IF NOT EXISTS user_info (
+            id    UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
+            name  STRING,
+            email STRING,
+            sub   STRING NOT NULL,
+            iss_id   UUID NOT NULL REFERENCES issuers(id),
+            UNIQUE (iss_id, sub)
+        )`)
+
+	return err
+}
+
+// LookupUserInfoByClaims fetches UserInfo from the store.
+// This does not make an HTTP call with the subject token, so for this
+// data to be available, the data must have already be fetched and
+// stored.
+func (s memoryUserInfoService) LookupUserInfoByClaims(ctx context.Context, iss, sub string) (*types.UserInfo, error) {
+	row := s.db.QueryRowContext(ctx, `
+        SELECT ui.name, ui.email, ui.sub, i.uri FROM user_info ui
+        JOIN issuers i ON
+           ui.iss_id = i.id
+        WHERE
+           i.uri = $1 AND ui.sub = $2
+        `, iss, sub)
+
+	var ui types.UserInfo
+
+	err := row.Scan(&ui.Name, &ui.Email, &ui.Subject, &ui.Issuer)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, types.ErrUserInfoNotFound
+	}
+
+	return &ui, err
+}
+
+// StoreUserInfo is used to store user information by issuer and
+// subject pairs. UserInfo is unique to issuer/subject pairs.
+func (s memoryUserInfoService) StoreUserInfo(ctx context.Context, userInfo types.UserInfo) error {
+	row := s.db.QueryRowContext(ctx, `
+        SELECT id FROM issuers WHERE uri = $1
+        `, userInfo.Issuer)
+
+	var issuerID string
+
+	err := row.Scan(&issuerID)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.db.ExecContext(ctx, `
+        INSERT INTO user_info (name, email, sub, iss_id) VALUES (
+            $1, $2, $3, $4
+	)`, userInfo.Name, userInfo.Email, userInfo.Subject, issuerID)
+
+	return err
+}
+
+// FetchUserInfoFromIssuer uses the subject access token to retrieve
+// information from the OIDC /userinfo endpoint.
+func (s memoryUserInfoService) FetchUserInfoFromIssuer(ctx context.Context, iss, rawToken string) (*types.UserInfo, error) {
+	endpoint, err := url.JoinPath(iss, "userinfo")
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", rawToken))
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf(
+			"unexpected response code %d from request: %w",
+			resp.StatusCode,
+			types.ErrFetchUserInfo,
+		)
+	}
+
+	var ui types.UserInfo
+
+	defer resp.Body.Close()
+
+	err = json.NewDecoder(resp.Body).Decode(&ui)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ui, nil
 }

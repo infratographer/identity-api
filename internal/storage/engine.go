@@ -21,6 +21,7 @@ type Engine interface {
 	BeginContext(context.Context) (context.Context, error)
 	CommitContext(context.Context) error
 	RollbackContext(context.Context) error
+	types.UserInfoService
 	Shutdown()
 }
 
@@ -47,10 +48,16 @@ func NewEngine(config Config) (Engine, error) {
 			return nil, err
 		}
 
+		userInfoSvc, err := newUserInfoService(config)
+		if err != nil {
+			return nil, err
+		}
+
 		out := &memoryEngine{
-			memoryIssuerService: issSvc,
-			crdb:                crdb,
-			db:                  db,
+			memoryIssuerService:   issSvc,
+			memoryUserInfoService: userInfoSvc,
+			crdb:                  crdb,
+			db:                    db,
 		}
 
 		return out, nil

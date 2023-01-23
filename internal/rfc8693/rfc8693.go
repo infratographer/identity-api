@@ -4,6 +4,7 @@ package rfc8693
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/ory/fosite"
@@ -12,6 +13,7 @@ import (
 	"github.com/ory/x/errorsx"
 
 	"go.infratographer.com/identity-manager-sts/internal/fositex"
+	"go.infratographer.com/identity-manager-sts/internal/types"
 )
 
 const (
@@ -201,8 +203,22 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 		return errorsx.WithStack(fosite.ErrInvalidRequest.WithHintf("error mapping claims: %s", err))
 	}
 
+	issuer := claims.Issuer
+
+	userInfo, err := s.populateUserInfo(ctx, issuer, claims.Subject, subjectToken)
+	if err != nil {
+		return errorsx.WithStack(fosite.ErrInvalidRequest.WithHintf("unable to populate user info: %s", err))
+	}
+
+	userInfoSvc := s.config.GetUserInfoStrategy(ctx)
+
+	err = userInfoSvc.StoreUserInfo(ctx, *userInfo)
+	if err != nil {
+		return errorsx.WithStack(fosite.ErrInvalidRequest.WithHintf("unable to store user info: %s", err))
+	}
+
 	var newClaims jwt.JWTClaims
-	newClaims.Subject = claims.Subject
+	newClaims.Subject = s.formatSubject(userInfo)
 	newClaims.Issuer = s.config.GetAccessTokenIssuer(ctx)
 
 	for k, v := range mappedClaims.ToMapClaims() {
@@ -257,4 +273,31 @@ func (s *TokenExchangeHandler) CanSkipClientAuth(ctx context.Context, requester 
 // CanHandleTokenEndpointRequest returns true if the grant type is token exchange.
 func (s *TokenExchangeHandler) CanHandleTokenEndpointRequest(ctx context.Context, requester fosite.AccessRequester) bool {
 	return requester.GetGrantTypes().ExactOne(GrantTypeTokenExchange)
+}
+
+func (s *TokenExchangeHandler) populateUserInfo(ctx context.Context, issuer string, subject string, token string) (*types.UserInfo, error) {
+	userInfoSvc := s.config.GetUserInfoStrategy(ctx)
+	userInfo, err := userInfoSvc.LookupUserInfoByClaims(ctx, issuer, subject)
+
+	if err != nil {
+		// We can handle ErrUserInfoNotFound by hitting the
+		// issuers userinfo endpoint, but if some other error
+		// came back bail.
+		if !errors.Is(err, types.ErrUserInfoNotFound) {
+			return nil, err
+		}
+	} else {
+		return userInfo, nil
+	}
+
+	userInfo, err = userInfoSvc.FetchUserInfoFromIssuer(ctx, issuer, token)
+	if err != nil {
+		return nil, err
+	}
+
+	return userInfo, nil
+}
+
+func (s *TokenExchangeHandler) formatSubject(info *types.UserInfo) string {
+	return fmt.Sprintf("urn:infratographer:user/%s", info.ID)
 }
