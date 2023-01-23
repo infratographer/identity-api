@@ -7,17 +7,17 @@ import (
 
 	"github.com/ory/fosite/token/jwt"
 
-	v1 "go.infratographer.com/identity-manager-sts/pkg/api/v1"
 	"go.infratographer.com/identity-manager-sts/internal/celutils"
+	"go.infratographer.com/identity-manager-sts/internal/types"
 )
 
 // ClaimMappingStrategy represents a mapping from external identity claims to identity-manager-sts claims.
 type ClaimMappingStrategy struct {
-	issuerSvc v1.IssuerService
+	issuerSvc types.IssuerService
 }
 
 // NewClaimMappingStrategy creates a ClaimMappingStrategy given an issuer service.
-func NewClaimMappingStrategy(issuerSvc v1.IssuerService) ClaimMappingStrategy {
+func NewClaimMappingStrategy(issuerSvc types.IssuerService) ClaimMappingStrategy {
 	out := ClaimMappingStrategy{
 		issuerSvc: issuerSvc,
 	}

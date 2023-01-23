@@ -7,6 +7,7 @@ import (
 
 	"github.com/cockroachdb/cockroach-go/v2/testserver"
 
+	"go.infratographer.com/identity-manager-sts/internal/types"
 	v1 "go.infratographer.com/identity-manager-sts/pkg/api/v1"
 )
 
@@ -19,13 +20,13 @@ func (eng *memoryEngine) Shutdown() {
 	eng.crdb.Stop()
 }
 
-func buildIssuerFromSeed(seed SeedIssuer) (v1.Issuer, error) {
-	claimMappings, err := v1.BuildClaimsMappingFromMap(seed.ClaimMappings)
+func buildIssuerFromSeed(seed SeedIssuer) (types.Issuer, error) {
+	claimMappings, err := types.BuildClaimsMappingFromMap(seed.ClaimMappings)
 	if err != nil {
-		return v1.Issuer{}, err
+		return types.Issuer{}, err
 	}
 
-	out := v1.Issuer{
+	out := types.Issuer{
 		ID:            seed.ID,
 		Name:          seed.Name,
 		URI:           seed.URI,
@@ -66,10 +67,10 @@ func newMemoryIssuerService(config Config) (*memoryIssuerService, error) {
 }
 
 // GetByURI looks up the given issuer by URI, returning the issuer if one exists.
-func (s *memoryIssuerService) GetByURI(ctx context.Context, uri string) (*v1.Issuer, error) {
+func (s *memoryIssuerService) GetByURI(ctx context.Context, uri string) (*types.Issuer, error) {
 	row := s.db.QueryRow(`SELECT id, name, uri, jwksuri, mappings FROM issuers WHERE uri = $1;`, uri)
 
-	var iss v1.Issuer
+	var iss types.Issuer
 
 	var mapping string
 
@@ -85,7 +86,7 @@ func (s *memoryIssuerService) GetByURI(ctx context.Context, uri string) (*v1.Iss
 		return nil, err
 	}
 
-	c := v1.ClaimsMapping{}
+	c := types.ClaimsMapping{}
 
 	err = c.UnmarshalJSON([]byte(mapping))
 	if err != nil {
@@ -112,7 +113,7 @@ func (s *memoryIssuerService) createTables() error {
 	return err
 }
 
-func (s *memoryIssuerService) insertIssuer(iss v1.Issuer) error {
+func (s *memoryIssuerService) insertIssuer(iss types.Issuer) error {
 	q := `
         INSERT INTO issuers (
             id, name, uri, jwksuri, mappings

@@ -3,7 +3,7 @@ package storage
 import (
 	"database/sql"
 
-	v1 "go.infratographer.com/identity-manager-sts/pkg/api/v1"
+	"go.infratographer.com/identity-manager-sts/internal/types"
 )
 
 const (
@@ -16,7 +16,7 @@ type EngineType string
 
 // Engine represents a storage engine.
 type Engine interface {
-	v1.IssuerService
+	types.IssuerService
 	Shutdown()
 }
 
