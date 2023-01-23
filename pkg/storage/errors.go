@@ -13,3 +13,5 @@ type ErrorUnknownEngineType struct {
 func (e *ErrorUnknownEngineType) Error() string {
 	return fmt.Sprintf("unknown engine type '%s'", e.engineType)
 }
+
+func (e *ErrorUnknownEngineType) Shutdown() {}

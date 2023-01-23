@@ -48,6 +48,7 @@ func serve(ctx context.Context) {
 	if err != nil {
 		logger.Fatalf("error initializing storage: %s", err)
 	}
+	defer storageEngine.Shutdown()
 
 	mappingStrategy := rfc8693.NewClaimMappingStrategy(storageEngine)
 

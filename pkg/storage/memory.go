@@ -4,12 +4,18 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/cockroachdb/cockroach-go/v2/testserver"
 	_ "github.com/mattn/go-sqlite3"
 	v1 "go.infratographer.com/identity-manager-sts/pkg/api/v1"
 )
 
 type memoryEngine struct {
 	*memoryIssuerService
+	crdb testserver.TestServer
+}
+
+func (eng *memoryEngine) Shutdown() {
+	eng.crdb.Stop()
 }
 
 func buildIssuerFromSeed(seed SeedIssuer) (v1.Issuer, error) {
@@ -126,4 +132,16 @@ func (s *memoryIssuerService) insertIssuer(iss v1.Issuer) error {
 	)
 
 	return err
+}
+
+func inMemoryCRDB() (testserver.TestServer, error) {
+	ts, err := testserver.NewTestServer()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := ts.Start(); err != nil {
+		return nil, err
+	}
+	return ts, nil
 }
