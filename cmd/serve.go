@@ -11,6 +11,7 @@ import (
 	"go.infratographer.com/x/otelx"
 	"go.infratographer.com/x/versionx"
 
+	"go.infratographer.com/identity-manager-sts/internal/api/httpsrv"
 	"go.infratographer.com/identity-manager-sts/internal/config"
 	"go.infratographer.com/identity-manager-sts/internal/fositex"
 	"go.infratographer.com/identity-manager-sts/internal/jwks"
@@ -74,10 +75,17 @@ func serve(ctx context.Context) {
 	oauth2Config.TokenEndpointHandlers.Append(tokenExchangeHandler)
 	provider := fositex.NewOAuth2Provider(oauth2Config, store)
 
+	apiHandler, err := httpsrv.NewAPIHandler(storageEngine)
+	if err != nil {
+		logger.Fatal("error initializing API server: %s", err)
+	}
+
 	router := routes.NewRouter(logger, oauth2Config, provider)
 
 	server := ginx.NewServer(logger.Desugar(), config.Config.Server, versionx.BuildDetails())
+	server.Debug = true
 	server = server.AddHandler(router)
+	server = server.AddHandler(apiHandler)
 
 	server.Run()
 }

@@ -4,9 +4,9 @@ import "fmt"
 
 // ErrorIssuerNotFound represents an error condition where a given issuer was not found.
 type ErrorIssuerNotFound struct {
-	URI string
+	Label string
 }
 
 func (e ErrorIssuerNotFound) Error() string {
-	return fmt.Sprintf("issuer '%s' not found", e.URI)
+	return fmt.Sprintf("issuer '%s' not found", e.Label)
 }

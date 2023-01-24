@@ -54,16 +54,9 @@ func (m ClaimMappingStrategy) MapClaims(ctx context.Context, claims *jwt.JWTClai
 	}
 
 	for k, v := range issuer.ClaimMappings {
-		prog := v.Program
-
-		out, _, err := prog.Eval(inputEnv)
-
+		out, err := celutils.Eval(v, inputEnv)
 		if err != nil {
-			wrapped := ErrorCELEval{
-				inner: err,
-			}
-
-			return nil, &wrapped
+			return nil, err
 		}
 
 		outputMap[k] = out.Value()

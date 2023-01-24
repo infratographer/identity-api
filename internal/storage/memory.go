@@ -21,7 +21,7 @@ func (eng *memoryEngine) Shutdown() {
 }
 
 func buildIssuerFromSeed(seed SeedIssuer) (types.Issuer, error) {
-	claimMappings, err := types.BuildClaimsMappingFromMap(seed.ClaimMappings)
+	claimMappings, err := types.NewClaimsMapping(seed.ClaimMappings)
 	if err != nil {
 		return types.Issuer{}, err
 	}
@@ -66,23 +66,63 @@ func newMemoryIssuerService(config Config) (*memoryIssuerService, error) {
 	return svc, nil
 }
 
+// Create creates an issuer.
+func (s *memoryIssuerService) Create(ctx context.Context, iss types.Issuer) (*types.Issuer, error) {
+	err := s.insertIssuer(iss)
+	if err != nil {
+		return nil, err
+	}
+
+	return &iss, nil
+}
+
+func (s *memoryIssuerService) GetByID(ctx context.Context, id string) (*types.Issuer, error) {
+	row := s.db.QueryRow(`SELECT id, name, uri, jwksuri, mappings FROM issuers WHERE id = $1;`, id)
+
+	iss, err := s.scanIssuer(row)
+
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		err := v1.ErrorIssuerNotFound{
+			Label: id,
+		}
+
+		return nil, err
+	case err != nil:
+		return nil, err
+	default:
+		return iss, nil
+	}
+}
+
 // GetByURI looks up the given issuer by URI, returning the issuer if one exists.
 func (s *memoryIssuerService) GetByURI(ctx context.Context, uri string) (*types.Issuer, error) {
 	row := s.db.QueryRow(`SELECT id, name, uri, jwksuri, mappings FROM issuers WHERE uri = $1;`, uri)
 
+	iss, err := s.scanIssuer(row)
+
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		err := v1.ErrorIssuerNotFound{
+			Label: uri,
+		}
+
+		return nil, err
+	case err != nil:
+		return nil, err
+	default:
+		return iss, nil
+	}
+}
+
+func (s *memoryIssuerService) scanIssuer(row *sql.Row) (*types.Issuer, error) {
 	var iss types.Issuer
 
 	var mapping string
 
 	err := row.Scan(&iss.ID, &iss.Name, &iss.URI, &iss.JWKSURI, &mapping)
 
-	if errors.Is(err, sql.ErrNoRows) {
-		err := v1.ErrorIssuerNotFound{
-			URI: uri,
-		}
-
-		return nil, err
-	} else if err != nil {
+	if err != nil {
 		return nil, err
 	}
 

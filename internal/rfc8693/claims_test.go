@@ -7,6 +7,7 @@ import (
 	"github.com/ory/fosite/token/jwt"
 	"github.com/stretchr/testify/assert"
 
+	"go.infratographer.com/identity-manager-sts/internal/celutils"
 	"go.infratographer.com/identity-manager-sts/internal/storage"
 )
 
@@ -84,7 +85,7 @@ func TestClaimMappingEval(t *testing.T) {
 			},
 			checkFn: func(t *testing.T, result testResult[jwt.JWTClaimsContainer]) {
 				assert.NotNil(t, result.err)
-				assert.ErrorIs(t, result.err, &ErrorCELEval{})
+				assert.ErrorIs(t, result.err, &celutils.ErrorCELEval{})
 			},
 		},
 		{

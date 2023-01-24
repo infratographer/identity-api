@@ -25,20 +25,20 @@ type testCase[T, U any] struct {
 func TestClaimMappingParse(t *testing.T) {
 	t.Parallel()
 
-	runFn := func(ctx context.Context, prog string) testResult[cel.Program] {
+	runFn := func(ctx context.Context, prog string) testResult[*cel.Ast] {
 		out, err := celutils.ParseCEL(prog)
 
-		return testResult[cel.Program]{
+		return testResult[*cel.Ast]{
 			success: out,
 			err:     err,
 		}
 	}
 
-	testCases := []testCase[string, cel.Program]{
+	testCases := []testCase[string, *cel.Ast]{
 		{
 			name:  "ParseError",
 			input: "'hello",
-			checkFn: func(t *testing.T, result testResult[cel.Program]) {
+			checkFn: func(t *testing.T, result testResult[*cel.Ast]) {
 				assert.Nil(t, result.success)
 				assert.NotNil(t, result.err)
 				assert.ErrorIs(t, result.err, &celutils.ErrorCELParse{})
@@ -47,7 +47,7 @@ func TestClaimMappingParse(t *testing.T) {
 		{
 			name:  "Success",
 			input: "'hello! ' + subSHA256",
-			checkFn: func(t *testing.T, result testResult[cel.Program]) {
+			checkFn: func(t *testing.T, result testResult[*cel.Ast]) {
 				assert.Nil(t, result.err)
 				assert.NotNil(t, result.success)
 			},

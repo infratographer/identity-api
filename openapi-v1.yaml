@@ -1,0 +1,118 @@
+openapi: 3.0.3
+info:
+  title: Security Token Service Management API
+  description: Security Token Service (STS) Management API is an API for managing STS configurations.
+  version: 0.0.1
+
+paths:
+  /api/v1/issuers:
+    post:
+      tags:
+        - Issuers
+      summary: Creates an issuer.
+      operationId: createIssuer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIssuer'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issuer'
+        '400':
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/issuers/{id}:
+    get:
+      tags:
+        - Issuers
+      summary: Gets an issuer by ID.
+      operationId: getIssuerByID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: ID of issuer to get
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issuer'
+
+components:
+  schemas:
+    ErrorResponse:
+      required:
+        - errors
+      properties:
+        errors:
+          type: array
+          description: A list of errors.
+          items:
+            type: string
+
+    CreateIssuer:
+      required:
+        - name
+        - uri
+        - jwks_uri
+      properties:
+        name:
+          type: string
+          description: A human-readable name for the issuer
+        uri:
+          x-go-name: URI
+          type: string
+          description: URI for the issuer. Must match the "iss" claim value in incoming JWTs
+        jwks_uri:
+          x-go-name: JWKSURI
+          type: string
+          description: JWKS URI
+        claim_mappings:
+          type: object
+          description: CEL expressions mapping token claims to other claims
+          additionalProperties:
+            type: string
+    Issuer:
+      required:
+        - id
+        - name
+        - uri
+        - jwks_uri
+        - claim_mappings
+      properties:
+        id:
+          x-go-name: ID
+          type: string
+          format: uuid
+          description: ID of the issuer
+        name:
+          type: string
+          description: A human-readable name for the issuer
+        uri:
+          x-go-name: URI
+          type: string
+          description: URI for the issuer. Must match the "iss" claim value in incoming JWTs
+        jwks_uri:
+          x-go-name: JWKSURI
+          type: string
+          description: JWKS URI
+        claim_mappings:
+          type: object
+          description: CEL expressions mapping token claims to other claims
+          additionalProperties:
+            type: string
+

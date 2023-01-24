@@ -3,8 +3,11 @@ package types
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/google/cel-go/cel"
+	exprpb "google.golang.org/genproto/googleapis/api/expr/v1alpha1"
+	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.infratographer.com/identity-manager-sts/internal/celutils"
 )
@@ -25,39 +28,91 @@ type Issuer struct {
 
 // IssuerService represents a service for managing issuers.
 type IssuerService interface {
-	Create(ctx context.Context, iss *Issuer) (*Issuer, error)
+	Create(ctx context.Context, iss Issuer) (*Issuer, error)
+	GetByID(ctx context.Context, id string) (*Issuer, error)
 	GetByURI(ctx context.Context, uri string) (*Issuer, error)
 }
 
 // ClaimsMapping represents a map of claims to a CEL expression that will be evaluated
-type ClaimsMapping map[string]StringToCEL
+type ClaimsMapping map[string]*cel.Ast
 
-// StringToCEL represents a string that is a CEL expression and the compiled program.
-type StringToCEL struct {
-	Repr    string
-	Program cel.Program
+// NewClaimsMapping creates a ClaimsMapping from the given map of CEL expressions.
+func NewClaimsMapping(exprs map[string]string) (ClaimsMapping, error) {
+	out := make(ClaimsMapping, len(exprs))
+
+	for k, v := range exprs {
+		ast, err := celutils.ParseCEL(v)
+		if err != nil {
+			return nil, err
+		}
+
+		out[k] = ast
+	}
+
+	return out, nil
+}
+
+// Repr produces a representation of the claim map using human-readable CEL expressions.
+func (c ClaimsMapping) Repr() (map[string]string, error) {
+	out := make(map[string]string, len(c))
+
+	for k, v := range c {
+		var err error
+
+		out[k], err = cel.AstToString(v)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return out, nil
 }
 
 // MarshalJSON implements the json.Marshaler interface.
 func (c ClaimsMapping) MarshalJSON() ([]byte, error) {
-	out := make(map[string]string, len(c))
+	out := make(map[string][]byte, len(c))
+
 	for k, v := range c {
-		out[k] = v.Repr
+		expr, err := cel.AstToCheckedExpr(v)
+		if err != nil {
+			return nil, err
+		}
+
+		b, err := prototext.Marshal(expr)
+		if err != nil {
+			return nil, err
+		}
+
+		out[k] = b
 	}
 
-	return json.Marshal(out)
+	b, err := json.Marshal(out)
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
 func (c *ClaimsMapping) UnmarshalJSON(data []byte) error {
-	in := make(map[string]string)
+	in := make(map[string][]byte)
 	if err := json.Unmarshal(data, &in); err != nil {
+		fmt.Println("ack")
 		return err
 	}
 
-	out, err := BuildClaimsMappingFromMap(in)
-	if err != nil {
-		return err
+	out := make(ClaimsMapping, len(in))
+
+	for k, v := range in {
+		var expr exprpb.CheckedExpr
+
+		err := prototext.Unmarshal(v, &expr)
+		if err != nil {
+			return err
+		}
+
+		out[k] = cel.CheckedExprToAst(&expr)
 	}
 
 	*c = out
@@ -66,20 +121,12 @@ func (c *ClaimsMapping) UnmarshalJSON(data []byte) error {
 }
 
 // BuildClaimsMappingFromMap builds a ClaimsMapping from a map of strings.
-func BuildClaimsMappingFromMap(in map[string]string) (ClaimsMapping, error) {
+func BuildClaimsMappingFromMap(in map[string]*exprpb.CheckedExpr) ClaimsMapping {
 	out := make(ClaimsMapping, len(in))
 
 	for k, v := range in {
-		prog, err := celutils.ParseCEL(v)
-		if err != nil {
-			return nil, err
-		}
-
-		out[k] = StringToCEL{
-			Repr:    v,
-			Program: prog,
-		}
+		out[k] = cel.CheckedExprToAst(v)
 	}
 
-	return out, nil
+	return out
 }

@@ -1,11 +1,18 @@
 all: lint test
-PHONY: test coverage lint golint clean vendor docker-up docker-down unit-test
+PHONY: deps generate test coverage lint golint clean vendor docker-up docker-down unit-test
 GOOS=linux
-# use the working dir as the app name, this should be the repo name
-APP_NAME=$(shell basename $(CURDIR))
+APP_NAME?=identity-manager-sts
 
 TEST_PRIVKEY_FILE?=tests/data/privkey.pem
 CONFIG_FILE?=sts.example.yaml
+
+# we use a prerelease version of oapi-codegen because the latest version (v1.12.4)
+# produces buggy Gin code
+deps:
+	@go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@f4cf8f9
+
+generate: deps
+	@go generate ./...
 
 test: | unit-test
 
@@ -25,7 +32,7 @@ golint: | vendor
 	@echo Linting Go files...
 	@golangci-lint run --build-tags "-tags testtools"
 
-build:
+build: vendor generate
 	@go mod download
 	@CGO_ENABLED=0 GOOS=linux go build -mod=readonly -v -o bin/${APP_NAME}
 

@@ -7,6 +7,7 @@ import (
 	"github.com/cockroachdb/cockroach-go/v2/testserver"
 	"github.com/stretchr/testify/assert"
 
+	"go.infratographer.com/identity-manager-sts/internal/types"
 	v1 "go.infratographer.com/identity-manager-sts/pkg/api/v1"
 )
 
@@ -15,7 +16,7 @@ func TestMemoryIssuerService(t *testing.T) {
 	t.Parallel()
 
 	type testResult struct {
-		iss *v1.Issuer
+		iss *types.Issuer
 		err error
 	}
 
@@ -25,12 +26,12 @@ func TestMemoryIssuerService(t *testing.T) {
 		checkFn func(*testing.T, testResult)
 	}
 
-	issuer := v1.Issuer{
+	issuer := types.Issuer{
 		ID:            "e495a393-ae79-4a02-a78d-9798c7d9d252",
 		Name:          "Example",
 		URI:           "https://example.com/",
 		JWKSURI:       "https://example.com/.well-known/jwks.json",
-		ClaimMappings: v1.ClaimsMapping{},
+		ClaimMappings: types.ClaimsMapping{},
 	}
 
 	testCases := []testCase{
@@ -39,7 +40,7 @@ func TestMemoryIssuerService(t *testing.T) {
 			input: "https://evil.biz/",
 			checkFn: func(t *testing.T, res testResult) {
 				expErr := v1.ErrorIssuerNotFound{
-					URI: "https://evil.biz/",
+					Label: "https://evil.biz/",
 				}
 
 				assert.ErrorIs(t, expErr, res.err)
