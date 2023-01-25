@@ -30,6 +30,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
   /api/v1/issuers/{id}:
     get:
       tags:
@@ -51,6 +52,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Issuer'
+        '404':
+          description: Error response. Issuer was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
 components:
   schemas:
@@ -86,6 +93,7 @@ components:
           description: CEL expressions mapping token claims to other claims
           additionalProperties:
             type: string
+
     Issuer:
       required:
         - id

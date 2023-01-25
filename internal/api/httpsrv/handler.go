@@ -2,6 +2,7 @@ package httpsrv
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -10,6 +11,45 @@ import (
 	"go.infratographer.com/identity-manager-sts/internal/types"
 	v1 "go.infratographer.com/identity-manager-sts/pkg/api/v1"
 )
+
+var (
+	responseNotFound = v1.ErrorResponse{
+		Errors: []string{
+			"not found",
+		},
+	}
+)
+
+func validationErrorHandler(ctx *gin.Context, err error, status int) {
+	messages := []string{
+		err.Error(),
+	}
+
+	resp := v1.ErrorResponse{
+		Errors: messages,
+	}
+
+	ctx.JSON(status, resp)
+}
+
+func errorHandlerMiddleware(ctx *gin.Context) {
+	ctx.Next()
+
+	if len(ctx.Errors) == 0 {
+		return
+	}
+
+	messages := make([]string, len(ctx.Errors))
+	for i, err := range ctx.Errors {
+		messages[i] = err.Error()
+	}
+
+	resp := v1.ErrorResponse{
+		Errors: messages,
+	}
+
+	ctx.JSON(http.StatusInternalServerError, resp)
+}
 
 // apiHandler represents an API handler.
 type apiHandler struct {
@@ -68,7 +108,11 @@ func (h *apiHandler) GetIssuerByID(ctx context.Context, req GetIssuerByIDRequest
 	id := req.Id.String()
 
 	iss, err := h.engine.GetByID(ctx, id)
-	if err != nil {
+	switch err {
+	case nil:
+	case types.ErrorIssuerNotFound:
+		return GetIssuerByID404JSONResponse(responseNotFound), nil
+	default:
 		return nil, err
 	}
 
@@ -115,13 +159,16 @@ func NewAPIHandler(engine storage.Engine) (*APIHandler, error) {
 
 // Routes registers the API's routes against the provided router group.
 func (h *APIHandler) Routes(rg *gin.RouterGroup) {
-	strictHandler := NewStrictHandler(h.handler, nil)
+	rg.Use(
+		h.validationMiddleware,
+		errorHandlerMiddleware,
+	)
 
 	options := GinServerOptions{
-		Middlewares: []MiddlewareFunc{
-			MiddlewareFunc(h.validationMiddleware),
-		},
+		ErrorHandler: validationErrorHandler,
 	}
+
+	strictHandler := NewStrictHandler(h.handler, nil)
 
 	RegisterHandlersWithOptions(rg, strictHandler, options)
 }

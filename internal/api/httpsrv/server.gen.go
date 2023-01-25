@@ -145,6 +145,15 @@ func (response GetIssuerByID200JSONResponse) VisitGetIssuerByIDResponse(w http.R
 	return json.NewEncoder(w).Encode(response)
 }
 
+type GetIssuerByID404JSONResponse ErrorResponse
+
+func (response GetIssuerByID404JSONResponse) VisitGetIssuerByIDResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// Creates an issuer.
