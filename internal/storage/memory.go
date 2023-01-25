@@ -4,11 +4,86 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/cockroachdb/cockroach-go/v2/testserver"
 
 	"go.infratographer.com/identity-manager-sts/internal/types"
 )
+
+const (
+	issuerColID       = "id"
+	issuerColName     = "name"
+	issuerColURI      = "uri"
+	issuerColJWKSURI  = "jwksuri"
+	issuerColMappings = "mappings"
+)
+
+var (
+	issuerColumns = []string{
+		issuerColID,
+		issuerColName,
+		issuerColURI,
+		issuerColJWKSURI,
+		issuerColMappings,
+	}
+	issuerColumnsStr = strings.Join(issuerColumns, ", ")
+)
+
+type colBinding struct {
+	column string
+	value  any
+}
+
+func colBindingsToParams(bindings []colBinding) (string, []any) {
+	bindingStrs := make([]string, len(bindings))
+	args := make([]any, len(bindings))
+
+	for i, binding := range bindings {
+		bindingStr := fmt.Sprintf("%s = $%d", binding.column, i+1)
+		bindingStrs[i] = bindingStr
+		args[i] = binding.value
+	}
+
+	bindingsStr := strings.Join(bindingStrs, ", ")
+
+	return bindingsStr, args
+}
+
+func bindIfNotNil[T any](bindings []colBinding, column string, value *T) []colBinding {
+	if value != nil {
+		binding := colBinding{
+			column: column,
+			value:  *value,
+		}
+
+		return append(bindings, binding)
+	}
+
+	return bindings
+}
+
+func issuerUpdateToColBindings(update types.IssuerUpdate) ([]colBinding, error) {
+	var bindings []colBinding
+
+	bindings = bindIfNotNil(bindings, issuerColName, update.Name)
+	bindings = bindIfNotNil(bindings, issuerColURI, update.URI)
+	bindings = bindIfNotNil(bindings, issuerColName, update.JWKSURI)
+
+	if update.ClaimMappings != nil {
+		mappingRepr, err := update.ClaimMappings.MarshalJSON()
+		if err != nil {
+			return nil, err
+		}
+
+		mappingStr := string(mappingRepr)
+
+		bindings = bindIfNotNil(bindings, issuerColMappings, &mappingStr)
+	}
+
+	return bindings, nil
+}
 
 type memoryEngine struct {
 	*memoryIssuerService
@@ -77,34 +152,36 @@ func (s *memoryIssuerService) CreateIssuer(ctx context.Context, iss types.Issuer
 
 // GetIssuerByID gets an issuer by ID.
 func (s *memoryIssuerService) GetIssuerByID(ctx context.Context, id string) (*types.Issuer, error) {
-	row := s.db.QueryRow(`SELECT id, name, uri, jwksuri, mappings FROM issuers WHERE id = $1;`, id)
+	query := fmt.Sprintf("SELECT %s FROM issuers WHERE id = $1", issuerColumnsStr)
+	row := s.db.QueryRow(query, id)
 
-	iss, err := s.scanIssuer(row)
-
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		return nil, types.ErrorIssuerNotFound
-	case err != nil:
-		return nil, err
-	default:
-		return iss, nil
-	}
+	return s.scanIssuer(row)
 }
 
 // GetByURI looks up the given issuer by URI, returning the issuer if one exists.
 func (s *memoryIssuerService) GetIssuerByURI(ctx context.Context, uri string) (*types.Issuer, error) {
-	row := s.db.QueryRow(`SELECT id, name, uri, jwksuri, mappings FROM issuers WHERE uri = $1;`, uri)
+	query := fmt.Sprintf("SELECT %s FROM issuers WHERE uri = $1", issuerColumnsStr)
+	row := s.db.QueryRow(query, uri)
 
-	iss, err := s.scanIssuer(row)
+	return s.scanIssuer(row)
+}
 
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		return nil, types.ErrorIssuerNotFound
-	case err != nil:
+// UpdateIssuer updates an issuer with the given values.
+func (s *memoryIssuerService) UpdateIssuer(ctx context.Context, id string, update types.IssuerUpdate) (*types.Issuer, error) {
+	bindings, err := issuerUpdateToColBindings(update)
+	if err != nil {
 		return nil, err
-	default:
-		return iss, nil
 	}
+
+	params, args := colBindingsToParams(bindings)
+
+	query := fmt.Sprintf("UPDATE issuers SET %s WHERE id = $%d RETURNING %s", params, len(args)+1, issuerColumnsStr)
+
+	args = append(args, id)
+
+	row := s.db.QueryRow(query, args...)
+
+	return s.scanIssuer(row)
 }
 
 // DeleteIssuer deletes an issuer with the given ID.
@@ -130,22 +207,28 @@ func (s *memoryIssuerService) DeleteIssuer(ctx context.Context, id string) error
 func (s *memoryIssuerService) scanIssuer(row *sql.Row) (*types.Issuer, error) {
 	var iss types.Issuer
 
-	var mapping string
+	var mapping sql.NullString
 
 	err := row.Scan(&iss.ID, &iss.Name, &iss.URI, &iss.JWKSURI, &mapping)
 
-	if err != nil {
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return nil, types.ErrorIssuerNotFound
+	case err != nil:
 		return nil, err
+	default:
 	}
 
 	c := types.ClaimsMapping{}
 
-	err = c.UnmarshalJSON([]byte(mapping))
-	if err != nil {
-		return nil, err
-	}
+	if mapping.Valid {
+		err = c.UnmarshalJSON([]byte(mapping.String))
+		if err != nil {
+			return nil, err
+		}
 
-	iss.ClaimMappings = c
+		iss.ClaimMappings = c
+	}
 
 	return &iss, nil
 }
@@ -168,10 +251,12 @@ func (s *memoryIssuerService) createTables() error {
 func (s *memoryIssuerService) insertIssuer(iss types.Issuer) error {
 	q := `
         INSERT INTO issuers (
-            id, name, uri, jwksuri, mappings
+            %s
         ) VALUES
         ($1, $2, $3, $4, $5);
         `
+
+	q = fmt.Sprintf(q, issuerColumnsStr)
 
 	mappings, err := iss.ClaimMappings.MarshalJSON()
 	if err != nil {

@@ -59,6 +59,45 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+    patch:
+      tags:
+        - Issuers
+      summary: Updates an issuer.
+      operationId: updateIssuer
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: ID of issuer to update
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IssuerUpdate'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issuer'
+        '400':
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
     delete:
       tags:
         - Issuers
@@ -111,6 +150,25 @@ components:
         - name
         - uri
         - jwks_uri
+      properties:
+        name:
+          type: string
+          description: A human-readable name for the issuer
+        uri:
+          x-go-name: URI
+          type: string
+          description: URI for the issuer. Must match the "iss" claim value in incoming JWTs
+        jwks_uri:
+          x-go-name: JWKSURI
+          type: string
+          description: JWKS URI
+        claim_mappings:
+          type: object
+          description: CEL expressions mapping token claims to other claims
+          additionalProperties:
+            type: string
+
+    IssuerUpdate:
       properties:
         name:
           type: string

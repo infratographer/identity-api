@@ -61,26 +61,45 @@ type Issuer struct {
 	URI string `json:"uri"`
 }
 
+// IssuerUpdate defines model for IssuerUpdate.
+type IssuerUpdate struct {
+	// ClaimMappings CEL expressions mapping token claims to other claims
+	ClaimMappings *map[string]string `json:"claim_mappings,omitempty"`
+
+	// JwksUri JWKS URI
+	JWKSURI *string `json:"jwks_uri,omitempty"`
+
+	// Name A human-readable name for the issuer
+	Name *string `json:"name,omitempty"`
+
+	// Uri URI for the issuer. Must match the "iss" claim value in incoming JWTs
+	URI *string `json:"uri,omitempty"`
+}
+
 // CreateIssuerJSONRequestBody defines body for CreateIssuer for application/json ContentType.
 type CreateIssuerJSONRequestBody = CreateIssuer
+
+// UpdateIssuerJSONRequestBody defines body for UpdateIssuer for application/json ContentType.
+type UpdateIssuerJSONRequestBody = IssuerUpdate
 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+xV30/rNhT+V468PWxSaHp371PeLhShsCEhWsQDIOQmJ60hsT3baYlQ/vfp2Ck0bRhi",
-	"YtqQ7lNT+/h858d3vvPEMlVpJVE6y5InZrMlVtx/HhnkDlNrazT0Xxul0TiB/jYruajuKq61kAt/wvNc",
-	"OKEkL897lq7RyBJmnRFywdqI5WgzIzTZsoQdHf8B+KgNWiuUtNC5BKceUIKHseAUKLdE0/1n0carmt9j",
-	"5sjr/frB3tVGEGQf4fTq9ylcXqQvr7pYIvZ4sFAHklfYmZFVG7FwsuvnOyzrissDgzzn8xKBzKBQBtwS",
-	"QYRCRfv5DgZ1eZHuPB3BWW0dVNxlS398w4S1NyzkDCte1ghCgpCZqqhCp1cz+0ZOPp82Ygb/rIXBnCXX",
-	"IbkQ1VbVbtuITbBEhxdotZIW93tu6yxDawcqU655Y8GZGkcvEc2VKpHLvQA2bgjy2BhlXkdEuh4ChFJY",
-	"B6qAYEGowmE1TLjugBvDm71oOggK5tNwXeT7JUknVI4eEwtlKu5Ywupa5G8wJZ38GKJ3DJGv5/AkRbt8",
-	"uW3ptZCF2s9gillthGtg5ikwRbMSGcIv09n0Vzjjki+wQung+3kKwgKX/otyruiSMpjOppApWYhFbTi5",
-	"9dPghCvxdYC+axaxFRobQhqPxqMvVHKlUXItWMK+jsajryximrul53nMtYhXX+JQdH+klXX0S+Pgw0hz",
-	"Yvz2EgklROsOVd74wVLSofTPuNalyPzD+N5SIJtlRF8/GyxYwn6KX7ZV3K2quAfR9htFiuQPgsD4QH8b",
-	"jz8Mext1p7FB5Iq6hA061fTbB4L3tXMgBm+wBd9GzNZVxU3z3BlPqW50iDWc9O26U0JP3Wi32fGTyNvA",
-	"ZFoX+z0Pa+S555obXqHzNLkeVq3gmZSv80njwhLPt82cJWHm+r2Ntkr192rXtrf/Ig92Nud7+PDtv+LD",
-	"CEKLYM0tSOWgULXMd1gSEttiCayFC8q6ECuUkE6GeROxBQ7owQm6YHPYpJP3koM8fjZm/AOF+H8z4gTd",
-	"Nh3mzasUaNv2rwAAAP//R0nq4l8MAAA=",
+	"H4sIAAAAAAAC/+yWUW/bOAzHvwqhu4c7wE2y2578ti3D4N0NGJoWe+iGQbWZRJ0t6SQqXVD4ux8oOWsc",
+	"ey06dOgV6FMcWSb/In8ieSVK01ijUZMX+ZXw5RobGR9fO5SEhfcBHf+3zlh0pDC+LWupmi+NtFbpVVyR",
+	"VaVIGS3rD72dtLUocuHJKb0SbSYq9KVTlveKXLx+8w/gN+vQe2W0h84kkPmKGqIbD2TA0Bpd919kO6vm",
+	"/AJLYqsXl1/9l+AUu+x7ePfx7wWcHhfXX3VaMvHtaGWOtGyw28a72kyklUM7L2EdGqmPHMpKntcIvA2W",
+	"xgGtEVQKVDY876io0+Pi4NMJvA+eoJFUruPyJ6G8/yTSmWEj64CgNChdmoYj9O7jib/lTPE8bSYc/huU",
+	"w0rkZ+lwSdVe1D63mZhjjYTH6K3RHoc596Es0fuRyNSXcuuBXMDJtaJzY2qUeiBgZ4ZdvnHOuB97RH49",
+	"5hBq5QnMEtIO9qoIm3HgugXpnNwO1HQuWMyjYV1Vw5AUcw5Hj8SlcY0kkYsQVHULKcX86RLd4RLFeI7f",
+	"pOyQl2u0Tm0lCZ+K6WPmoGUUlF6aoYwFlsEp2sJJDPcC3UaVCH8sThZ/wnup5Qob1AQvPxSgPEgdn1h4",
+	"wy9ZxuJkAaXRS7UKTrLZWNpIUY0/dtA3LTKxQeeTpNlkNnnGcTMWtbRK5OL5ZDZ5LjJhJa0jU1Np1XTz",
+	"bJoiF5es8cS/jF6UUVRM1/5EkO4Denplqm2E2GhCHT+T1taqjB9OLzwL2U0W/PS7w6XIxW/T69Fj2s0d",
+	"056Ltn/ruL3EhdQtotC/ZrN7873v9SCxqWMtQw077xzTF/fovN8IRzTEDXvu20z40DTSbb9nJiLV8c/U",
+	"SK4lZ13t4TrUZofJnl6pqk0kc+8f5jzNBN9zbqWTDVLE5Gy8BSXLXGU6m3xdRB552xXNPBXQfm6zvVDd",
+	"3Lra9vMv5OBgDLoLDy8eiocJpBTBpfSgDcHSBF0dUJIOtkcJXCpK5XGlNqihmI9zk4kVjtSDt0hpz6tt",
+	"Mb8rHGzxsZHxExXi/03EW6R9HM63NyBguZcOIUgzzc8ViJDmoV+Gwf33p94c99SfbuhPDwr/AeYpX7e3",
+	"x7b9LwAA//+RWvmhEBEAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

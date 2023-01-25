@@ -87,17 +87,9 @@ func (h *apiHandler) CreateIssuer(ctx context.Context, req CreateIssuerRequestOb
 		return nil, err
 	}
 
-	claimsMappingRepr, err := issuer.ClaimMappings.Repr()
+	out, err := issuer.ToV1Issuer()
 	if err != nil {
 		return nil, err
-	}
-
-	out := v1.Issuer{
-		ID:            uuid.MustParse(issuer.ID),
-		Name:          issuer.Name,
-		URI:           issuer.URI,
-		JWKSURI:       issuer.JWKSURI,
-		ClaimMappings: claimsMappingRepr,
 	}
 
 	return CreateIssuer200JSONResponse(out), nil
@@ -115,20 +107,56 @@ func (h *apiHandler) GetIssuerByID(ctx context.Context, req GetIssuerByIDRequest
 		return nil, err
 	}
 
-	claimMappingRepr, err := iss.ClaimMappings.Repr()
+	out, err := iss.ToV1Issuer()
 	if err != nil {
 		return nil, err
 	}
 
-	out := v1.Issuer{
-		ID:            uuid.MustParse(iss.ID),
-		Name:          iss.Name,
-		URI:           iss.URI,
-		JWKSURI:       iss.JWKSURI,
-		ClaimMappings: claimMappingRepr,
+	return GetIssuerByID200JSONResponse(out), nil
+}
+
+func (h *apiHandler) UpdateIssuer(ctx context.Context, req UpdateIssuerRequestObject) (UpdateIssuerResponseObject, error) {
+	id := req.Id.String()
+	updateOp := req.Body
+
+	var (
+		claimsMapping types.ClaimsMapping
+		err           error
+	)
+
+	if updateOp.ClaimMappings != nil {
+		claimsMapping, err = types.NewClaimsMapping(*updateOp.ClaimMappings)
+		if err != nil {
+			return UpdateIssuer400JSONResponse{
+				Errors: []string{
+					"error parsing CEL expression",
+				},
+			}, nil
+		}
 	}
 
-	return GetIssuerByID200JSONResponse(out), nil
+	update := types.IssuerUpdate{
+		Name:          updateOp.Name,
+		URI:           updateOp.URI,
+		JWKSURI:       updateOp.JWKSURI,
+		ClaimMappings: claimsMapping,
+	}
+
+	issuer, err := h.engine.UpdateIssuer(ctx, id, update)
+	switch err {
+	case nil:
+	case types.ErrorIssuerNotFound:
+		return UpdateIssuer404JSONResponse(responseNotFound), nil
+	default:
+		return nil, err
+	}
+
+	out, err := issuer.ToV1Issuer()
+	if err != nil {
+		return nil, err
+	}
+
+	return UpdateIssuer200JSONResponse(out), nil
 }
 
 func (h *apiHandler) DeleteIssuer(ctx context.Context, req DeleteIssuerRequestObject) (DeleteIssuerResponseObject, error) {

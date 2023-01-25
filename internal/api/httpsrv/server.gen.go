@@ -26,6 +26,9 @@ type ServerInterface interface {
 	// Gets an issuer by ID.
 	// (GET /api/v1/issuers/{id})
 	GetIssuerByID(c *gin.Context, id openapi_types.UUID)
+	// Updates an issuer.
+	// (PATCH /api/v1/issuers/{id})
+	UpdateIssuer(c *gin.Context, id openapi_types.UUID)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -98,6 +101,30 @@ func (siw *ServerInterfaceWrapper) GetIssuerByID(c *gin.Context) {
 	siw.Handler.GetIssuerByID(c, id)
 }
 
+// UpdateIssuer operation middleware
+func (siw *ServerInterfaceWrapper) UpdateIssuer(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameter("simple", false, "id", c.Param("id"), &id)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.UpdateIssuer(c, id)
+}
+
 // GinServerOptions provides options for the Gin server.
 type GinServerOptions struct {
 	BaseURL      string
@@ -128,6 +155,7 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 	router.POST(options.BaseURL+"/api/v1/issuers", wrapper.CreateIssuer)
 	router.DELETE(options.BaseURL+"/api/v1/issuers/:id", wrapper.DeleteIssuer)
 	router.GET(options.BaseURL+"/api/v1/issuers/:id", wrapper.GetIssuerByID)
+	router.PATCH(options.BaseURL+"/api/v1/issuers/:id", wrapper.UpdateIssuer)
 }
 
 type CreateIssuerRequestObject struct {
@@ -208,6 +236,42 @@ func (response GetIssuerByID404JSONResponse) VisitGetIssuerByIDResponse(w http.R
 	return json.NewEncoder(w).Encode(response)
 }
 
+type UpdateIssuerRequestObject struct {
+	Id   openapi_types.UUID `json:"id"`
+	Body *UpdateIssuerJSONRequestBody
+}
+
+type UpdateIssuerResponseObject interface {
+	VisitUpdateIssuerResponse(w http.ResponseWriter) error
+}
+
+type UpdateIssuer200JSONResponse Issuer
+
+func (response UpdateIssuer200JSONResponse) VisitUpdateIssuerResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateIssuer400JSONResponse ErrorResponse
+
+func (response UpdateIssuer400JSONResponse) VisitUpdateIssuerResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateIssuer404JSONResponse ErrorResponse
+
+func (response UpdateIssuer404JSONResponse) VisitUpdateIssuerResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// Creates an issuer.
@@ -219,6 +283,9 @@ type StrictServerInterface interface {
 	// Gets an issuer by ID.
 	// (GET /api/v1/issuers/{id})
 	GetIssuerByID(ctx context.Context, request GetIssuerByIDRequestObject) (GetIssuerByIDResponseObject, error)
+	// Updates an issuer.
+	// (PATCH /api/v1/issuers/{id})
+	UpdateIssuer(ctx context.Context, request UpdateIssuerRequestObject) (UpdateIssuerResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx *gin.Context, args interface{}) (interface{}, error)
@@ -311,6 +378,40 @@ func (sh *strictHandler) GetIssuerByID(ctx *gin.Context, id openapi_types.UUID) 
 		ctx.Error(err)
 	} else if validResponse, ok := response.(GetIssuerByIDResponseObject); ok {
 		if err := validResponse.VisitGetIssuerByIDResponse(ctx.Writer); err != nil {
+			ctx.Error(err)
+		}
+	} else if response != nil {
+		ctx.Error(fmt.Errorf("Unexpected response type: %T", response))
+	}
+}
+
+// UpdateIssuer operation middleware
+func (sh *strictHandler) UpdateIssuer(ctx *gin.Context, id openapi_types.UUID) {
+	var request UpdateIssuerRequestObject
+
+	request.Id = id
+
+	var body UpdateIssuerJSONRequestBody
+	if err := ctx.ShouldBind(&body); err != nil {
+		ctx.Status(http.StatusBadRequest)
+		ctx.Error(err)
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx *gin.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateIssuer(ctx, request.(UpdateIssuerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateIssuer")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		ctx.Error(err)
+	} else if validResponse, ok := response.(UpdateIssuerResponseObject); ok {
+		if err := validResponse.VisitUpdateIssuerResponse(ctx.Writer); err != nil {
 			ctx.Error(err)
 		}
 	} else if response != nil {
