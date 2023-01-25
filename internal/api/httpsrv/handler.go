@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	"go.infratographer.com/identity-manager-sts/internal/storage"
 	"go.infratographer.com/identity-manager-sts/internal/types"
 	v1 "go.infratographer.com/identity-manager-sts/pkg/api/v1"
 )
@@ -53,7 +52,7 @@ func errorHandlerMiddleware(ctx *gin.Context) {
 
 // apiHandler represents an API handler.
 type apiHandler struct {
-	engine storage.Engine
+	engine types.IssuerService
 }
 
 func (h *apiHandler) CreateIssuer(ctx context.Context, req CreateIssuerRequestObject) (CreateIssuerResponseObject, error) {
@@ -139,7 +138,7 @@ type APIHandler struct {
 }
 
 // NewAPIHandler creates an API handler with the given storage engine.
-func NewAPIHandler(engine storage.Engine) (*APIHandler, error) {
+func NewAPIHandler(engine types.IssuerService) (*APIHandler, error) {
 	validationMiddleware, err := oapiValidationMiddleware()
 	if err != nil {
 		return nil, err
