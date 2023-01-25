@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"go.infratographer.com/identity-manager-sts/internal/types"
-	v1 "go.infratographer.com/identity-manager-sts/pkg/api/v1"
 )
 
 func TestMemoryIssuerService(t *testing.T) {
@@ -39,11 +38,7 @@ func TestMemoryIssuerService(t *testing.T) {
 			name:  "NotFound",
 			input: "https://evil.biz/",
 			checkFn: func(t *testing.T, res testResult) {
-				expErr := v1.ErrorIssuerNotFound{
-					Label: "https://evil.biz/",
-				}
-
-				assert.ErrorIs(t, expErr, res.err)
+				assert.ErrorIs(t, types.ErrorIssuerNotFound, res.err)
 			},
 		},
 		{

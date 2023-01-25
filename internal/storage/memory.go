@@ -8,7 +8,6 @@ import (
 	"github.com/cockroachdb/cockroach-go/v2/testserver"
 
 	"go.infratographer.com/identity-manager-sts/internal/types"
-	v1 "go.infratographer.com/identity-manager-sts/pkg/api/v1"
 )
 
 type memoryEngine struct {
@@ -83,11 +82,7 @@ func (s *memoryIssuerService) GetByID(ctx context.Context, id string) (*types.Is
 
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
-		err := v1.ErrorIssuerNotFound{
-			Label: id,
-		}
-
-		return nil, err
+		return nil, types.ErrorIssuerNotFound
 	case err != nil:
 		return nil, err
 	default:
@@ -103,11 +98,7 @@ func (s *memoryIssuerService) GetByURI(ctx context.Context, uri string) (*types.
 
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
-		err := v1.ErrorIssuerNotFound{
-			Label: uri,
-		}
-
-		return nil, err
+		return nil, types.ErrorIssuerNotFound
 	case err != nil:
 		return nil, err
 	default:
