@@ -59,6 +59,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+    delete:
+      tags:
+        - Issuers
+      summary: Deletes an issuer with the given ID.
+      operationId: deleteIssuer
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: ID of issuer to delete
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+        '404':
+          description: Error response. Issuer was not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 components:
   schemas:
     ErrorResponse:
@@ -70,6 +97,14 @@ components:
           description: A list of errors.
           items:
             type: string
+
+    DeleteResponse:
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          description: Always true.
 
     CreateIssuer:
       required:

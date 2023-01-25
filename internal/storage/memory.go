@@ -107,6 +107,26 @@ func (s *memoryIssuerService) GetIssuerByURI(ctx context.Context, uri string) (*
 	}
 }
 
+// DeleteIssuer deletes an issuer with the given ID.
+func (s *memoryIssuerService) DeleteIssuer(ctx context.Context, id string) error {
+	result, err := s.db.Exec(`DELETE FROM issuers WHERE id = $1;`, id)
+
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return types.ErrorIssuerNotFound
+	}
+
+	return nil
+}
+
 func (s *memoryIssuerService) scanIssuer(row *sql.Row) (*types.Issuer, error) {
 	var iss types.Issuer
 

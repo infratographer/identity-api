@@ -20,6 +20,9 @@ type ServerInterface interface {
 	// Creates an issuer.
 	// (POST /api/v1/issuers)
 	CreateIssuer(c *gin.Context)
+	// Deletes an issuer with the given ID.
+	// (DELETE /api/v1/issuers/{id})
+	DeleteIssuer(c *gin.Context, id openapi_types.UUID)
 	// Gets an issuer by ID.
 	// (GET /api/v1/issuers/{id})
 	GetIssuerByID(c *gin.Context, id openapi_types.UUID)
@@ -45,6 +48,30 @@ func (siw *ServerInterfaceWrapper) CreateIssuer(c *gin.Context) {
 	}
 
 	siw.Handler.CreateIssuer(c)
+}
+
+// DeleteIssuer operation middleware
+func (siw *ServerInterfaceWrapper) DeleteIssuer(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameter("simple", false, "id", c.Param("id"), &id)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.DeleteIssuer(c, id)
 }
 
 // GetIssuerByID operation middleware
@@ -99,6 +126,7 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 	}
 
 	router.POST(options.BaseURL+"/api/v1/issuers", wrapper.CreateIssuer)
+	router.DELETE(options.BaseURL+"/api/v1/issuers/:id", wrapper.DeleteIssuer)
 	router.GET(options.BaseURL+"/api/v1/issuers/:id", wrapper.GetIssuerByID)
 }
 
@@ -124,6 +152,32 @@ type CreateIssuer400JSONResponse ErrorResponse
 func (response CreateIssuer400JSONResponse) VisitCreateIssuerResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteIssuerRequestObject struct {
+	Id openapi_types.UUID `json:"id"`
+}
+
+type DeleteIssuerResponseObject interface {
+	VisitDeleteIssuerResponse(w http.ResponseWriter) error
+}
+
+type DeleteIssuer200JSONResponse DeleteResponse
+
+func (response DeleteIssuer200JSONResponse) VisitDeleteIssuerResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteIssuer404JSONResponse ErrorResponse
+
+func (response DeleteIssuer404JSONResponse) VisitDeleteIssuerResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -159,6 +213,9 @@ type StrictServerInterface interface {
 	// Creates an issuer.
 	// (POST /api/v1/issuers)
 	CreateIssuer(ctx context.Context, request CreateIssuerRequestObject) (CreateIssuerResponseObject, error)
+	// Deletes an issuer with the given ID.
+	// (DELETE /api/v1/issuers/{id})
+	DeleteIssuer(ctx context.Context, request DeleteIssuerRequestObject) (DeleteIssuerResponseObject, error)
 	// Gets an issuer by ID.
 	// (GET /api/v1/issuers/{id})
 	GetIssuerByID(ctx context.Context, request GetIssuerByIDRequestObject) (GetIssuerByIDResponseObject, error)
@@ -202,6 +259,32 @@ func (sh *strictHandler) CreateIssuer(ctx *gin.Context) {
 		ctx.Error(err)
 	} else if validResponse, ok := response.(CreateIssuerResponseObject); ok {
 		if err := validResponse.VisitCreateIssuerResponse(ctx.Writer); err != nil {
+			ctx.Error(err)
+		}
+	} else if response != nil {
+		ctx.Error(fmt.Errorf("Unexpected response type: %T", response))
+	}
+}
+
+// DeleteIssuer operation middleware
+func (sh *strictHandler) DeleteIssuer(ctx *gin.Context, id openapi_types.UUID) {
+	var request DeleteIssuerRequestObject
+
+	request.Id = id
+
+	handler := func(ctx *gin.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteIssuer(ctx, request.(DeleteIssuerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteIssuer")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		ctx.Error(err)
+	} else if validResponse, ok := response.(DeleteIssuerResponseObject); ok {
+		if err := validResponse.VisitDeleteIssuerResponse(ctx.Writer); err != nil {
 			ctx.Error(err)
 		}
 	} else if response != nil {

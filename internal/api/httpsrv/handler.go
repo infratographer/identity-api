@@ -131,6 +131,25 @@ func (h *apiHandler) GetIssuerByID(ctx context.Context, req GetIssuerByIDRequest
 	return GetIssuerByID200JSONResponse(out), nil
 }
 
+func (h *apiHandler) DeleteIssuer(ctx context.Context, req DeleteIssuerRequestObject) (DeleteIssuerResponseObject, error) {
+	id := req.Id.String()
+
+	err := h.engine.DeleteIssuer(ctx, id)
+	switch err {
+	case nil:
+	case types.ErrorIssuerNotFound:
+		return DeleteIssuer404JSONResponse(responseNotFound), nil
+	default:
+		return nil, err
+	}
+
+	out := v1.DeleteResponse{
+		Success: true,
+	}
+
+	return DeleteIssuer200JSONResponse(out), nil
+}
+
 // APIHandler represents an identity-manager-sts management API handler.
 type APIHandler struct {
 	handler              *apiHandler

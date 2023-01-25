@@ -30,6 +30,7 @@ type IssuerService interface {
 	CreateIssuer(ctx context.Context, iss Issuer) (*Issuer, error)
 	GetIssuerByID(ctx context.Context, id string) (*Issuer, error)
 	GetIssuerByURI(ctx context.Context, uri string) (*Issuer, error)
+	DeleteIssuer(ctx context.Context, id string) error
 }
 
 // ClaimsMapping represents a map of claims to a CEL expression that will be evaluated
