@@ -82,7 +82,7 @@ func (h *apiHandler) CreateIssuer(ctx context.Context, req CreateIssuerRequestOb
 		ClaimMappings: claimsMapping,
 	}
 
-	issuer, err := h.engine.Create(ctx, issuerToCreate)
+	issuer, err := h.engine.CreateIssuer(ctx, issuerToCreate)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (h *apiHandler) CreateIssuer(ctx context.Context, req CreateIssuerRequestOb
 func (h *apiHandler) GetIssuerByID(ctx context.Context, req GetIssuerByIDRequestObject) (GetIssuerByIDResponseObject, error) {
 	id := req.Id.String()
 
-	iss, err := h.engine.GetByID(ctx, id)
+	iss, err := h.engine.GetIssuerByID(ctx, id)
 	switch err {
 	case nil:
 	case types.ErrorIssuerNotFound:

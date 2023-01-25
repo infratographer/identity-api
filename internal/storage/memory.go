@@ -65,8 +65,8 @@ func newMemoryIssuerService(config Config) (*memoryIssuerService, error) {
 	return svc, nil
 }
 
-// Create creates an issuer.
-func (s *memoryIssuerService) Create(ctx context.Context, iss types.Issuer) (*types.Issuer, error) {
+// CreateIssuer creates an issuer.
+func (s *memoryIssuerService) CreateIssuer(ctx context.Context, iss types.Issuer) (*types.Issuer, error) {
 	err := s.insertIssuer(iss)
 	if err != nil {
 		return nil, err
@@ -75,7 +75,8 @@ func (s *memoryIssuerService) Create(ctx context.Context, iss types.Issuer) (*ty
 	return &iss, nil
 }
 
-func (s *memoryIssuerService) GetByID(ctx context.Context, id string) (*types.Issuer, error) {
+// GetIssuerByID gets an issuer by ID.
+func (s *memoryIssuerService) GetIssuerByID(ctx context.Context, id string) (*types.Issuer, error) {
 	row := s.db.QueryRow(`SELECT id, name, uri, jwksuri, mappings FROM issuers WHERE id = $1;`, id)
 
 	iss, err := s.scanIssuer(row)
@@ -91,7 +92,7 @@ func (s *memoryIssuerService) GetByID(ctx context.Context, id string) (*types.Is
 }
 
 // GetByURI looks up the given issuer by URI, returning the issuer if one exists.
-func (s *memoryIssuerService) GetByURI(ctx context.Context, uri string) (*types.Issuer, error) {
+func (s *memoryIssuerService) GetIssuerByURI(ctx context.Context, uri string) (*types.Issuer, error) {
 	row := s.db.QueryRow(`SELECT id, name, uri, jwksuri, mappings FROM issuers WHERE uri = $1;`, uri)
 
 	iss, err := s.scanIssuer(row)

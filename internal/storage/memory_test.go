@@ -74,7 +74,7 @@ func TestMemoryIssuerService(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			iss, err := issSvc.GetByURI(context.Background(), testCase.input)
+			iss, err := issSvc.GetIssuerByURI(context.Background(), testCase.input)
 
 			result := testResult{
 				iss: iss,

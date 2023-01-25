@@ -28,9 +28,9 @@ type Issuer struct {
 
 // IssuerService represents a service for managing issuers.
 type IssuerService interface {
-	Create(ctx context.Context, iss Issuer) (*Issuer, error)
-	GetByID(ctx context.Context, id string) (*Issuer, error)
-	GetByURI(ctx context.Context, uri string) (*Issuer, error)
+	CreateIssuer(ctx context.Context, iss Issuer) (*Issuer, error)
+	GetIssuerByID(ctx context.Context, id string) (*Issuer, error)
+	GetIssuerByURI(ctx context.Context, uri string) (*Issuer, error)
 }
 
 // ClaimsMapping represents a map of claims to a CEL expression that will be evaluated

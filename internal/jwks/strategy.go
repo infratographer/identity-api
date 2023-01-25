@@ -28,7 +28,7 @@ func NewIssuerJWKSURIStrategy(issuerSvc types.IssuerService) fositex.IssuerJWKSU
 }
 
 func (s issuerJWKSURIStrategy) GetIssuerJWKSURI(ctx context.Context, iss string) (string, error) {
-	issuer, err := s.issuerSvc.GetByURI(ctx, iss)
+	issuer, err := s.issuerSvc.GetIssuerByURI(ctx, iss)
 	if err != nil {
 		return "", err
 	}

@@ -37,7 +37,7 @@ func (m ClaimMappingStrategy) MapClaims(ctx context.Context, claims *jwt.JWTClai
 
 	iss := claims.Issuer
 
-	issuer, err := m.issuerSvc.GetByURI(ctx, iss)
+	issuer, err := m.issuerSvc.GetIssuerByURI(ctx, iss)
 	if err != nil {
 		return nil, err
 	}
