@@ -3,7 +3,6 @@ package types
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/google/cel-go/cel"
 	exprpb "google.golang.org/genproto/googleapis/api/expr/v1alpha1"
@@ -98,7 +97,6 @@ func (c ClaimsMapping) MarshalJSON() ([]byte, error) {
 func (c *ClaimsMapping) UnmarshalJSON(data []byte) error {
 	in := make(map[string][]byte)
 	if err := json.Unmarshal(data, &in); err != nil {
-		fmt.Println("ack")
 		return err
 	}
 
