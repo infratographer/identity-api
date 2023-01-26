@@ -7,23 +7,13 @@ import (
 	"github.com/cockroachdb/cockroach-go/v2/testserver"
 	"github.com/stretchr/testify/assert"
 
+	"go.infratographer.com/identity-manager-sts/internal/testingx"
 	"go.infratographer.com/identity-manager-sts/internal/types"
 )
 
 func TestMemoryIssuerService(t *testing.T) {
 	db, _ := testserver.NewDBForTest(t)
 	t.Parallel()
-
-	type testResult struct {
-		iss *types.Issuer
-		err error
-	}
-
-	type testCase struct {
-		name    string
-		input   string
-		checkFn func(*testing.T, testResult)
-	}
 
 	issuer := types.Issuer{
 		ID:            "e495a393-ae79-4a02-a78d-9798c7d9d252",
@@ -33,20 +23,20 @@ func TestMemoryIssuerService(t *testing.T) {
 		ClaimMappings: types.ClaimsMapping{},
 	}
 
-	testCases := []testCase{
+	testCases := []testingx.TestCase[string, *types.Issuer]{
 		{
-			name:  "NotFound",
-			input: "https://evil.biz/",
-			checkFn: func(t *testing.T, res testResult) {
-				assert.ErrorIs(t, types.ErrorIssuerNotFound, res.err)
+			Name:  "NotFound",
+			Input: "https://evil.biz/",
+			CheckFn: func(t *testing.T, res testingx.TestResult[*types.Issuer]) {
+				assert.ErrorIs(t, types.ErrorIssuerNotFound, res.Err)
 			},
 		},
 		{
-			name:  "Success",
-			input: "https://example.com/",
-			checkFn: func(t *testing.T, res testResult) {
-				assert.Nil(t, res.err)
-				assert.Equal(t, &issuer, res.iss)
+			Name:  "Success",
+			Input: "https://example.com/",
+			CheckFn: func(t *testing.T, res testingx.TestResult[*types.Issuer]) {
+				assert.Nil(t, res.Err)
+				assert.Equal(t, &issuer, res.Success)
 			},
 		},
 	}
@@ -68,20 +58,16 @@ func TestMemoryIssuerService(t *testing.T) {
 	issSvc, err := newMemoryIssuerService(config)
 	assert.Nil(t, err)
 
-	for _, testCase := range testCases {
-		testCase := testCase
+	runFn := func(ctx context.Context, input string) testingx.TestResult[*types.Issuer] {
+		iss, err := issSvc.GetIssuerByURI(context.Background(), input)
 
-		t.Run(testCase.name, func(t *testing.T) {
-			t.Parallel()
+		result := testingx.TestResult[*types.Issuer]{
+			Success: iss,
+			Err:     err,
+		}
 
-			iss, err := issSvc.GetIssuerByURI(context.Background(), testCase.input)
-
-			result := testResult{
-				iss: iss,
-				err: err,
-			}
-
-			testCase.checkFn(t, result)
-		})
+		return result
 	}
+
+	testingx.RunTests(context.Background(), t, testCases, runFn)
 }

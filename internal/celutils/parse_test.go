@@ -8,48 +8,38 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"go.infratographer.com/identity-manager-sts/internal/celutils"
+	"go.infratographer.com/identity-manager-sts/internal/testingx"
 )
-
-type testResult[U any] struct {
-	success U
-	err     error
-}
-
-type testCase[T, U any] struct {
-	name    string
-	input   T
-	checkFn func(*testing.T, testResult[U])
-}
 
 // TestClaimMappingParse checks that claim mapping expressions parse correctly.
 func TestClaimMappingParse(t *testing.T) {
 	t.Parallel()
 
-	runFn := func(ctx context.Context, prog string) testResult[*cel.Ast] {
-		out, err := celutils.ParseCEL(prog)
+	runFn := func(ctx context.Context, prog string) testingx.TestResult[*cel.Ast] {
+		out, Err := celutils.ParseCEL(prog)
 
-		return testResult[*cel.Ast]{
-			success: out,
-			err:     err,
+		return testingx.TestResult[*cel.Ast]{
+			Success: out,
+			Err:     Err,
 		}
 	}
 
-	testCases := []testCase[string, *cel.Ast]{
+	testCases := []testingx.TestCase[string, *cel.Ast]{
 		{
-			name:  "ParseError",
-			input: "'hello",
-			checkFn: func(t *testing.T, result testResult[*cel.Ast]) {
-				assert.Nil(t, result.success)
-				assert.NotNil(t, result.err)
-				assert.ErrorIs(t, result.err, &celutils.ErrorCELParse{})
+			Name:  "ParseError",
+			Input: "'hello",
+			CheckFn: func(t *testing.T, result testingx.TestResult[*cel.Ast]) {
+				assert.Nil(t, result.Success)
+				assert.NotNil(t, result.Err)
+				assert.ErrorIs(t, result.Err, &celutils.ErrorCELParse{})
 			},
 		},
 		{
-			name:  "Success",
-			input: "'hello! ' + subSHA256",
-			checkFn: func(t *testing.T, result testResult[*cel.Ast]) {
-				assert.Nil(t, result.err)
-				assert.NotNil(t, result.success)
+			Name:  "Success",
+			Input: "'hello! ' + subSHA256",
+			CheckFn: func(t *testing.T, result testingx.TestResult[*cel.Ast]) {
+				assert.Nil(t, result.Err)
+				assert.NotNil(t, result.Success)
 			},
 		},
 	}
@@ -57,11 +47,11 @@ func TestClaimMappingParse(t *testing.T) {
 	for _, testCase := range testCases {
 		testCase := testCase
 
-		t.Run(testCase.name, func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			t.Parallel()
 
-			result := runFn(context.Background(), testCase.input)
-			testCase.checkFn(t, result)
+			result := runFn(context.Background(), testCase.Input)
+			testCase.CheckFn(t, result)
 		})
 	}
 }
