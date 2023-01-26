@@ -69,7 +69,7 @@ func issuerUpdateToColBindings(update types.IssuerUpdate) ([]colBinding, error) 
 
 	bindings = bindIfNotNil(bindings, issuerColName, update.Name)
 	bindings = bindIfNotNil(bindings, issuerColURI, update.URI)
-	bindings = bindIfNotNil(bindings, issuerColName, update.JWKSURI)
+	bindings = bindIfNotNil(bindings, issuerColJWKSURI, update.JWKSURI)
 
 	if update.ClaimMappings != nil {
 		mappingRepr, err := update.ClaimMappings.MarshalJSON()
