@@ -5,12 +5,20 @@ info:
   version: 0.0.1
 
 paths:
-  /api/v1/issuers:
+  /api/v1/tenants/{tenantID}/issuers:
     post:
       tags:
         - Issuers
       summary: Creates an issuer.
       operationId: createIssuer
+      parameters:
+        - in: path
+          name: tenantID
+          required: true
+          description: ID of tenant to create issuer in
+          schema:
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:

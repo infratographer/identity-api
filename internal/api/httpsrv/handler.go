@@ -56,6 +56,7 @@ type apiHandler struct {
 }
 
 func (h *apiHandler) CreateIssuer(ctx context.Context, req CreateIssuerRequestObject) (CreateIssuerResponseObject, error) {
+	tenantID := req.TenantID
 	createOp := req.Body
 
 	var (
@@ -75,6 +76,7 @@ func (h *apiHandler) CreateIssuer(ctx context.Context, req CreateIssuerRequestOb
 	}
 
 	issuerToCreate := types.Issuer{
+		TenantID:      tenantID.String(),
 		ID:            uuid.New().String(),
 		Name:          createOp.Name,
 		URI:           createOp.URI,

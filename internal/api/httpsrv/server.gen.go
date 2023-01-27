@@ -17,9 +17,6 @@ import (
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// Creates an issuer.
-	// (POST /api/v1/issuers)
-	CreateIssuer(c *gin.Context)
 	// Deletes an issuer with the given ID.
 	// (DELETE /api/v1/issuers/{id})
 	DeleteIssuer(c *gin.Context, id openapi_types.UUID)
@@ -29,6 +26,9 @@ type ServerInterface interface {
 	// Updates an issuer.
 	// (PATCH /api/v1/issuers/{id})
 	UpdateIssuer(c *gin.Context, id openapi_types.UUID)
+	// Creates an issuer.
+	// (POST /api/v1/tenants/{tenantID}/issuers)
+	CreateIssuer(c *gin.Context, tenantID openapi_types.UUID)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -39,19 +39,6 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(c *gin.Context)
-
-// CreateIssuer operation middleware
-func (siw *ServerInterfaceWrapper) CreateIssuer(c *gin.Context) {
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.CreateIssuer(c)
-}
 
 // DeleteIssuer operation middleware
 func (siw *ServerInterfaceWrapper) DeleteIssuer(c *gin.Context) {
@@ -125,6 +112,30 @@ func (siw *ServerInterfaceWrapper) UpdateIssuer(c *gin.Context) {
 	siw.Handler.UpdateIssuer(c, id)
 }
 
+// CreateIssuer operation middleware
+func (siw *ServerInterfaceWrapper) CreateIssuer(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "tenantID" -------------
+	var tenantID openapi_types.UUID
+
+	err = runtime.BindStyledParameter("simple", false, "tenantID", c.Param("tenantID"), &tenantID)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter tenantID: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.CreateIssuer(c, tenantID)
+}
+
 // GinServerOptions provides options for the Gin server.
 type GinServerOptions struct {
 	BaseURL      string
@@ -152,36 +163,10 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 		ErrorHandler:       errorHandler,
 	}
 
-	router.POST(options.BaseURL+"/api/v1/issuers", wrapper.CreateIssuer)
 	router.DELETE(options.BaseURL+"/api/v1/issuers/:id", wrapper.DeleteIssuer)
 	router.GET(options.BaseURL+"/api/v1/issuers/:id", wrapper.GetIssuerByID)
 	router.PATCH(options.BaseURL+"/api/v1/issuers/:id", wrapper.UpdateIssuer)
-}
-
-type CreateIssuerRequestObject struct {
-	Body *CreateIssuerJSONRequestBody
-}
-
-type CreateIssuerResponseObject interface {
-	VisitCreateIssuerResponse(w http.ResponseWriter) error
-}
-
-type CreateIssuer200JSONResponse Issuer
-
-func (response CreateIssuer200JSONResponse) VisitCreateIssuerResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type CreateIssuer400JSONResponse ErrorResponse
-
-func (response CreateIssuer400JSONResponse) VisitCreateIssuerResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(400)
-
-	return json.NewEncoder(w).Encode(response)
+	router.POST(options.BaseURL+"/api/v1/tenants/:tenantID/issuers", wrapper.CreateIssuer)
 }
 
 type DeleteIssuerRequestObject struct {
@@ -272,11 +257,35 @@ func (response UpdateIssuer404JSONResponse) VisitUpdateIssuerResponse(w http.Res
 	return json.NewEncoder(w).Encode(response)
 }
 
+type CreateIssuerRequestObject struct {
+	TenantID openapi_types.UUID `json:"tenantID"`
+	Body     *CreateIssuerJSONRequestBody
+}
+
+type CreateIssuerResponseObject interface {
+	VisitCreateIssuerResponse(w http.ResponseWriter) error
+}
+
+type CreateIssuer200JSONResponse Issuer
+
+func (response CreateIssuer200JSONResponse) VisitCreateIssuerResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateIssuer400JSONResponse ErrorResponse
+
+func (response CreateIssuer400JSONResponse) VisitCreateIssuerResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
-	// Creates an issuer.
-	// (POST /api/v1/issuers)
-	CreateIssuer(ctx context.Context, request CreateIssuerRequestObject) (CreateIssuerResponseObject, error)
 	// Deletes an issuer with the given ID.
 	// (DELETE /api/v1/issuers/{id})
 	DeleteIssuer(ctx context.Context, request DeleteIssuerRequestObject) (DeleteIssuerResponseObject, error)
@@ -286,6 +295,9 @@ type StrictServerInterface interface {
 	// Updates an issuer.
 	// (PATCH /api/v1/issuers/{id})
 	UpdateIssuer(ctx context.Context, request UpdateIssuerRequestObject) (UpdateIssuerResponseObject, error)
+	// Creates an issuer.
+	// (POST /api/v1/tenants/{tenantID}/issuers)
+	CreateIssuer(ctx context.Context, request CreateIssuerRequestObject) (CreateIssuerResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx *gin.Context, args interface{}) (interface{}, error)
@@ -299,38 +311,6 @@ func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareF
 type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
-}
-
-// CreateIssuer operation middleware
-func (sh *strictHandler) CreateIssuer(ctx *gin.Context) {
-	var request CreateIssuerRequestObject
-
-	var body CreateIssuerJSONRequestBody
-	if err := ctx.ShouldBind(&body); err != nil {
-		ctx.Status(http.StatusBadRequest)
-		ctx.Error(err)
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx *gin.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.CreateIssuer(ctx, request.(CreateIssuerRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "CreateIssuer")
-	}
-
-	response, err := handler(ctx, request)
-
-	if err != nil {
-		ctx.Error(err)
-	} else if validResponse, ok := response.(CreateIssuerResponseObject); ok {
-		if err := validResponse.VisitCreateIssuerResponse(ctx.Writer); err != nil {
-			ctx.Error(err)
-		}
-	} else if response != nil {
-		ctx.Error(fmt.Errorf("Unexpected response type: %T", response))
-	}
 }
 
 // DeleteIssuer operation middleware
@@ -412,6 +392,40 @@ func (sh *strictHandler) UpdateIssuer(ctx *gin.Context, id openapi_types.UUID) {
 		ctx.Error(err)
 	} else if validResponse, ok := response.(UpdateIssuerResponseObject); ok {
 		if err := validResponse.VisitUpdateIssuerResponse(ctx.Writer); err != nil {
+			ctx.Error(err)
+		}
+	} else if response != nil {
+		ctx.Error(fmt.Errorf("Unexpected response type: %T", response))
+	}
+}
+
+// CreateIssuer operation middleware
+func (sh *strictHandler) CreateIssuer(ctx *gin.Context, tenantID openapi_types.UUID) {
+	var request CreateIssuerRequestObject
+
+	request.TenantID = tenantID
+
+	var body CreateIssuerJSONRequestBody
+	if err := ctx.ShouldBind(&body); err != nil {
+		ctx.Status(http.StatusBadRequest)
+		ctx.Error(err)
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx *gin.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateIssuer(ctx, request.(CreateIssuerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateIssuer")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		ctx.Error(err)
+	} else if validResponse, ok := response.(CreateIssuerResponseObject); ok {
+		if err := validResponse.VisitCreateIssuerResponse(ctx.Writer); err != nil {
 			ctx.Error(err)
 		}
 	} else if response != nil {

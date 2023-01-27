@@ -13,6 +13,7 @@ import (
 )
 
 const (
+	issuerColTenantID = "tenant_id"
 	issuerColID       = "id"
 	issuerColName     = "name"
 	issuerColURI      = "uri"
@@ -22,6 +23,7 @@ const (
 
 var (
 	issuerColumns = []string{
+		issuerColTenantID,
 		issuerColID,
 		issuerColName,
 		issuerColURI,
@@ -101,6 +103,7 @@ func buildIssuerFromSeed(seed SeedIssuer) (types.Issuer, error) {
 	}
 
 	out := types.Issuer{
+		TenantID:      seed.TenantID,
 		ID:            seed.ID,
 		Name:          seed.Name,
 		URI:           seed.URI,
@@ -209,7 +212,7 @@ func (s *memoryIssuerService) scanIssuer(row *sql.Row) (*types.Issuer, error) {
 
 	var mapping sql.NullString
 
-	err := row.Scan(&iss.ID, &iss.Name, &iss.URI, &iss.JWKSURI, &mapping)
+	err := row.Scan(&iss.TenantID, &iss.ID, &iss.Name, &iss.URI, &iss.JWKSURI, &mapping)
 
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
@@ -236,11 +239,12 @@ func (s *memoryIssuerService) scanIssuer(row *sql.Row) (*types.Issuer, error) {
 func (s *memoryIssuerService) createTables() error {
 	stmt := `
         CREATE TABLE IF NOT EXISTS issuers (
-            id       uuid PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
-            uri      STRING NOT NULL,
-            name     STRING NOT NULL,
-            jwksuri  STRING NOT NULL,
-            mappings STRING
+            id        uuid PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
+            tenant_id uuid NOT NULL,
+            uri       STRING NOT NULL,
+            name      STRING NOT NULL,
+            jwksuri   STRING NOT NULL,
+            mappings  STRING
         );
         `
 	_, err := s.db.Exec(stmt)
@@ -253,7 +257,7 @@ func (s *memoryIssuerService) insertIssuer(iss types.Issuer) error {
         INSERT INTO issuers (
             %s
         ) VALUES
-        ($1, $2, $3, $4, $5);
+        ($1, $2, $3, $4, $5, $6);
         `
 
 	q = fmt.Sprintf(q, issuerColumnsStr)
@@ -265,6 +269,7 @@ func (s *memoryIssuerService) insertIssuer(iss types.Issuer) error {
 
 	_, err = s.db.Exec(
 		q,
+		iss.TenantID,
 		iss.ID,
 		iss.Name,
 		iss.URI,

@@ -15,6 +15,8 @@ import (
 
 // Issuer represents a token issuer.
 type Issuer struct {
+	// TenantID represents the ID of the tenant the issuer belongs to.
+	TenantID string
 	// ID represents the ID of the issuer in identity-manager-sts.
 	ID string
 	// Name represents the human-readable name of the issuer.

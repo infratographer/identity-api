@@ -2,6 +2,7 @@ package storage
 
 // SeedIssuer represents the seed data for a single issuer.
 type SeedIssuer struct {
+	TenantID      string
 	ID            string
 	Name          string
 	URI           string

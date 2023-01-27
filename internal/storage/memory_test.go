@@ -43,7 +43,9 @@ func TestMemoryIssuerService(t *testing.T) {
 		panic(err)
 	}
 
+	tenantID := "56a95c1b-33f8-4def-8b6d-ca9fe6976170"
 	issuer := types.Issuer{
+		TenantID:      tenantID,
 		ID:            "e495a393-ae79-4a02-a78d-9798c7d9d252",
 		Name:          "Example",
 		URI:           "https://example.com/",
@@ -56,6 +58,7 @@ func TestMemoryIssuerService(t *testing.T) {
 		SeedData: SeedData{
 			Issuers: []SeedIssuer{
 				{
+					TenantID:      tenantID,
 					ID:            issuer.ID,
 					Name:          issuer.Name,
 					URI:           issuer.URI,
@@ -73,6 +76,7 @@ func TestMemoryIssuerService(t *testing.T) {
 		t.Parallel()
 
 		issuer := types.Issuer{
+			TenantID:      tenantID,
 			ID:            "6b0117f8-29e4-49fa-841e-63c52aa27d96",
 			Name:          "Good issuer",
 			URI:           "https://issuer-a27d96.info/",
@@ -181,6 +185,7 @@ func TestMemoryIssuerService(t *testing.T) {
 		t.Parallel()
 
 		issuer := types.Issuer{
+			TenantID:      tenantID,
 			ID:            "b9ae2e16-11c0-49e4-8d9b-1d6698bba1a3",
 			Name:          "Good issuer",
 			URI:           "https://issuer-bba1a3.info/",
@@ -189,7 +194,9 @@ func TestMemoryIssuerService(t *testing.T) {
 		}
 
 		_, err := issSvc.CreateIssuer(context.Background(), issuer)
-		assert.NoError(t, err)
+		if !assert.NoError(t, err) {
+			assert.FailNow(t, "setup failed")
+		}
 
 		newName := "Better issuer"
 		newURI := "https://issuer.info/better/"
@@ -239,6 +246,7 @@ func TestMemoryIssuerService(t *testing.T) {
 		t.Parallel()
 
 		issuer := types.Issuer{
+			TenantID:      tenantID,
 			ID:            "ace77968-03b0-4f1b-b3f0-b214daf4ac18",
 			Name:          "Good issuer",
 			URI:           "https://issuer-f4ac18.info/",
@@ -247,7 +255,9 @@ func TestMemoryIssuerService(t *testing.T) {
 		}
 
 		_, err := issSvc.CreateIssuer(context.Background(), issuer)
-		assert.NoError(t, err)
+		if !assert.NoError(t, err) {
+			assert.FailNow(t, "setup failed")
+		}
 
 		testCases := []testingx.TestCase[string, any]{
 			{
