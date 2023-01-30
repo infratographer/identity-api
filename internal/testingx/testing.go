@@ -19,7 +19,7 @@ type TestResult[U any] struct {
 type TestCase[T, U any] struct {
 	Name    string
 	Input   T
-	CheckFn func(*testing.T, TestResult[U])
+	CheckFn func(context.Context, *testing.T, TestResult[U])
 }
 
 // RunTests runs all provided test cases using the given test function.
@@ -31,7 +31,7 @@ func RunTests[T, U any](ctx context.Context, t *testing.T, cases []TestCase[T, U
 			t.Parallel()
 
 			result := testFn(ctx, testCase.Input)
-			testCase.CheckFn(t, result)
+			testCase.CheckFn(ctx, t, result)
 		})
 	}
 }

@@ -28,7 +28,7 @@ func TestClaimMappingParse(t *testing.T) {
 		{
 			Name:  "ParseError",
 			Input: "'hello",
-			CheckFn: func(t *testing.T, result testingx.TestResult[*cel.Ast]) {
+			CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[*cel.Ast]) {
 				assert.Nil(t, result.Success)
 				assert.NotNil(t, result.Err)
 				assert.ErrorIs(t, result.Err, &celutils.ErrorCELParse{})
@@ -37,21 +37,12 @@ func TestClaimMappingParse(t *testing.T) {
 		{
 			Name:  "Success",
 			Input: "'hello! ' + subSHA256",
-			CheckFn: func(t *testing.T, result testingx.TestResult[*cel.Ast]) {
+			CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[*cel.Ast]) {
 				assert.Nil(t, result.Err)
 				assert.NotNil(t, result.Success)
 			},
 		},
 	}
 
-	for _, testCase := range testCases {
-		testCase := testCase
-
-		t.Run(testCase.Name, func(t *testing.T) {
-			t.Parallel()
-
-			result := runFn(context.Background(), testCase.Input)
-			testCase.CheckFn(t, result)
-		})
-	}
+	testingx.RunTests(context.Background(), t, testCases, runFn)
 }

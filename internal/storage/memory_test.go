@@ -88,7 +88,7 @@ func TestMemoryIssuerService(t *testing.T) {
 			{
 				Name:  "Success",
 				Input: issuer,
-				CheckFn: func(t *testing.T, res testingx.TestResult[*types.Issuer]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
 					assert.Nil(t, res.Err)
 					compareIssuers(t, issuer, *res.Success)
 				},
@@ -116,14 +116,14 @@ func TestMemoryIssuerService(t *testing.T) {
 			{
 				Name:  "NotFound",
 				Input: "https://evil.biz/",
-				CheckFn: func(t *testing.T, res testingx.TestResult[*types.Issuer]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
 					assert.ErrorIs(t, types.ErrorIssuerNotFound, res.Err)
 				},
 			},
 			{
 				Name:  "Success",
 				Input: "https://example.com/",
-				CheckFn: func(t *testing.T, res testingx.TestResult[*types.Issuer]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
 					if assert.NoError(t, res.Err) {
 						compareIssuers(t, issuer, *res.Success)
 					}
@@ -152,14 +152,14 @@ func TestMemoryIssuerService(t *testing.T) {
 			{
 				Name:  "NotFound",
 				Input: "00000000-0000-0000-0000-000000000000",
-				CheckFn: func(t *testing.T, res testingx.TestResult[*types.Issuer]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
 					assert.ErrorIs(t, types.ErrorIssuerNotFound, res.Err)
 				},
 			},
 			{
 				Name:  "Success",
 				Input: issuer.ID,
-				CheckFn: func(t *testing.T, res testingx.TestResult[*types.Issuer]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
 					if assert.NoError(t, res.Err) {
 						compareIssuers(t, issuer, *res.Success)
 					}
@@ -214,7 +214,7 @@ func TestMemoryIssuerService(t *testing.T) {
 			{
 				Name:  "Full",
 				Input: fullUpdate,
-				CheckFn: func(t *testing.T, res testingx.TestResult[*types.Issuer]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
 					exp := issuer
 					exp.Name = newName
 					exp.URI = newURI
@@ -263,7 +263,7 @@ func TestMemoryIssuerService(t *testing.T) {
 			{
 				Name:  "Success",
 				Input: issuer.ID,
-				CheckFn: func(t *testing.T, res testingx.TestResult[any]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[any]) {
 					if assert.NoError(t, res.Err) {
 						_, err := issSvc.GetIssuerByID(context.Background(), issuer.ID)
 						assert.ErrorIs(t, types.ErrorIssuerNotFound, err)
@@ -273,7 +273,7 @@ func TestMemoryIssuerService(t *testing.T) {
 			{
 				Name:  "NotFound",
 				Input: "00000000-0000-0000-0000-000000000000",
-				CheckFn: func(t *testing.T, res testingx.TestResult[any]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[any]) {
 					assert.ErrorIs(t, types.ErrorIssuerNotFound, res.Err)
 				},
 			},

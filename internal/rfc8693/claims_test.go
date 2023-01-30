@@ -59,7 +59,7 @@ func TestClaimMappingEval(t *testing.T) {
 				Issuer:  "https://example.com/",
 				Extra:   map[string]any{},
 			},
-			CheckFn: func(t *testing.T, result testingx.TestResult[jwt.JWTClaimsContainer]) {
+			CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[jwt.JWTClaimsContainer]) {
 				assert.NotNil(t, result.Err)
 				assert.ErrorIs(t, result.Err, &celutils.ErrorCELEval{})
 			},
@@ -72,7 +72,7 @@ func TestClaimMappingEval(t *testing.T) {
 					"num": 1,
 				},
 			},
-			CheckFn: func(t *testing.T, result testingx.TestResult[jwt.JWTClaimsContainer]) {
+			CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[jwt.JWTClaimsContainer]) {
 				assert.NotNil(t, result.Err)
 				assert.ErrorIs(t, result.Err, ErrorMissingSub)
 			},
@@ -85,7 +85,7 @@ func TestClaimMappingEval(t *testing.T) {
 					"num": 1,
 				},
 			},
-			CheckFn: func(t *testing.T, result testingx.TestResult[jwt.JWTClaimsContainer]) {
+			CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[jwt.JWTClaimsContainer]) {
 				assert.NotNil(t, result.Err)
 				assert.ErrorIs(t, result.Err, ErrorMissingIss)
 			},
@@ -99,7 +99,7 @@ func TestClaimMappingEval(t *testing.T) {
 					"num": 2,
 				},
 			},
-			CheckFn: func(t *testing.T, result testingx.TestResult[jwt.JWTClaimsContainer]) {
+			CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[jwt.JWTClaimsContainer]) {
 				assert.Nil(t, result.Err)
 				expected := &jwt.JWTClaims{
 					Extra: map[string]any{

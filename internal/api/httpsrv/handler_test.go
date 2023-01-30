@@ -77,7 +77,7 @@ func TestAPIHandler(t *testing.T) {
 					TenantID: tenantUUID,
 					Body:     createOp,
 				},
-				CheckFn: func(t *testing.T, result testingx.TestResult[CreateIssuerResponseObject]) {
+				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[CreateIssuerResponseObject]) {
 					// Just stop if we failed
 					if !assert.NoError(t, result.Err) {
 						return
@@ -114,7 +114,7 @@ func TestAPIHandler(t *testing.T) {
 						URI:     "https://bad.info/",
 					},
 				},
-				CheckFn: func(t *testing.T, result testingx.TestResult[CreateIssuerResponseObject]) {
+				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[CreateIssuerResponseObject]) {
 					// We expect a 400 here, not a 500
 					if !assert.NoError(t, result.Err) {
 						return
@@ -163,7 +163,7 @@ func TestAPIHandler(t *testing.T) {
 				Input: GetIssuerByIDRequestObject{
 					Id: issuerUUID,
 				},
-				CheckFn: func(t *testing.T, result testingx.TestResult[GetIssuerByIDResponseObject]) {
+				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[GetIssuerByIDResponseObject]) {
 					if !assert.NoError(t, result.Err) {
 						return
 					}
@@ -191,7 +191,7 @@ func TestAPIHandler(t *testing.T) {
 				Input: GetIssuerByIDRequestObject{
 					Id: uuid.MustParse("00000000-0000-0000-0000-000000000000"),
 				},
-				CheckFn: func(t *testing.T, result testingx.TestResult[GetIssuerByIDResponseObject]) {
+				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[GetIssuerByIDResponseObject]) {
 					if !assert.NoError(t, result.Err) {
 						return
 					}
@@ -260,7 +260,7 @@ func TestAPIHandler(t *testing.T) {
 						Name: &newName,
 					},
 				},
-				CheckFn: func(t *testing.T, result testingx.TestResult[UpdateIssuerResponseObject]) {
+				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[UpdateIssuerResponseObject]) {
 					if !assert.NoError(t, result.Err) {
 						return
 					}
@@ -291,7 +291,7 @@ func TestAPIHandler(t *testing.T) {
 						Name: &newName,
 					},
 				},
-				CheckFn: func(t *testing.T, result testingx.TestResult[UpdateIssuerResponseObject]) {
+				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[UpdateIssuerResponseObject]) {
 					if !assert.NoError(t, result.Err) {
 						return
 					}
@@ -355,7 +355,7 @@ func TestAPIHandler(t *testing.T) {
 				Input: DeleteIssuerRequestObject{
 					Id: issuerUUID,
 				},
-				CheckFn: func(t *testing.T, result testingx.TestResult[DeleteIssuerResponseObject]) {
+				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[DeleteIssuerResponseObject]) {
 					if !assert.NoError(t, result.Err) {
 						return
 					}
@@ -379,7 +379,7 @@ func TestAPIHandler(t *testing.T) {
 				Input: DeleteIssuerRequestObject{
 					Id: uuid.MustParse("00000000-0000-0000-0000-000000000000"),
 				},
-				CheckFn: func(t *testing.T, result testingx.TestResult[DeleteIssuerResponseObject]) {
+				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[DeleteIssuerResponseObject]) {
 					if !assert.NoError(t, result.Err) {
 						return
 					}
