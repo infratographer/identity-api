@@ -3,6 +3,7 @@ package cmd
 
 import (
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -37,6 +38,11 @@ func initConfig() {
 		viper.SetConfigType("yaml")
 		viper.SetConfigName("identity-manager-sts")
 	}
+
+	// Allow populating configuration from environment
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	viper.SetEnvPrefix("imsts")
+	viper.AutomaticEnv() // read in environment variables that match
 
 	err := viper.ReadInConfig()
 
