@@ -17,9 +17,11 @@ type TestResult[U any] struct {
 
 // TestCase represents a named test case, combining the input with a function for checking the observed result.
 type TestCase[T, U any] struct {
-	Name    string
-	Input   T
-	CheckFn func(context.Context, *testing.T, TestResult[U])
+	Name      string
+	Input     T
+	SetupFn   func(context.Context) context.Context
+	CheckFn   func(context.Context, *testing.T, TestResult[U])
+	CleanupFn func(context.Context)
 }
 
 // RunTests runs all provided test cases using the given test function.
@@ -29,6 +31,14 @@ func RunTests[T, U any](ctx context.Context, t *testing.T, cases []TestCase[T, U
 
 		t.Run(testCase.Name, func(t *testing.T) {
 			t.Parallel()
+
+			if testCase.SetupFn != nil {
+				ctx = testCase.SetupFn(ctx)
+			}
+
+			if testCase.CleanupFn != nil {
+				defer testCase.CleanupFn(ctx)
+			}
 
 			result := testFn(ctx, testCase.Input)
 			testCase.CheckFn(ctx, t, result)
