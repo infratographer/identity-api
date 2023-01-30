@@ -88,15 +88,28 @@ func TestMemoryIssuerService(t *testing.T) {
 			{
 				Name:  "Success",
 				Input: issuer,
+				SetupFn: func(ctx context.Context) context.Context {
+					txCtx, err := beginTxContext(ctx, db)
+					if !assert.NoError(t, err) {
+						assert.FailNow(t, "setup failed")
+					}
+
+					return txCtx
+				},
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
-					assert.Nil(t, res.Err)
-					compareIssuers(t, issuer, *res.Success)
+					if assert.NoError(t, res.Err) {
+						compareIssuers(t, issuer, *res.Success)
+					}
+				},
+				CleanupFn: func(ctx context.Context) {
+					err := rollbackContextTx(ctx)
+					assert.NoError(t, err)
 				},
 			},
 		}
 
 		runFn := func(ctx context.Context, input types.Issuer) testingx.TestResult[*types.Issuer] {
-			iss, err := issSvc.CreateIssuer(context.Background(), input)
+			iss, err := issSvc.CreateIssuer(ctx, input)
 
 			result := testingx.TestResult[*types.Issuer]{
 				Success: iss,
@@ -121,7 +134,28 @@ func TestMemoryIssuerService(t *testing.T) {
 				},
 			},
 			{
-				Name:  "Success",
+				Name: "UsingTx",
+				SetupFn: func(ctx context.Context) context.Context {
+					txCtx, err := beginTxContext(ctx, db)
+					if !assert.NoError(t, err) {
+						assert.FailNow(t, "setup failed")
+					}
+
+					return txCtx
+				},
+				Input: "https://example.com/",
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
+					if assert.NoError(t, res.Err) {
+						compareIssuers(t, issuer, *res.Success)
+					}
+				},
+				CleanupFn: func(ctx context.Context) {
+					err := rollbackContextTx(ctx)
+					assert.NoError(t, err)
+				},
+			},
+			{
+				Name:  "UsingDB",
 				Input: "https://example.com/",
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
 					if assert.NoError(t, res.Err) {
@@ -132,7 +166,7 @@ func TestMemoryIssuerService(t *testing.T) {
 		}
 
 		runFn := func(ctx context.Context, input string) testingx.TestResult[*types.Issuer] {
-			iss, err := issSvc.GetIssuerByURI(context.Background(), input)
+			iss, err := issSvc.GetIssuerByURI(ctx, input)
 
 			result := testingx.TestResult[*types.Issuer]{
 				Success: iss,
@@ -157,7 +191,28 @@ func TestMemoryIssuerService(t *testing.T) {
 				},
 			},
 			{
-				Name:  "Success",
+				Name:  "UsingTx",
+				Input: issuer.ID,
+				SetupFn: func(ctx context.Context) context.Context {
+					txCtx, err := beginTxContext(ctx, db)
+					if !assert.NoError(t, err) {
+						assert.FailNow(t, "setup failed")
+					}
+
+					return txCtx
+				},
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
+					if assert.NoError(t, res.Err) {
+						compareIssuers(t, issuer, *res.Success)
+					}
+				},
+				CleanupFn: func(ctx context.Context) {
+					err := rollbackContextTx(ctx)
+					assert.NoError(t, err)
+				},
+			},
+			{
+				Name:  "UsingDB",
 				Input: issuer.ID,
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
 					if assert.NoError(t, res.Err) {
@@ -168,7 +223,7 @@ func TestMemoryIssuerService(t *testing.T) {
 		}
 
 		runFn := func(ctx context.Context, input string) testingx.TestResult[*types.Issuer] {
-			iss, err := issSvc.GetIssuerByID(context.Background(), input)
+			iss, err := issSvc.GetIssuerByID(ctx, input)
 
 			result := testingx.TestResult[*types.Issuer]{
 				Success: iss,
@@ -193,11 +248,6 @@ func TestMemoryIssuerService(t *testing.T) {
 			ClaimMappings: mappings,
 		}
 
-		_, err := issSvc.CreateIssuer(context.Background(), issuer)
-		if !assert.NoError(t, err) {
-			assert.FailNow(t, "setup failed")
-		}
-
 		newName := "Better issuer"
 		newURI := "https://issuer.info/better/"
 		newJWKSURI := "https://issuer.info/better/jwks.json"
@@ -210,10 +260,30 @@ func TestMemoryIssuerService(t *testing.T) {
 			ClaimMappings: newMapping,
 		}
 
+		setupFn := func(ctx context.Context) context.Context {
+			ctx, err := beginTxContext(ctx, db)
+			if !assert.NoError(t, err) {
+				assert.FailNow(t, "setup failed")
+			}
+
+			_, err = issSvc.CreateIssuer(ctx, issuer)
+			if !assert.NoError(t, err) {
+				assert.FailNow(t, "setup failed")
+			}
+
+			return ctx
+		}
+
+		cleanupFn := func(ctx context.Context) {
+			err := rollbackContextTx(ctx)
+			assert.NoError(t, err)
+		}
+
 		testCases := []testingx.TestCase[types.IssuerUpdate, *types.Issuer]{
 			{
-				Name:  "Full",
-				Input: fullUpdate,
+				Name:    "Full",
+				Input:   fullUpdate,
+				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
 					exp := issuer
 					exp.Name = newName
@@ -225,11 +295,12 @@ func TestMemoryIssuerService(t *testing.T) {
 						compareIssuers(t, exp, *res.Success)
 					}
 				},
+				CleanupFn: cleanupFn,
 			},
 		}
 
 		runFn := func(ctx context.Context, input types.IssuerUpdate) testingx.TestResult[*types.Issuer] {
-			iss, err := issSvc.UpdateIssuer(context.Background(), issuer.ID, input)
+			iss, err := issSvc.UpdateIssuer(ctx, issuer.ID, input)
 
 			result := testingx.TestResult[*types.Issuer]{
 				Success: iss,
@@ -254,33 +325,51 @@ func TestMemoryIssuerService(t *testing.T) {
 			ClaimMappings: mappings,
 		}
 
-		_, err := issSvc.CreateIssuer(context.Background(), issuer)
-		if !assert.NoError(t, err) {
-			assert.FailNow(t, "setup failed")
+		setupFn := func(ctx context.Context) context.Context {
+			ctx, err := beginTxContext(ctx, db)
+			if !assert.NoError(t, err) {
+				assert.FailNow(t, "setup failed")
+			}
+
+			_, err = issSvc.CreateIssuer(ctx, issuer)
+			if !assert.NoError(t, err) {
+				assert.FailNow(t, "setup failed")
+			}
+
+			return ctx
+		}
+
+		cleanupFn := func(ctx context.Context) {
+			err := rollbackContextTx(ctx)
+			assert.NoError(t, err)
 		}
 
 		testCases := []testingx.TestCase[string, any]{
 			{
-				Name:  "Success",
-				Input: issuer.ID,
+				Name:    "Success",
+				Input:   issuer.ID,
+				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[any]) {
 					if assert.NoError(t, res.Err) {
-						_, err := issSvc.GetIssuerByID(context.Background(), issuer.ID)
+						_, err := issSvc.GetIssuerByID(ctx, issuer.ID)
 						assert.ErrorIs(t, types.ErrorIssuerNotFound, err)
 					}
 				},
+				CleanupFn: cleanupFn,
 			},
 			{
-				Name:  "NotFound",
-				Input: "00000000-0000-0000-0000-000000000000",
+				Name:    "NotFound",
+				Input:   "00000000-0000-0000-0000-000000000000",
+				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[any]) {
 					assert.ErrorIs(t, types.ErrorIssuerNotFound, res.Err)
 				},
+				CleanupFn: cleanupFn,
 			},
 		}
 
 		runFn := func(ctx context.Context, input string) testingx.TestResult[any] {
-			err := issSvc.DeleteIssuer(context.Background(), input)
+			err = issSvc.DeleteIssuer(ctx, input)
 
 			result := testingx.TestResult[any]{
 				Success: nil,

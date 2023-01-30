@@ -70,6 +70,20 @@ func TestAPIHandler(t *testing.T) {
 			URI:           "https://example.com/",
 		}
 
+		setupFn := func(ctx context.Context) context.Context {
+			ctx, err := issSvc.BeginContext(ctx)
+			if !assert.NoError(t, err) {
+				assert.FailNow(t, "setup failed")
+			}
+
+			return ctx
+		}
+
+		cleanupFn := func(ctx context.Context) {
+			err := issSvc.RollbackContext(ctx)
+			assert.NoError(t, err)
+		}
+
 		testCases := []testingx.TestCase[CreateIssuerRequestObject, CreateIssuerResponseObject]{
 			{
 				Name: "Success",
@@ -77,6 +91,7 @@ func TestAPIHandler(t *testing.T) {
 					TenantID: tenantUUID,
 					Body:     createOp,
 				},
+				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[CreateIssuerResponseObject]) {
 					// Just stop if we failed
 					if !assert.NoError(t, result.Err) {
@@ -100,6 +115,7 @@ func TestAPIHandler(t *testing.T) {
 
 					assert.Equal(t, expIssuer, obsIssuer)
 				},
+				CleanupFn: cleanupFn,
 			},
 			{
 				Name: "CELError",
@@ -114,6 +130,7 @@ func TestAPIHandler(t *testing.T) {
 						URI:     "https://bad.info/",
 					},
 				},
+				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[CreateIssuerResponseObject]) {
 					// We expect a 400 here, not a 500
 					if !assert.NoError(t, result.Err) {
@@ -133,6 +150,7 @@ func TestAPIHandler(t *testing.T) {
 
 					assert.Equal(t, expResp, obsResp)
 				},
+				CleanupFn: cleanupFn,
 			},
 		}
 
@@ -245,11 +263,26 @@ func TestAPIHandler(t *testing.T) {
 			ClaimMappings: mappings,
 		}
 
-		if _, err := issSvc.CreateIssuer(context.Background(), issuer); err != nil {
-			assert.FailNow(t, "error initializing issuer")
+		newName := "Better issuer"
+
+		setupFn := func(ctx context.Context) context.Context {
+			ctx, err := issSvc.BeginContext(ctx)
+			if !assert.NoError(t, err) {
+				assert.FailNow(t, "setup failed")
+			}
+
+			_, err = issSvc.CreateIssuer(ctx, issuer)
+			if err != nil {
+				assert.FailNow(t, "setup failed")
+			}
+
+			return ctx
 		}
 
-		newName := "Better issuer"
+		cleanupFn := func(ctx context.Context) {
+			err := issSvc.RollbackContext(ctx)
+			assert.NoError(t, err)
+		}
 
 		testCases := []testingx.TestCase[UpdateIssuerRequestObject, UpdateIssuerResponseObject]{
 			{
@@ -260,6 +293,7 @@ func TestAPIHandler(t *testing.T) {
 						Name: &newName,
 					},
 				},
+				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[UpdateIssuerResponseObject]) {
 					if !assert.NoError(t, result.Err) {
 						return
@@ -282,6 +316,7 @@ func TestAPIHandler(t *testing.T) {
 
 					assert.Equal(t, expIssuer, obsIssuer)
 				},
+				CleanupFn: cleanupFn,
 			},
 			{
 				Name: "NotFound",
@@ -291,6 +326,7 @@ func TestAPIHandler(t *testing.T) {
 						Name: &newName,
 					},
 				},
+				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[UpdateIssuerResponseObject]) {
 					if !assert.NoError(t, result.Err) {
 						return
@@ -309,6 +345,7 @@ func TestAPIHandler(t *testing.T) {
 
 					assert.Equal(t, expResp, obsResp)
 				},
+				CleanupFn: cleanupFn,
 			},
 		}
 
@@ -345,8 +382,24 @@ func TestAPIHandler(t *testing.T) {
 			ClaimMappings: mappings,
 		}
 
-		if _, err := issSvc.CreateIssuer(context.Background(), issuer); err != nil {
-			assert.FailNow(t, "error initializing issuer")
+		setupFn := func(ctx context.Context) context.Context {
+			ctx, err := issSvc.BeginContext(ctx)
+			if !assert.NoError(t, err) {
+				assert.FailNow(t, "setup failed")
+			}
+
+			_, err = issSvc.CreateIssuer(ctx, issuer)
+
+			if !assert.NoError(t, err) {
+				assert.FailNow(t, "error initializing issuer")
+			}
+
+			return ctx
+		}
+
+		cleanupFn := func(ctx context.Context) {
+			err := issSvc.RollbackContext(ctx)
+			assert.NoError(t, err)
 		}
 
 		testCases := []testingx.TestCase[DeleteIssuerRequestObject, DeleteIssuerResponseObject]{
@@ -355,6 +408,7 @@ func TestAPIHandler(t *testing.T) {
 				Input: DeleteIssuerRequestObject{
 					Id: issuerUUID,
 				},
+				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[DeleteIssuerResponseObject]) {
 					if !assert.NoError(t, result.Err) {
 						return
@@ -372,13 +426,18 @@ func TestAPIHandler(t *testing.T) {
 					}
 
 					assert.Equal(t, expResp, obsResp)
+
+					_, err := issSvc.GetIssuerByID(ctx, issuerID)
+					assert.ErrorIs(t, err, types.ErrorIssuerNotFound)
 				},
+				CleanupFn: cleanupFn,
 			},
 			{
 				Name: "NotFound",
 				Input: DeleteIssuerRequestObject{
 					Id: uuid.MustParse("00000000-0000-0000-0000-000000000000"),
 				},
+				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[DeleteIssuerResponseObject]) {
 					if !assert.NoError(t, result.Err) {
 						return
@@ -397,6 +456,7 @@ func TestAPIHandler(t *testing.T) {
 
 					assert.Equal(t, expResp, obsResp)
 				},
+				CleanupFn: cleanupFn,
 			},
 		}
 

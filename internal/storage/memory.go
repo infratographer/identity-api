@@ -90,10 +90,23 @@ func issuerUpdateToColBindings(update types.IssuerUpdate) ([]colBinding, error) 
 type memoryEngine struct {
 	*memoryIssuerService
 	crdb testserver.TestServer
+	db   *sql.DB
 }
 
 func (eng *memoryEngine) Shutdown() {
 	eng.crdb.Stop()
+}
+
+func (eng *memoryEngine) BeginContext(ctx context.Context) (context.Context, error) {
+	return beginTxContext(ctx, eng.db)
+}
+
+func (eng *memoryEngine) CommitContext(ctx context.Context) error {
+	return commitContextTx(ctx)
+}
+
+func (eng *memoryEngine) RollbackContext(ctx context.Context) error {
+	return rollbackContextTx(ctx)
 }
 
 func buildIssuerFromSeed(seed SeedIssuer) (types.Issuer, error) {
@@ -128,16 +141,30 @@ func newMemoryIssuerService(config Config) (*memoryIssuerService, error) {
 		return nil, err
 	}
 
+	ctx, err := beginTxContext(context.Background(), config.db)
+	if err != nil {
+		return nil, err
+	}
+
 	for _, seed := range config.SeedData.Issuers {
 		iss, err := buildIssuerFromSeed(seed)
 		if err != nil {
 			return nil, err
 		}
 
-		err = svc.insertIssuer(iss)
+		err = svc.insertIssuer(ctx, iss)
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	err = commitContextTx(ctx)
+	if err != nil {
+		if err := rollbackContextTx(ctx); err != nil {
+			return nil, err
+		}
+
+		return nil, err
 	}
 
 	return svc, nil
@@ -145,7 +172,7 @@ func newMemoryIssuerService(config Config) (*memoryIssuerService, error) {
 
 // CreateIssuer creates an issuer.
 func (s *memoryIssuerService) CreateIssuer(ctx context.Context, iss types.Issuer) (*types.Issuer, error) {
-	err := s.insertIssuer(iss)
+	err := s.insertIssuer(ctx, iss)
 	if err != nil {
 		return nil, err
 	}
@@ -153,24 +180,55 @@ func (s *memoryIssuerService) CreateIssuer(ctx context.Context, iss types.Issuer
 	return &iss, nil
 }
 
-// GetIssuerByID gets an issuer by ID.
+// GetIssuerByID gets an issuer by ID. This function will use a transaction in the context if one
+// exists.
 func (s *memoryIssuerService) GetIssuerByID(ctx context.Context, id string) (*types.Issuer, error) {
 	query := fmt.Sprintf("SELECT %s FROM issuers WHERE id = $1", issuerColumnsStr)
-	row := s.db.QueryRow(query, id)
+
+	var row *sql.Row
+
+	tx, err := getContextTx(ctx)
+
+	switch err {
+	case nil:
+		row = tx.QueryRowContext(ctx, query, id)
+	case ErrorMissingContextTx:
+		row = s.db.QueryRowContext(ctx, query, id)
+	default:
+		return nil, err
+	}
 
 	return s.scanIssuer(row)
 }
 
-// GetByURI looks up the given issuer by URI, returning the issuer if one exists.
+// GetByURI looks up the given issuer by URI, returning the issuer if one exists. This function will
+// use a transaction in the context if one exists.
 func (s *memoryIssuerService) GetIssuerByURI(ctx context.Context, uri string) (*types.Issuer, error) {
 	query := fmt.Sprintf("SELECT %s FROM issuers WHERE uri = $1", issuerColumnsStr)
-	row := s.db.QueryRow(query, uri)
+
+	var row *sql.Row
+
+	tx, err := getContextTx(ctx)
+
+	switch err {
+	case nil:
+		row = tx.QueryRowContext(ctx, query, uri)
+	case ErrorMissingContextTx:
+		row = s.db.QueryRowContext(ctx, query, uri)
+	default:
+		return nil, err
+	}
 
 	return s.scanIssuer(row)
 }
 
 // UpdateIssuer updates an issuer with the given values.
 func (s *memoryIssuerService) UpdateIssuer(ctx context.Context, id string, update types.IssuerUpdate) (*types.Issuer, error) {
+	tx, err := getContextTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	bindings, err := issuerUpdateToColBindings(update)
 	if err != nil {
 		return nil, err
@@ -182,14 +240,19 @@ func (s *memoryIssuerService) UpdateIssuer(ctx context.Context, id string, updat
 
 	args = append(args, id)
 
-	row := s.db.QueryRow(query, args...)
+	row := tx.QueryRowContext(ctx, query, args...)
 
 	return s.scanIssuer(row)
 }
 
 // DeleteIssuer deletes an issuer with the given ID.
 func (s *memoryIssuerService) DeleteIssuer(ctx context.Context, id string) error {
-	result, err := s.db.Exec(`DELETE FROM issuers WHERE id = $1;`, id)
+	tx, err := getContextTx(ctx)
+	if err != nil {
+		return err
+	}
+
+	result, err := tx.ExecContext(ctx, `DELETE FROM issuers WHERE id = $1;`, id)
 
 	if err != nil {
 		return err
@@ -252,7 +315,12 @@ func (s *memoryIssuerService) createTables() error {
 	return err
 }
 
-func (s *memoryIssuerService) insertIssuer(iss types.Issuer) error {
+func (s *memoryIssuerService) insertIssuer(ctx context.Context, iss types.Issuer) error {
+	tx, err := getContextTx(ctx)
+	if err != nil {
+		return err
+	}
+
 	q := `
         INSERT INTO issuers (
             %s
@@ -267,7 +335,8 @@ func (s *memoryIssuerService) insertIssuer(iss types.Issuer) error {
 		return err
 	}
 
-	_, err = s.db.Exec(
+	_, err = tx.ExecContext(
+		ctx,
 		q,
 		iss.TenantID,
 		iss.ID,
