@@ -186,15 +186,6 @@ func (response DeleteIssuer200JSONResponse) VisitDeleteIssuerResponse(w http.Res
 	return json.NewEncoder(w).Encode(response)
 }
 
-type DeleteIssuer404JSONResponse ErrorResponse
-
-func (response DeleteIssuer404JSONResponse) VisitDeleteIssuerResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(404)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
 type GetIssuerByIDRequestObject struct {
 	Id openapi_types.UUID `json:"id"`
 }
@@ -208,15 +199,6 @@ type GetIssuerByID200JSONResponse Issuer
 func (response GetIssuerByID200JSONResponse) VisitGetIssuerByIDResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type GetIssuerByID404JSONResponse ErrorResponse
-
-func (response GetIssuerByID404JSONResponse) VisitGetIssuerByIDResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(404)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -239,24 +221,6 @@ func (response UpdateIssuer200JSONResponse) VisitUpdateIssuerResponse(w http.Res
 	return json.NewEncoder(w).Encode(response)
 }
 
-type UpdateIssuer400JSONResponse ErrorResponse
-
-func (response UpdateIssuer400JSONResponse) VisitUpdateIssuerResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(400)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type UpdateIssuer404JSONResponse ErrorResponse
-
-func (response UpdateIssuer404JSONResponse) VisitUpdateIssuerResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(404)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
 type CreateIssuerRequestObject struct {
 	TenantID openapi_types.UUID `json:"tenantID"`
 	Body     *CreateIssuerJSONRequestBody
@@ -271,15 +235,6 @@ type CreateIssuer200JSONResponse Issuer
 func (response CreateIssuer200JSONResponse) VisitCreateIssuerResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
-}
-
-type CreateIssuer400JSONResponse ErrorResponse
-
-func (response CreateIssuer400JSONResponse) VisitCreateIssuerResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(400)
 
 	return json.NewEncoder(w).Encode(response)
 }

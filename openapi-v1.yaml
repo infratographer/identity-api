@@ -32,12 +32,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Issuer'
-        '400':
-          description: Error response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
 
   /api/v1/issuers/{id}:
     get:
@@ -60,12 +54,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Issuer'
-        '404':
-          description: Error response. Issuer was not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
 
     patch:
       tags:
@@ -93,18 +81,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Issuer'
-        '400':
-          description: Error response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Error response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
 
     delete:
       tags:
@@ -126,25 +102,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeleteResponse'
-        '404':
-          description: Error response. Issuer was not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
 
 components:
   schemas:
-    ErrorResponse:
-      required:
-        - errors
-      properties:
-        errors:
-          type: array
-          description: A list of errors.
-          items:
-            type: string
-
     DeleteResponse:
       required:
         - success
