@@ -72,7 +72,7 @@ func TestMemoryIssuerService(t *testing.T) {
 	issSvc, err := newMemoryIssuerService(config)
 	assert.Nil(t, err)
 
-	t.Run("Create", func(t *testing.T) {
+	t.Run("CreateIssuer", func(t *testing.T) {
 		t.Parallel()
 
 		issuer := types.Issuer{
@@ -122,7 +122,7 @@ func TestMemoryIssuerService(t *testing.T) {
 		testingx.RunTests(context.Background(), t, testCases, runFn)
 	})
 
-	t.Run("GetByURI", func(t *testing.T) {
+	t.Run("GetIssuerByURI", func(t *testing.T) {
 		t.Parallel()
 
 		testCases := []testingx.TestCase[string, *types.Issuer]{
@@ -179,7 +179,7 @@ func TestMemoryIssuerService(t *testing.T) {
 		testingx.RunTests(context.Background(), t, testCases, runFn)
 	})
 
-	t.Run("GetByID", func(t *testing.T) {
+	t.Run("GetIssuerByID", func(t *testing.T) {
 		t.Parallel()
 
 		testCases := []testingx.TestCase[string, *types.Issuer]{
@@ -236,7 +236,7 @@ func TestMemoryIssuerService(t *testing.T) {
 		testingx.RunTests(context.Background(), t, testCases, runFn)
 	})
 
-	t.Run("Update", func(t *testing.T) {
+	t.Run("UpdateIssuer", func(t *testing.T) {
 		t.Parallel()
 
 		issuer := types.Issuer{
@@ -313,7 +313,7 @@ func TestMemoryIssuerService(t *testing.T) {
 		testingx.RunTests(context.Background(), t, testCases, runFn)
 	})
 
-	t.Run("Delete", func(t *testing.T) {
+	t.Run("DeleteIssuer", func(t *testing.T) {
 		t.Parallel()
 
 		issuer := types.Issuer{
