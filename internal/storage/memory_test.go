@@ -31,8 +31,12 @@ func compareIssuers(t *testing.T, exp types.Issuer, obs types.Issuer) {
 }
 
 func TestMemoryIssuerService(t *testing.T) {
-	db, _ := testserver.NewDBForTest(t)
+	db, shutdown := testserver.NewDBForTest(t)
 	t.Parallel()
+
+	t.Cleanup(func() {
+		shutdown()
+	})
 
 	mappingStrs := map[string]string{
 		"foo": "123",
