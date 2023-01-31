@@ -32,12 +32,17 @@ func RunTests[T, U any](ctx context.Context, t *testing.T, cases []TestCase[T, U
 		t.Run(testCase.Name, func(t *testing.T) {
 			t.Parallel()
 
+			// Ensure we're closed over ctx
+			ctx := ctx
+
 			if testCase.SetupFn != nil {
 				ctx = testCase.SetupFn(ctx)
 			}
 
 			if testCase.CleanupFn != nil {
-				defer testCase.CleanupFn(ctx)
+				t.Cleanup(func() {
+					testCase.CleanupFn(ctx)
+				})
 			}
 
 			result := testFn(ctx, testCase.Input)
