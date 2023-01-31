@@ -304,7 +304,7 @@ func (s *memoryIssuerService) createTables() error {
         CREATE TABLE IF NOT EXISTS issuers (
             id        uuid PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
             tenant_id uuid NOT NULL,
-            uri       STRING NOT NULL,
+            uri       STRING NOT NULL UNIQUE,
             name      STRING NOT NULL,
             jwksuri   STRING NOT NULL,
             mappings  STRING

@@ -66,9 +66,9 @@ func TestAPIHandler(t *testing.T) {
 
 		createOp := &v1.CreateIssuer{
 			ClaimMappings: &mappingStrs,
-			JWKSURI:       "https://example.com/jwks.json",
+			JWKSURI:       "https://issuer.info/jwks.json",
 			Name:          "Good issuer",
-			URI:           "https://example.com/",
+			URI:           "https://issuer.info/",
 		}
 
 		setupFn := func(ctx context.Context) context.Context {
@@ -233,8 +233,8 @@ func TestAPIHandler(t *testing.T) {
 			TenantID:      tenantID,
 			ID:            issuerID,
 			Name:          "Example",
-			URI:           "https://example.com/",
-			JWKSURI:       "https://example.com/.well-known/jwks.json",
+			URI:           "https://issuer.info/",
+			JWKSURI:       "https://issuer.info/.well-known/jwks.json",
 			ClaimMappings: mappings,
 		}
 
@@ -337,8 +337,8 @@ func TestAPIHandler(t *testing.T) {
 			TenantID:      tenantID,
 			ID:            issuerID,
 			Name:          "Example",
-			URI:           "https://example.com/",
-			JWKSURI:       "https://example.com/.well-known/jwks.json",
+			URI:           "https://issuer.info/",
+			JWKSURI:       "https://issuer.info/.well-known/jwks.json",
 			ClaimMappings: mappings,
 		}
 
