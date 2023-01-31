@@ -230,9 +230,7 @@ func (h *apiHandler) DeleteIssuer(ctx context.Context, req DeleteIssuerRequestOb
 
 	err := h.engine.DeleteIssuer(ctx, id)
 	switch err {
-	case nil:
-	case types.ErrorIssuerNotFound:
-		return nil, errorNotFound
+	case nil, types.ErrorIssuerNotFound:
 	default:
 		return nil, err
 	}

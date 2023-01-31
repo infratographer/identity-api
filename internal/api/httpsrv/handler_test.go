@@ -399,7 +399,22 @@ func TestAPIHandler(t *testing.T) {
 				},
 				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[DeleteIssuerResponseObject]) {
-					assert.ErrorIs(t, errorNotFound, result.Err)
+					if !assert.NoError(t, result.Err) {
+						return
+					}
+
+					resp, ok := result.Success.(DeleteIssuer200JSONResponse)
+					if !ok {
+						assert.FailNow(t, "unexpected result type for delete issuer response")
+					}
+
+					obsResp := v1.DeleteResponse(resp)
+
+					expResp := v1.DeleteResponse{
+						Success: true,
+					}
+
+					assert.Equal(t, expResp, obsResp)
 				},
 				CleanupFn: cleanupFn,
 			},
