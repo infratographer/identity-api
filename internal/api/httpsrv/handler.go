@@ -7,16 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"go.infratographer.com/identity-manager-sts/internal/storage"
 	"go.infratographer.com/identity-manager-sts/internal/types"
 	v1 "go.infratographer.com/identity-manager-sts/pkg/api/v1"
-)
-
-var (
-	responseNotFound = v1.ErrorResponse{
-		Errors: []string{
-			"not found",
-		},
-	}
 )
 
 func validationErrorHandler(ctx *gin.Context, err error, status int) {
@@ -31,13 +24,24 @@ func validationErrorHandler(ctx *gin.Context, err error, status int) {
 	ctx.JSON(status, resp)
 }
 
-func errorHandlerMiddleware(ctx *gin.Context) {
-	ctx.Next()
+func buildSingleErrorResponse(ctx *gin.Context) {
+	err := ctx.Errors[0]
 
-	if len(ctx.Errors) == 0 {
-		return
+	switch e := err.Err.(type) {
+	case errorWithStatus:
+		resp := v1.ErrorResponse{
+			Errors: []string{
+				e.message,
+			},
+		}
+
+		ctx.JSON(e.status, resp)
+	default:
+		buildMultiErrorResponse(ctx)
 	}
+}
 
+func buildMultiErrorResponse(ctx *gin.Context) {
 	messages := make([]string, len(ctx.Errors))
 	for i, err := range ctx.Errors {
 		messages[i] = err.Error()
@@ -50,9 +54,67 @@ func errorHandlerMiddleware(ctx *gin.Context) {
 	ctx.JSON(http.StatusInternalServerError, resp)
 }
 
+func errorHandlerMiddleware(ctx *gin.Context) {
+	ctx.Next()
+
+	switch len(ctx.Errors) {
+	case 0:
+		return
+	case 1:
+		buildSingleErrorResponse(ctx)
+	default:
+		buildMultiErrorResponse(ctx)
+	}
+}
+
+func storageMiddleware(engine storage.Engine) gin.HandlerFunc {
+	return func(gCtx *gin.Context) {
+		reqCtx := gCtx.Request.Context()
+
+		newCtx, err := engine.BeginContext(reqCtx)
+		if err != nil {
+			resp := v1.ErrorResponse{
+				Errors: []string{
+					err.Error(),
+				},
+			}
+
+			gCtx.AbortWithStatusJSON(http.StatusBadGateway, resp)
+
+			return
+		}
+
+		gCtx.Request = gCtx.Request.WithContext(newCtx)
+
+		gCtx.Next()
+
+		if len(gCtx.Errors) == 0 {
+			err = engine.CommitContext(newCtx)
+			if err != nil {
+				err = errorWithStatus{
+					status:  http.StatusBadGateway,
+					message: err.Error(),
+				}
+				gCtx.Error(err) //nolint:errcheck
+			}
+
+			return
+		}
+
+		err = engine.RollbackContext(newCtx)
+		if err != nil {
+			err = errorWithStatus{
+				status:  http.StatusBadGateway,
+				message: err.Error(),
+			}
+			gCtx.Error(err) //nolint:errcheck
+		}
+	}
+}
+
 // apiHandler represents an API handler.
 type apiHandler struct {
-	engine types.IssuerService
+	engine storage.Engine
 }
 
 func (h *apiHandler) CreateIssuer(ctx context.Context, req CreateIssuerRequestObject) (CreateIssuerResponseObject, error) {
@@ -67,11 +129,12 @@ func (h *apiHandler) CreateIssuer(ctx context.Context, req CreateIssuerRequestOb
 	if createOp.ClaimMappings != nil {
 		claimsMapping, err = types.NewClaimsMapping(*createOp.ClaimMappings)
 		if err != nil {
-			return CreateIssuer400JSONResponse{
-				Errors: []string{
-					"error parsing CEL expression",
-				},
-			}, nil
+			err = errorWithStatus{
+				status:  http.StatusBadRequest,
+				message: "error parsing CEL expression",
+			}
+
+			return nil, err
 		}
 	}
 
@@ -104,7 +167,7 @@ func (h *apiHandler) GetIssuerByID(ctx context.Context, req GetIssuerByIDRequest
 	switch err {
 	case nil:
 	case types.ErrorIssuerNotFound:
-		return GetIssuerByID404JSONResponse(responseNotFound), nil
+		return nil, errorNotFound
 	default:
 		return nil, err
 	}
@@ -129,11 +192,12 @@ func (h *apiHandler) UpdateIssuer(ctx context.Context, req UpdateIssuerRequestOb
 	if updateOp.ClaimMappings != nil {
 		claimsMapping, err = types.NewClaimsMapping(*updateOp.ClaimMappings)
 		if err != nil {
-			return UpdateIssuer400JSONResponse{
-				Errors: []string{
-					"error parsing CEL expression",
-				},
-			}, nil
+			err = errorWithStatus{
+				status:  http.StatusBadRequest,
+				message: "error parsing CEL expression",
+			}
+
+			return nil, err
 		}
 	}
 
@@ -148,7 +212,7 @@ func (h *apiHandler) UpdateIssuer(ctx context.Context, req UpdateIssuerRequestOb
 	switch err {
 	case nil:
 	case types.ErrorIssuerNotFound:
-		return UpdateIssuer404JSONResponse(responseNotFound), nil
+		return nil, errorNotFound
 	default:
 		return nil, err
 	}
@@ -168,7 +232,7 @@ func (h *apiHandler) DeleteIssuer(ctx context.Context, req DeleteIssuerRequestOb
 	switch err {
 	case nil:
 	case types.ErrorIssuerNotFound:
-		return DeleteIssuer404JSONResponse(responseNotFound), nil
+		return nil, errorNotFound
 	default:
 		return nil, err
 	}
@@ -187,7 +251,7 @@ type APIHandler struct {
 }
 
 // NewAPIHandler creates an API handler with the given storage engine.
-func NewAPIHandler(engine types.IssuerService) (*APIHandler, error) {
+func NewAPIHandler(engine storage.Engine) (*APIHandler, error) {
 	validationMiddleware, err := oapiValidationMiddleware()
 	if err != nil {
 		return nil, err
@@ -210,6 +274,7 @@ func (h *APIHandler) Routes(rg *gin.RouterGroup) {
 	rg.Use(
 		h.validationMiddleware,
 		errorHandlerMiddleware,
+		storageMiddleware(h.handler.engine),
 	)
 
 	options := GinServerOptions{

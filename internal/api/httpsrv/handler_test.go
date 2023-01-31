@@ -2,6 +2,7 @@ package httpsrv
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/google/uuid"
@@ -132,23 +133,12 @@ func TestAPIHandler(t *testing.T) {
 				},
 				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[CreateIssuerResponseObject]) {
-					// We expect a 400 here, not a 500
-					if !assert.NoError(t, result.Err) {
-						return
+					expErr := errorWithStatus{
+						status:  http.StatusBadRequest,
+						message: "error parsing CEL expression",
 					}
 
-					obsResp, ok := result.Success.(CreateIssuer400JSONResponse)
-					if !ok {
-						assert.FailNow(t, "unexpected result type for create issuer response")
-					}
-
-					expResp := CreateIssuer400JSONResponse{
-						Errors: []string{
-							"error parsing CEL expression",
-						},
-					}
-
-					assert.Equal(t, expResp, obsResp)
+					assert.ErrorIs(t, expErr, result.Err)
 				},
 				CleanupFn: cleanupFn,
 			},
@@ -210,22 +200,7 @@ func TestAPIHandler(t *testing.T) {
 					Id: uuid.MustParse("00000000-0000-0000-0000-000000000000"),
 				},
 				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[GetIssuerByIDResponseObject]) {
-					if !assert.NoError(t, result.Err) {
-						return
-					}
-
-					obsResp, ok := result.Success.(GetIssuerByID404JSONResponse)
-					if !ok {
-						assert.FailNow(t, "unexpected result type for get issuer response")
-					}
-
-					expResp := GetIssuerByID404JSONResponse{
-						Errors: []string{
-							"not found",
-						},
-					}
-
-					assert.Equal(t, expResp, obsResp)
+					assert.ErrorIs(t, errorNotFound, result.Err)
 				},
 			},
 		}
@@ -328,22 +303,7 @@ func TestAPIHandler(t *testing.T) {
 				},
 				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[UpdateIssuerResponseObject]) {
-					if !assert.NoError(t, result.Err) {
-						return
-					}
-
-					obsResp, ok := result.Success.(UpdateIssuer404JSONResponse)
-					if !ok {
-						assert.FailNow(t, "unexpected result type for update issuer response")
-					}
-
-					expResp := UpdateIssuer404JSONResponse{
-						Errors: []string{
-							"not found",
-						},
-					}
-
-					assert.Equal(t, expResp, obsResp)
+					assert.ErrorIs(t, errorNotFound, result.Err)
 				},
 				CleanupFn: cleanupFn,
 			},
@@ -439,22 +399,7 @@ func TestAPIHandler(t *testing.T) {
 				},
 				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[DeleteIssuerResponseObject]) {
-					if !assert.NoError(t, result.Err) {
-						return
-					}
-
-					obsResp, ok := result.Success.(DeleteIssuer404JSONResponse)
-					if !ok {
-						assert.FailNow(t, "unexpected result type for delete issuer response")
-					}
-
-					expResp := DeleteIssuer404JSONResponse{
-						Errors: []string{
-							"not found",
-						},
-					}
-
-					assert.Equal(t, expResp, obsResp)
+					assert.ErrorIs(t, errorNotFound, result.Err)
 				},
 				CleanupFn: cleanupFn,
 			},

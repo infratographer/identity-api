@@ -22,14 +22,14 @@ func beginTxContext(ctx context.Context, db *sql.DB) (context.Context, error) {
 }
 
 func getContextTx(ctx context.Context) (*sql.Tx, error) {
-	maybeTx := ctx.Value(txKey)
-
-	tx, ok := maybeTx.(*sql.Tx)
-	if !ok {
+	switch v := ctx.Value(txKey).(type) {
+	case *sql.Tx:
+		return v, nil
+	case nil:
 		return nil, ErrorMissingContextTx
+	default:
+		panic("unknown type for context transaction")
 	}
-
-	return tx, nil
 }
 
 func commitContextTx(ctx context.Context) error {

@@ -2,14 +2,16 @@ package cmd
 
 import (
 	"context"
+	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/ory/fosite/compose"
 	fositestorage "github.com/ory/fosite/storage"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.infratographer.com/x/ginx"
 	"go.infratographer.com/x/otelx"
-	"go.infratographer.com/x/versionx"
+	"go.uber.org/zap/zapcore"
 
 	"go.infratographer.com/identity-manager-sts/internal/api/httpsrv"
 	"go.infratographer.com/identity-manager-sts/internal/config"
@@ -82,10 +84,21 @@ func serve(ctx context.Context) {
 
 	router := routes.NewRouter(logger, oauth2Config, provider)
 
-	server := ginx.NewServer(logger.Desugar(), config.Config.Server, versionx.BuildDetails())
-	server.Debug = true
-	server = server.AddHandler(router)
-	server = server.AddHandler(apiHandler)
+	emptyLogFn := func(c *gin.Context) []zapcore.Field {
+		return []zapcore.Field{}
+	}
 
-	server.Run()
+	// ginx doesn't allow configuration of ContextWithFallback but we need it here.
+	engine := ginx.DefaultEngine(logger.Desugar(), emptyLogFn)
+	engine.ContextWithFallback = true
+
+	router.Routes(engine.Group("/"))
+	apiHandler.Routes(engine.Group("/"))
+
+	srv := &http.Server{
+		Addr:    config.Config.Server.Listen,
+		Handler: engine,
+	}
+
+	logger.Fatal(srv.ListenAndServe())
 }
