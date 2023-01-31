@@ -14,7 +14,7 @@ COPY . ./
 # -mod=readonly ensures immutable go.mod and go.sum in container builds.
 RUN CGO_ENABLED=0 GOOS=linux go build -mod=readonly -v -o identity-manager-sts
 
-FROM gcr.io/distroless/static:nonroot AS runner
+FROM gcr.io/distroless/base:nonroot AS runner
 
 # `nonroot` coming from distroless
 USER 65532:65532
