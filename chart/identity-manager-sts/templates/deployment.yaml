@@ -1,0 +1,46 @@
+---
+apiVersion: {{ include "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  annotations:
+  name: {{ template "common.names.fullname" . }}
+spec:
+  replicas: {{ .Values.identityManagerSTS.replicaCount }}
+  selector:
+    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+      {{- include "common.labels.standard" . | nindent 8 }}
+      {{- if .Values.identityManagerSTS.extraLabels }}
+      {{- toYaml .Values.identityManagerSTS.extraLabels | nindent 8 }}
+      {{- end }}
+    spec:
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: {{ include "common.names.name" . }}
+          env:
+            - name: IMSTS_OAUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.identityManagerSTS.config.oauth.secret.name }}"
+                  key: "{{ .Values.identityManagerSTS.config.oauth.secret.key }}"
+          image: "{{ .Values.identityManagerSTS.image.repository }}:{{ .Values.identityManagerSTS.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: signing-keys
+              mountPath: /keys/
+              readOnly: true
+          ports:
+            - name: web
+              containerPort: 8080
+          {{- if .Values.identityManagerSTS.deployment.resources }}
+          resources:
+          {{- toYaml .Values.identityManagerSTS.deployment.resources | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: signing-keys
+          secret:
+            secretName: "{{ .Values.identityManagerSTS.config.oauth.privateKeys.secretName }}"
+            defaultMode: 0400

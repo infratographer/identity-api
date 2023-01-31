@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "common.names.name" . }}-app-config
+data:
+  {{- with .Values.identityManagerSTS.config }}
+  sts.yaml: |
+    server:
+      listen: {{ .server.listen }}
+    otel:
+      enabled: {{ .otel.enabled }}
+      provider: {{ .otel.provider }}
+      stdout:
+        prettyPrint: {{ .otel.stdout.prettyPrint }}
+    oauth:
+      issuer: {{ .oauth.issuer | quote}}
+      accessTokenLifespan: {{ .oauth.accessTokenLifespan }}
+      privateKeys:
+        {{- if .oauth.privateKeys.keys }}
+        {{- range $key, $value := .oauth.privateKeys.keys }}
+        - keyID: {{ $key }}
+          algorithm: {{ $value.algorithm }}
+          path: /keys/keyid-{{ $key  }}.pem
+        {{- end }}
+        {{- end }}
+    storage:
+      type: {{ .storage.type | default "memory" }}
+      seedData:
+        issuers:
+          {{- range $k, $v := .storage.seedData.issuers }}
+          {{- template "im-sts.seedIssuer" $v }}
+          {{- end }}
+  {{- end }}

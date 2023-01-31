@@ -1,0 +1,61 @@
+---
+identityManagerSTS:
+  replicaCount: 3
+  image:
+    repository: ""
+    pullPolicy: IfNotPresent
+    tag: ""
+
+  extraLabels: {}
+
+  deployment:
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1Gi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+
+  config:
+    server:
+      listen: "0.0.0.0:8080"
+
+    otel:
+      enabled: false
+      provider: stdout
+      stdout:
+        prettyPrint: true
+
+    storage:
+      type: memory
+      # Configure the issuers to trust upon initial deployment
+      seedData:
+        issuers: []
+
+    oauth:
+      issuer: ""
+      accessTokenLifespan: 600
+      secret:
+        name: ""
+        key: ""
+
+      # Private keys used to mint JWTs
+      # secret should contain PEM private keys named `keyid-${name}.pem`
+      privateKeys:
+        secretName: ""
+        keys:
+          default:
+            algorithm: RS256
+
+
+
+ingress:
+  enabled: false
+  # tls:
+  #   - hosts:
+  #       - myidentity-sts.example.com
+  #     secretName: myidentity-sts-tls
+
+service:
+  port: 8080
