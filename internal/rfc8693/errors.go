@@ -16,27 +16,6 @@ var (
 	}
 )
 
-// ErrorCELEval represents an error during CEL evaluation.
-type ErrorCELEval struct {
-	inner error
-}
-
-func (ErrorCELEval) Error() string {
-	return "error evaluating CEL expression"
-}
-
-// Is returns true if target is a *ErrorCELEval.
-func (e *ErrorCELEval) Is(target error) bool {
-	_, ok := target.(*ErrorCELEval)
-
-	return ok
-}
-
-// Unwrap returns the inner error from CEL evaluation.
-func (e *ErrorCELEval) Unwrap() error {
-	return e.inner
-}
-
 // ErrorMissingClaim represents an error where a required claim is missing.
 type ErrorMissingClaim struct {
 	claim string

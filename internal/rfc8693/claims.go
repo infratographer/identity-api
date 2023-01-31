@@ -7,17 +7,17 @@ import (
 
 	"github.com/ory/fosite/token/jwt"
 
-	v1 "go.infratographer.com/identity-manager-sts/pkg/api/v1"
-	"go.infratographer.com/identity-manager-sts/pkg/celutils"
+	"go.infratographer.com/identity-manager-sts/internal/celutils"
+	"go.infratographer.com/identity-manager-sts/internal/types"
 )
 
 // ClaimMappingStrategy represents a mapping from external identity claims to identity-manager-sts claims.
 type ClaimMappingStrategy struct {
-	issuerSvc v1.IssuerService
+	issuerSvc types.IssuerService
 }
 
 // NewClaimMappingStrategy creates a ClaimMappingStrategy given an issuer service.
-func NewClaimMappingStrategy(issuerSvc v1.IssuerService) ClaimMappingStrategy {
+func NewClaimMappingStrategy(issuerSvc types.IssuerService) ClaimMappingStrategy {
 	out := ClaimMappingStrategy{
 		issuerSvc: issuerSvc,
 	}
@@ -37,7 +37,7 @@ func (m ClaimMappingStrategy) MapClaims(ctx context.Context, claims *jwt.JWTClai
 
 	iss := claims.Issuer
 
-	issuer, err := m.issuerSvc.GetByURI(ctx, iss)
+	issuer, err := m.issuerSvc.GetIssuerByURI(ctx, iss)
 	if err != nil {
 		return nil, err
 	}
@@ -54,16 +54,9 @@ func (m ClaimMappingStrategy) MapClaims(ctx context.Context, claims *jwt.JWTClai
 	}
 
 	for k, v := range issuer.ClaimMappings {
-		prog := v.Program
-
-		out, _, err := prog.Eval(inputEnv)
-
+		out, err := celutils.Eval(v, inputEnv)
 		if err != nil {
-			wrapped := ErrorCELEval{
-				inner: err,
-			}
-
-			return nil, &wrapped
+			return nil, err
 		}
 
 		outputMap[k] = out.Value()

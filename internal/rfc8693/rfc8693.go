@@ -11,7 +11,7 @@ import (
 	"github.com/ory/fosite/token/jwt"
 	"github.com/ory/x/errorsx"
 
-	"go.infratographer.com/identity-manager-sts/pkg/fositex"
+	"go.infratographer.com/identity-manager-sts/internal/fositex"
 )
 
 const (

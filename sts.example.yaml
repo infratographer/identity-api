@@ -17,7 +17,9 @@ storage:
   type: memory
   seedData:
     issuers:
-      - name: "Example"
+      - tenantID: 67787b34-866e-4b75-a395-5aba096b2c1b
+        id: 54f1973b-f7df-4b80-86ab-2238a934d7bb
+        name: "Example"
         uri: "https://auth.example.com/"
         jwksURI: "https://auth.example.com/.well-known/jwks.json"
         claimMappings:

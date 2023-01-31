@@ -1,0 +1,187 @@
+openapi: 3.0.3
+info:
+  title: Security Token Service Management API
+  description: Security Token Service (STS) Management API is an API for managing STS configurations.
+  version: 0.0.1
+
+paths:
+  /api/v1/tenants/{tenantID}/issuers:
+    post:
+      tags:
+        - Issuers
+      summary: Creates an issuer.
+      operationId: createIssuer
+      parameters:
+        - in: path
+          name: tenantID
+          required: true
+          description: ID of tenant to create issuer in
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIssuer'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issuer'
+
+  /api/v1/issuers/{id}:
+    get:
+      tags:
+        - Issuers
+      summary: Gets an issuer by ID.
+      operationId: getIssuerByID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: ID of issuer to get
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issuer'
+
+    patch:
+      tags:
+        - Issuers
+      summary: Updates an issuer.
+      operationId: updateIssuer
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: ID of issuer to update
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IssuerUpdate'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issuer'
+
+    delete:
+      tags:
+        - Issuers
+      summary: Deletes an issuer with the given ID.
+      operationId: deleteIssuer
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: ID of issuer to delete
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+
+components:
+  schemas:
+    DeleteResponse:
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          description: Always true.
+
+    CreateIssuer:
+      required:
+        - name
+        - uri
+        - jwks_uri
+      properties:
+        name:
+          type: string
+          description: A human-readable name for the issuer
+        uri:
+          x-go-name: URI
+          type: string
+          description: URI for the issuer. Must match the "iss" claim value in incoming JWTs
+        jwks_uri:
+          x-go-name: JWKSURI
+          type: string
+          description: JWKS URI
+        claim_mappings:
+          type: object
+          description: CEL expressions mapping token claims to other claims
+          additionalProperties:
+            type: string
+
+    IssuerUpdate:
+      properties:
+        name:
+          type: string
+          description: A human-readable name for the issuer
+        uri:
+          x-go-name: URI
+          type: string
+          description: URI for the issuer. Must match the "iss" claim value in incoming JWTs
+        jwks_uri:
+          x-go-name: JWKSURI
+          type: string
+          description: JWKS URI
+        claim_mappings:
+          type: object
+          description: CEL expressions mapping token claims to other claims
+          additionalProperties:
+            type: string
+
+    Issuer:
+      required:
+        - id
+        - name
+        - uri
+        - jwks_uri
+        - claim_mappings
+      properties:
+        id:
+          x-go-name: ID
+          type: string
+          format: uuid
+          description: ID of the issuer
+        name:
+          type: string
+          description: A human-readable name for the issuer
+        uri:
+          x-go-name: URI
+          type: string
+          description: URI for the issuer. Must match the "iss" claim value in incoming JWTs
+        jwks_uri:
+          x-go-name: JWKSURI
+          type: string
+          description: JWKS URI
+        claim_mappings:
+          type: object
+          description: CEL expressions mapping token claims to other claims
+          additionalProperties:
+            type: string
+

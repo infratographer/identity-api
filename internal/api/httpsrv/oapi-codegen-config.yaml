@@ -1,0 +1,8 @@
+package: httpsrv
+output: server.gen.go
+generate:
+  gin-server: true
+  strict-server: true
+additional-imports:
+  - alias: .
+    package: go.infratographer.com/identity-manager-sts/pkg/api/v1
