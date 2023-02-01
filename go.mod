@@ -10,7 +10,7 @@ require (
 	github.com/google/cel-go v0.13.0
 	github.com/google/uuid v1.3.0
 	github.com/ory/fosite v0.44.0
-	github.com/ory/x v0.0.533
+	github.com/ory/x v0.0.534
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.15.0
@@ -73,7 +73,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
-	github.com/ory/go-acc v0.2.8 // indirect
+	github.com/ory/go-acc v0.2.9-0.20230103102148-6b1c9a70dbbe // indirect
 	github.com/ory/go-convenience v0.1.0 // indirect
 	github.com/ory/viper v1.7.5 // indirect
 	github.com/pborman/uuid v1.2.1 // indirect
