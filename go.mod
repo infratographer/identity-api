@@ -17,7 +17,7 @@ require (
 	github.com/stretchr/testify v1.8.1
 	go.infratographer.com/x v0.0.2
 	go.uber.org/zap v1.24.0
-	google.golang.org/genproto v0.0.0-20221227171554-f9683d7f8bef
+	google.golang.org/genproto v0.0.0-20230131230820-1c016267d619
 	google.golang.org/protobuf v1.28.1
 	gopkg.in/square/go-jose.v2 v2.6.0
 )
