@@ -4,20 +4,20 @@ image:
   pullPolicy: IfNotPresent
   tag: ""
 
+
+# identityManagerSTS has all the knobs for the deployment
 identityManagerSTS:
+
   replicas: 3
 
   extraLabels: {}
   extraAnnotations: {}
   resources: {}
 
-    # limits:
-    #   cpu: 500m
-    #   memory: 1Gi
-    # requests:
-    #   cpu: 100m
-    #   memory: 128Mi
-
+  # config builds the application configuration, non-sensitive pieces
+  # end up in the configMap. sensitive things such as oauth secret and
+  # private keys are mounted as environment variables or read-only
+  # volumeMounts.
   config:
     server:
       ip: "0.0.0.0"
@@ -31,19 +31,42 @@ identityManagerSTS:
 
     storage:
       type: memory
+
       # Configure the issuers to trust upon initial deployment
       seedData:
+
+        # Issuers is how you configure the issuers to trust when
+        # bootstrapping the application issuers is a map with the
+        # following format:
+        # ```yaml
+        #   - name: "Example"
+        #     uri: "https://auth.example.com/"
+        #     jwksURI: "https://auth.example.com/.well-known/jwks.json"
+        #     claimMappings:
+        #       "infratographer:sub": "'infratographer://example.com/' + subSHA256"
+        #```
         issuers: []
 
     oauth:
+      # issuer is the `iss` claim in the exchanged tokens
       issuer: ""
+
+      # accessTokenLifespan is the lifetime of exchanged tokens
       accessTokenLifespan: 600
+
       secretName: ""
 
       # Private keys used to mint JWTs
-      # secret should contain PEM private keys named `keyid-${name}.pem`
       privateKeys:
+        # secretName specifies the secret where all signing keys live
+        # the secret should contain PEM private keys named
+        # `keyid-${name}.pem`, which will subsequently be mounted to
+        # `/keys/` for the container.
         secretName: ""
+
+        # keys is a map of key ids with algorithms the object name must
+        # match the `name` in the secret and tells im-sts which keys
+        # to read/use for minting JWTs.
         keys:
           default:
             algorithm: RS256
