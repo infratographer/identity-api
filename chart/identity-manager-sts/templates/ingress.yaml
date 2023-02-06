@@ -7,8 +7,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  annotations:
     {{- with .Values.ingress.annotations }}
+  annotations:
     {{- toYaml . | nindent 4 }}
     {{- end }}
   name: {{ $fullName }}-ingress
@@ -31,8 +31,8 @@ spec:
                   name: web
   {{- end }}
   {{- end }}
-  {{- with .Values.ingress }}
+  {{- with .Values.ingress.tls }}
   tls:
-    {{- toYaml .tls | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
 {{- end }}

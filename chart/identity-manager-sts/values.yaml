@@ -1,8 +1,8 @@
 ---
 image:
-  repository: ""
+  repository: "ghcr.io/infratographer/identity-manager-sts"
   pullPolicy: IfNotPresent
-  tag: ""
+  tag: "latest"
 
 
 # identityManagerSTS has all the knobs for the deployment
@@ -11,7 +11,7 @@ identityManagerSTS:
   replicas: 3
 
   extraLabels: {}
-  extraAnnotations: {}
+  annotations: {}
   resources: {}
 
   # config builds the application configuration, non-sensitive pieces
@@ -75,7 +75,7 @@ identityManagerSTS:
 
 ingress:
   enabled: false
-  annotations: null
+  annotations: {}
 
   # ```yaml
   # hosts:
@@ -92,7 +92,7 @@ ingress:
   #       - myidentity-sts.exaple.com
   #     secretName: myidentity-sts-tls
   # ```
-  tls: []
+  tls: {}
     # - hosts:
     #     - myidentity-sts.example.com
     #   secretName: myidentity-sts-tls

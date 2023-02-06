@@ -25,7 +25,7 @@ spec:
         {{- with .Values.identityManagerSTS.extraLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-      {{- with .Values.identityManagerSTS.extraAnnotations }}
+      {{- with .Values.identityManagerSTS.annotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
