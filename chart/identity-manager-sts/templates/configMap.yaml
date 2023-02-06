@@ -9,7 +9,7 @@ metadata:
     {{- include "common.labels.standard" . | nindent 4 }}
 data:
   {{- with .Values.identityManagerSTS.config }}
-  sts.yaml: |
+  identity-manager-sts.yaml: |
     server:
       listen: "{{ $serverIP }}:{{ $serverPort }}"
     otel:

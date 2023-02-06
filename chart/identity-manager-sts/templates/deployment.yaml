@@ -35,14 +35,16 @@ spec:
       containers:
         - name: {{ include "common.names.name" . }}
           envFrom:
-            secretKeyRef:
-              name: "{{ $oauthCfg.secretName }}"
+            - secretRef:
+                name: "{{ $oauthCfg.secretName }}"
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy | default "Always" }}
           volumeMounts:
             - name: signing-keys
               mountPath: /keys/
               readOnly: true
+            - name: app-config
+              mountPath: /etc/identity-manager-sts/
           ports:
             - name: web
               containerPort: {{ include "im-sts.listenPort" . }}
@@ -55,3 +57,6 @@ spec:
           secret:
             secretName: "{{ $oauthCfg.privateKeys.secretName }}"
             defaultMode: 0400
+        - name: app-config
+          configMap:
+            name: {{ include "common.names.name" . }}-app-config
