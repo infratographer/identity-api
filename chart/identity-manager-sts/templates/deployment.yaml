@@ -1,4 +1,5 @@
 ---
+{{- $oauthCfg := .Values.identityManagerSTS.config.oauth }}
 apiVersion: {{ include "common.capabilities.deployment.apiVersion" . }}
 kind: Deployment
 metadata:
@@ -33,12 +34,9 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: {{ include "common.names.name" . }}
-          env:
-            - name: IMSTS_OAUTH_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Values.identityManagerSTS.config.oauth.secret.name }}"
-                  key: "{{ .Values.identityManagerSTS.config.oauth.secret.key }}"
+          envFrom:
+            secretKeyRef:
+              name: "{{ $oauthCfg.secretName }}"
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy | default "Always" }}
           volumeMounts:
@@ -47,7 +45,7 @@ spec:
               readOnly: true
           ports:
             - name: web
-              containerPort: 8080
+              containerPort: {{ include "im-sts.listenPort" . }}
           {{- with .Values.identityManagerSTS.resources }}
           resources:
           {{- toYaml . | nindent 12 }}
@@ -55,5 +53,5 @@ spec:
       volumes:
         - name: signing-keys
           secret:
-            secretName: "{{ .Values.identityManagerSTS.config.oauth.privateKeys.secretName }}"
+            secretName: "{{ $oauthCfg.privateKeys.secretName }}"
             defaultMode: 0400

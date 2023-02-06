@@ -13,3 +13,7 @@ Create the SeedIssuer object to bootstrap the token exchange with an issuer.
               {{ $k | quote }}: {{ $v | quote }}
             {{- end }}
 {{- end }}
+
+{{- define "im-sts.listenPort" }}
+{{- .Values.identityManagerSTS.config.server.port | default 8080 }}
+{{- end }}

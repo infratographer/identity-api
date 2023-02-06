@@ -20,7 +20,8 @@ identityManagerSTS:
 
   config:
     server:
-      listen: "0.0.0.0:8080"
+      ip: "0.0.0.0"
+      port: 8080
 
     otel:
       enabled: false
@@ -37,9 +38,7 @@ identityManagerSTS:
     oauth:
       issuer: ""
       accessTokenLifespan: 600
-      secret:
-        name: ""
-        key: ""
+      secretName: ""
 
       # Private keys used to mint JWTs
       # secret should contain PEM private keys named `keyid-${name}.pem`
@@ -74,6 +73,3 @@ ingress:
     # - hosts:
     #     - myidentity-sts.example.com
     #   secretName: myidentity-sts-tls
-
-service:
-  port: 8080

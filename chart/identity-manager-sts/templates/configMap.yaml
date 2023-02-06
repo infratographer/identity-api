@@ -1,14 +1,19 @@
+---
+{{- $serverPort := include "im-sts.listenPort" . }}
+{{- $serverIP := .Values.identityManagerSTS.config.server.ip }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ include "common.names.name" . }}-app-config
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
 data:
   {{- with .Values.identityManagerSTS.config }}
   sts.yaml: |
     server:
-      listen: {{ .server.listen }}
+      listen: "{{ $serverIP }}:{{ $serverPort }}"
     otel:
-      enabled: {{ .otel.enabled }}
+      enabled: {{ .otel.enabled | default false }}
       provider: {{ .otel.provider }}
       stdout:
         prettyPrint: {{ .otel.stdout.prettyPrint }}
@@ -20,7 +25,7 @@ data:
         {{- range $key, $value := .oauth.privateKeys.keys }}
         - keyID: {{ $key }}
           algorithm: {{ $value.algorithm }}
-          path: /keys/keyid-{{ $key  }}.pem
+          path: /keys/keyid-{{ $key }}.pem
         {{- end }}
         {{- end }}
     storage:
