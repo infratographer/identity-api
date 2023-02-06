@@ -24,10 +24,10 @@ data:
       accessTokenLifespan: {{ .oauth.accessTokenLifespan }}
       privateKeys:
         {{- if .oauth.privateKeys.keys }}
-        {{- range $key, $value := .oauth.privateKeys.keys }}
-        - keyID: {{ $key }}
+        {{- range $i, $value := .oauth.privateKeys.keys }}
+        - keyID: {{ $value.keyID }}
+          path: {{ $value.path }}
           algorithm: {{ $value.algorithm }}
-          path: /keys/keyid-{{ $key }}.pem
         {{- end }}
         {{- end }}
     storage:

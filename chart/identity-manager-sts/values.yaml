@@ -4,7 +4,6 @@ image:
   pullPolicy: IfNotPresent
   tag: "latest"
 
-
 # identityManagerSTS has all the knobs for the deployment
 identityManagerSTS:
 
@@ -59,19 +58,24 @@ identityManagerSTS:
       # Private keys used to mint JWTs
       privateKeys:
         # secretName specifies the secret where all signing keys live
-        # the secret should contain PEM private keys named
-        # `keyid-${name}.pem`, which will subsequently be mounted to
-        # `/keys/` for the container.
+        # the secret should contain PEM private keys. These are mounted
+        # in the container at `/keys/`
         secretName: ""
 
-        # keys is a map of key ids with algorithms the object name must
-        # match the `name` in the secret and tells im-sts which keys
-        # to read/use for minting JWTs.
+        # keys is an array of objects which specify the keys to be
+        # used when creating and signing JWTs
+        #
+        # Each keyID should match a key in the secret above.
+        #
+        # ```yaml
+        #  - keyID: default
+        #    path: /keys/default.pem
+        #    algorithm: RS256
+        # ```
         keys:
-          default:
+          - keyID: default
+            path: "/keys/default.pem"
             algorithm: RS256
-
-
 
 ingress:
   enabled: false
