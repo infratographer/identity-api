@@ -14,9 +14,11 @@ data:
       listen: "{{ $serverIP }}:{{ $serverPort }}"
     otel:
       enabled: {{ .otel.enabled | default false }}
+      {{- if .otel.enabled }}
       provider: {{ .otel.provider }}
       stdout:
         prettyPrint: {{ .otel.stdout.prettyPrint }}
+      {{- end }}
     oauth:
       issuer: {{ .oauth.issuer | quote}}
       accessTokenLifespan: {{ .oauth.accessTokenLifespan }}
