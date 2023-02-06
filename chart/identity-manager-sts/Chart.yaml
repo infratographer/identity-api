@@ -5,7 +5,7 @@ description: A Helm chart for Identity-manager STS a RFC 8693 token exchange ser
 name: identity-manager-sts
 keywords:
 version: 0.0.1
-home: http://github.com/infratographer/identity-manager-stsg
+home: http://github.com/infratographer/identity-manager-sts
 dependencies:
   - name: common
     version: 2.2.2
