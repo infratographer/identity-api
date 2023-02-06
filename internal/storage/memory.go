@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/cockroach-go/v2/testserver"
+	"github.com/google/uuid"
 
 	"go.infratographer.com/identity-manager-sts/internal/types"
 )
@@ -436,7 +437,7 @@ func (s memoryUserInfoService) LookupUserInfoByClaims(ctx context.Context, iss, 
 
 // StoreUserInfo is used to store user information by issuer and
 // subject pairs. UserInfo is unique to issuer/subject pairs.
-func (s memoryUserInfoService) StoreUserInfo(ctx context.Context, userInfo types.UserInfo) error {
+func (s memoryUserInfoService) StoreUserInfo(ctx context.Context, userInfo types.UserInfo) (*types.UserInfo, error) {
 	row := s.db.QueryRowContext(ctx, `
         SELECT id FROM issuers WHERE uri = $1
         `, userInfo.Issuer)
@@ -444,16 +445,34 @@ func (s memoryUserInfoService) StoreUserInfo(ctx context.Context, userInfo types
 	var issuerID string
 
 	err := row.Scan(&issuerID)
-	if err != nil {
-		return err
+	switch err {
+	case nil:
+	case sql.ErrNoRows:
+		return nil, types.ErrorIssuerNotFound
+	default:
+		return nil, err
 	}
 
-	_, err = s.db.ExecContext(ctx, `
+	row = s.db.QueryRowContext(ctx, `
         INSERT INTO user_info (name, email, sub, iss_id) VALUES (
             $1, $2, $3, $4
-	)`, userInfo.Name, userInfo.Email, userInfo.Subject, issuerID)
+	) ON CONFLICT (sub, iss_id)
+        DO UPDATE SET
+            sub = excluded.sub, iss_id = excluded.iss_id
+        RETURNING id`,
+		userInfo.Name, userInfo.Email, userInfo.Subject, issuerID,
+	)
 
-	return err
+	var userID string
+
+	err = row.Scan(&userID)
+	if err != nil {
+		return nil, err
+	}
+
+	userInfo.ID = uuid.MustParse(userID)
+
+	return &userInfo, err
 }
 
 // FetchUserInfoFromIssuer uses the subject access token to retrieve

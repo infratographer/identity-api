@@ -191,7 +191,7 @@ type UserInfoService interface {
 	LookupUserInfoByClaims(ctx context.Context, iss, sub string) (*UserInfo, error)
 
 	// StoreUserInfo stores the userInfo into the storage backend.
-	StoreUserInfo(ctx context.Context, userInfo UserInfo) error
+	StoreUserInfo(ctx context.Context, userInfo UserInfo) (*UserInfo, error)
 
 	// FetchUserInfoFromIssuer uses the rawToken to make a userinfo endpoint request
 	// and unpacks it into the UserInfo type.

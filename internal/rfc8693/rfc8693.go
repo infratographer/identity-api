@@ -212,13 +212,13 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 
 	userInfoSvc := s.config.GetUserInfoStrategy(ctx)
 
-	err = userInfoSvc.StoreUserInfo(ctx, *userInfo)
+	userWithID, err := userInfoSvc.StoreUserInfo(ctx, *userInfo)
 	if err != nil {
 		return errorsx.WithStack(fosite.ErrInvalidRequest.WithHintf("unable to store user info: %s", err))
 	}
 
 	var newClaims jwt.JWTClaims
-	newClaims.Subject = s.formatSubject(userInfo)
+	newClaims.Subject = s.formatSubject(userWithID)
 	newClaims.Issuer = s.config.GetAccessTokenIssuer(ctx)
 
 	for k, v := range mappedClaims.ToMapClaims() {
