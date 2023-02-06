@@ -2,18 +2,31 @@
 apiVersion: {{ include "common.capabilities.deployment.apiVersion" . }}
 kind: Deployment
 metadata:
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+    {{- with .Values.identityManagerSTS.extraLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.identityManagerSTS.extraAnnotations }}
   annotations:
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
   name: {{ template "common.names.fullname" . }}
 spec:
-  replicas: {{ .Values.identityManagerSTS.replicaCount }}
+  replicas: {{ .Values.identityManagerSTS.replicas }}
+  revisionHistoryLimit: 3
   selector:
     matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-      {{- include "common.labels.standard" . | nindent 8 }}
-      {{- if .Values.identityManagerSTS.extraLabels }}
-      {{- toYaml .Values.identityManagerSTS.extraLabels | nindent 8 }}
+        {{- include "common.labels.standard" . | nindent 8 }}
+        {{- with .Values.identityManagerSTS.extraLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.identityManagerSTS.extraAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
       restartPolicy: Always
@@ -26,8 +39,8 @@ spec:
                 secretKeyRef:
                   name: "{{ .Values.identityManagerSTS.config.oauth.secret.name }}"
                   key: "{{ .Values.identityManagerSTS.config.oauth.secret.key }}"
-          image: "{{ .Values.identityManagerSTS.image.repository }}:{{ .Values.identityManagerSTS.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: Always
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy | default "Always" }}
           volumeMounts:
             - name: signing-keys
               mountPath: /keys/
@@ -35,9 +48,9 @@ spec:
           ports:
             - name: web
               containerPort: 8080
-          {{- if .Values.identityManagerSTS.deployment.resources }}
+          {{- with .Values.identityManagerSTS.resources }}
           resources:
-          {{- toYaml .Values.identityManagerSTS.deployment.resources | nindent 12 }}
+          {{- toYaml . | nindent 12 }}
           {{- end }}
       volumes:
         - name: signing-keys

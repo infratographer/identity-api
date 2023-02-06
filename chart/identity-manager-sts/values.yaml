@@ -1,21 +1,22 @@
 ---
+image:
+  repository: ""
+  pullPolicy: IfNotPresent
+  tag: ""
+
 identityManagerSTS:
-  replicaCount: 3
-  image:
-    repository: ""
-    pullPolicy: IfNotPresent
-    tag: ""
+  replicas: 3
 
   extraLabels: {}
+  extraAnnotations: {}
+  resources: {}
 
-  deployment:
-    resources:
-      limits:
-        cpu: 500m
-        memory: 1Gi
-      requests:
-        cpu: 100m
-        memory: 128Mi
+    # limits:
+    #   cpu: 500m
+    #   memory: 1Gi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
 
   config:
     server:
@@ -52,10 +53,27 @@ identityManagerSTS:
 
 ingress:
   enabled: false
+  annotations: null
+
+  # ```yaml
+  # hosts:
+  #   - host: bar.foo
+  #     paths:
+  #       - /example
+  #```
+  hosts: []
+
+  # tls is a list of hosts and secrets for an Ingres
+  # ```yaml
   # tls:
   #   - hosts:
-  #       - myidentity-sts.example.com
+  #       - myidentity-sts.exaple.com
   #     secretName: myidentity-sts-tls
+  # ```
+  tls: []
+    # - hosts:
+    #     - myidentity-sts.example.com
+    #   secretName: myidentity-sts-tls
 
 service:
   port: 8080
