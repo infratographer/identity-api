@@ -13,6 +13,7 @@ metadata:
     {{ toYaml . | nindent 4 }}
   {{- end }}
   name: {{ template "common.names.fullname" . }}
+  namespace: {{ .Release.Namespace }}
 spec:
   replicas: {{ .Values.identityManagerSTS.replicas }}
   revisionHistoryLimit: 3

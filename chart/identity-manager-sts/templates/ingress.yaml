@@ -12,6 +12,7 @@ metadata:
     {{- toYaml . | nindent 4 }}
     {{- end }}
   name: {{ $fullName }}-ingress
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "common.labels.standard" . | nindent 4 }}
 spec:
