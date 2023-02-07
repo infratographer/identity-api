@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/cockroachdb/cockroach-go/v2 v2.2.20
 	github.com/deepmap/oapi-codegen v1.12.5-0.20230118012357-f4cf8f9a5703
-	github.com/getkin/kin-openapi v0.113.0
+	github.com/getkin/kin-openapi v0.114.0
 	github.com/gin-gonic/gin v1.8.2
 	github.com/google/cel-go v0.13.0
 	github.com/google/uuid v1.3.0
