@@ -11,8 +11,6 @@ spec:
       port: 80
       protocol: TCP
       targetPort: {{ include "im-sts.listenPort" . }}
-  selector:
-    app: {{ template "common.names.name" . }}
-    component: app
+  selector: {{- include "common.labels.matchLabels" . | nindent 4 }}
   sessionAffinity: None
   type: ClusterIP
