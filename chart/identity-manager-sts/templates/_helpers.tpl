@@ -15,5 +15,5 @@ Create the SeedIssuer object to bootstrap the token exchange with an issuer.
 {{- end }}
 
 {{- define "im-sts.listenPort" }}
-{{- .Values.identityManagerSTS.config.server.port | default 8080 }}
+{{- .Values.config.server.port | default 8080 }}
 {{- end }}

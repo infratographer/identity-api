@@ -1,21 +1,20 @@
 ---
-{{- $oauthCfg := .Values.identityManagerSTS.config.oauth }}
 apiVersion: {{ include "common.capabilities.deployment.apiVersion" . }}
 kind: Deployment
 metadata:
   labels:
     {{- include "common.labels.standard" . | nindent 4 }}
-    {{- with .Values.identityManagerSTS.extraLabels }}
+    {{- with .Values.deployment.extraLabels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
-  {{- with .Values.identityManagerSTS.extraAnnotations }}
+  {{- with .Values.deployment.extraAnnotations }}
   annotations:
     {{ toYaml . | nindent 4 }}
   {{- end }}
   name: {{ template "common.names.fullname" . }}
   namespace: {{ .Release.Namespace }}
 spec:
-  replicas: {{ .Values.identityManagerSTS.replicas }}
+  replicas: {{ .Values.deployment.replicas }}
   revisionHistoryLimit: 3
   selector:
     matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
@@ -23,10 +22,10 @@ spec:
     metadata:
       labels:
         {{- include "common.labels.standard" . | nindent 8 }}
-        {{- with .Values.identityManagerSTS.extraLabels }}
+        {{- with .Values.deployment.extraLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-      {{- with .Values.identityManagerSTS.annotations }}
+      {{- with .Values.deployment.annotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
@@ -40,8 +39,8 @@ spec:
           command:
             - /bin/sh
             - -c
-            - "cp -f /sts-keys/* /keys/; chown {{ .Values.identityManagerSTS.containerUserID }} /keys/*"
-          {{- with .Values.identityManagerSTS.resources }}
+            - "cp -f /sts-keys/* /keys/; chown {{ .Values.deployment.containerUserID }} /keys/*"
+          {{- with .Values.deployment.resources }}
           resources:
           {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -54,7 +53,7 @@ spec:
         - name: {{ include "common.names.name" . }}
           envFrom:
             - secretRef:
-                name: "{{ $oauthCfg.secretName }}"
+                name: "{{ .Values.config.oauth.secretName }}"
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy | default "Always" }}
           volumeMounts:
@@ -66,14 +65,14 @@ spec:
           ports:
             - name: web
               containerPort: {{ include "im-sts.listenPort" . }}
-          {{- with .Values.identityManagerSTS.resources }}
+          {{- with .Values.deployment.resources }}
           resources:
           {{- toYaml . | nindent 12 }}
           {{- end }}
       volumes:
         - name: signing-keys-seed
           secret:
-            secretName: "{{ $oauthCfg.privateKeys.secretName }}"
+            secretName: "{{ .Values.config.oauth.privateKeys.secretName }}"
             defaultMode: 0400
         - name: signing-keys
           emptyDir:
