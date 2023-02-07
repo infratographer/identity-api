@@ -9,80 +9,77 @@ copyKeys:
   pullPolicy: IfNotPresent
   tag: "latest"
 
-# identityManagerSTS has all the knobs for the deployment
-identityManagerSTS:
-
+deployment:
   replicas: 3
-
   extraLabels: {}
   annotations: {}
   resources: {}
 
   containerUserID: 65532
 
-  # config builds the application configuration, non-sensitive pieces
-  # end up in the configMap. sensitive things such as oauth secret and
-  # private keys are mounted as environment variables or read-only
-  # volumeMounts.
-  config:
-    server:
-      ip: "0.0.0.0"
-      port: 8080
+# config builds the application configuration, non-sensitive pieces
+# end up in the configMap. sensitive things such as oauth secret and
+# private keys are mounted as environment variables or read-only
+# volumeMounts.
+config:
+  server:
+    ip: "0.0.0.0"
+    port: 8080
 
-    otel:
-      enabled: false
-      provider: stdout
-      stdout:
-        prettyPrint: true
+  otel:
+    enabled: false
+    provider: stdout
+    stdout:
+      prettyPrint: true
 
-    storage:
-      type: memory
+  storage:
+    type: memory
 
-      # Configure the issuers to trust upon initial deployment
-      seedData:
+    # Configure the issuers to trust upon initial deployment
+    seedData:
 
-        # Issuers is how you configure the issuers to trust when
-        # bootstrapping the application issuers is a map with the
-        # following format:
-        # ```yaml
-        #   - name: "Example"
-        #     uri: "https://auth.example.com/"
-        #     jwksURI: "https://auth.example.com/.well-known/jwks.json"
-        #     claimMappings:
-        #       "infratographer:sub": "'infratographer://example.com/' + subSHA256"
-        #```
-        issuers: []
+      # Issuers is how you configure the issuers to trust when
+      # bootstrapping the application issuers is a map with the
+      # following format:
+      # ```yaml
+      #   - name: "Example"
+      #     uri: "https://auth.example.com/"
+      #     jwksURI: "https://auth.example.com/.well-known/jwks.json"
+      #     claimMappings:
+      #       "infratographer:sub": "'infratographer://example.com/' + subSHA256"
+      #```
+      issuers: []
 
-    oauth:
-      # issuer is the `iss` claim in the exchanged tokens
-      issuer: ""
+  oauth:
+    # issuer is the `iss` claim in the exchanged tokens
+    issuer: "a"
 
-      # accessTokenLifespan is the lifetime of exchanged tokens
-      accessTokenLifespan: 600
+    # accessTokenLifespan is the lifetime of exchanged tokens
+    accessTokenLifespan: 600
 
-      secretName: ""
+    secretName: "b"
 
-      # Private keys used to mint JWTs
-      privateKeys:
-        # secretName specifies the secret where all signing keys live
-        # the secret should contain PEM private keys. These are mounted
-        # in the container at `/keys/`
-        secretName: ""
+    # Private keys used to mint JWTs
+    privateKeys:
+      # secretName specifies the secret where all signing keys live
+      # the secret should contain PEM private keys. These are mounted
+      # in the container at `/keys/`
+      secretName: "c"
 
-        # keys is an array of objects which specify the keys to be
-        # used when creating and signing JWTs
-        #
-        # Each keyID should match a key in the secret above.
-        #
-        # ```yaml
-        #  - keyID: default
-        #    path: /keys/default.pem
-        #    algorithm: RS256
-        # ```
-        keys:
-          - keyID: default
-            path: "/keys/default.pem"
-            algorithm: RS256
+      # keys is an array of objects which specify the keys to be
+      # used when creating and signing JWTs
+      #
+      # Each keyID should match a key in the secret above.
+      #
+      # ```yaml
+      #  - keyID: default
+      #    path: /keys/default.pem
+      #    algorithm: RS256
+      # ```
+      keys:
+        - keyID: default
+          path: "/keys/default.pem"
+          algorithm: RS256
 
 ingress:
   enabled: false

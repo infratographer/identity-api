@@ -1,6 +1,6 @@
 ---
 {{- $serverPort := include "im-sts.listenPort" . }}
-{{- $serverIP := .Values.identityManagerSTS.config.server.ip }}
+{{- $serverIP := .Values.config.server.ip }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -9,7 +9,7 @@ metadata:
   labels:
     {{- include "common.labels.standard" . | nindent 4 }}
 data:
-  {{- with .Values.identityManagerSTS.config }}
+  {{- with .Values.config }}
   identity-manager-sts.yaml: |
     server:
       listen: "{{ $serverIP }}:{{ $serverPort }}"
