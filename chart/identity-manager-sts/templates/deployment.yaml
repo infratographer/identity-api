@@ -32,6 +32,23 @@ spec:
     spec:
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
+      initContainers:
+        - name: copy-keys
+          image: "{{ .Values.copyKeys.repository }}:{{ .Values.copyKeys.tag }}"
+          imagePullPolicy: {{ .Values.copyKeys.pullPolicy }}
+          command:
+            - /bin/sh
+            - -c
+            - "cp -f /sts-keys/* /keys/; chown {{ .Values.identityManagerSTS.containerUserID }} /keys/*.pem"
+          {{- with .Values.identityManagerSTS.resources }}
+          resources:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: signing-keys-seed
+              mountPath: /sts-keys/
+            - name: signing-keys
+              mountPath: /keys/
       containers:
         - name: {{ include "common.names.name" . }}
           envFrom:
@@ -53,10 +70,12 @@ spec:
           {{- toYaml . | nindent 12 }}
           {{- end }}
       volumes:
-        - name: signing-keys
+        - name: signing-keys-seed
           secret:
             secretName: "{{ $oauthCfg.privateKeys.secretName }}"
             defaultMode: 0400
+        - name: signing-keys
+          emptyDir:
         - name: app-config
           configMap:
             name: {{ include "common.names.name" . }}-app-config

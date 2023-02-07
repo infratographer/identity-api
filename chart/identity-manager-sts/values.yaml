@@ -4,6 +4,11 @@ image:
   pullPolicy: IfNotPresent
   tag: "latest"
 
+copyKeys:
+  repository: "busybox"
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
 # identityManagerSTS has all the knobs for the deployment
 identityManagerSTS:
 
@@ -12,6 +17,8 @@ identityManagerSTS:
   extraLabels: {}
   annotations: {}
   resources: {}
+
+  containerUserID: 65532
 
   # config builds the application configuration, non-sensitive pieces
   # end up in the configMap. sensitive things such as oauth secret and
