@@ -29,6 +29,8 @@ const (
 	ParamActorTokenType = "actor_token_type"
 	// ClaimClientID is the claim for the client ID.
 	ClaimClientID = "client_id"
+
+	responseIssuedTokenType = "issued_token_type"
 )
 
 var (
@@ -242,7 +244,8 @@ func (s *TokenExchangeHandler) PopulateTokenEndpointResponse(ctx context.Context
 	}
 
 	responder.SetAccessToken(token)
-	responder.SetTokenType(TokenTypeJWT)
+	responder.SetExtra(responseIssuedTokenType, TokenTypeJWT)
+	responder.SetTokenType(fosite.BearerAccessToken)
 	responder.SetExpiresIn(s.config.GetAccessTokenLifespan(ctx))
 
 	return nil
