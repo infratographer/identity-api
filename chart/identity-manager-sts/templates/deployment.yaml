@@ -40,7 +40,7 @@ spec:
           command:
             - /bin/sh
             - -c
-            - "cp -f /sts-keys/* /keys/; chown {{ .Values.identityManagerSTS.containerUserID }} /keys/*.pem"
+            - "cp -f /sts-keys/* /keys/; chown {{ .Values.identityManagerSTS.containerUserID }} /keys/*"
           {{- with .Values.identityManagerSTS.resources }}
           resources:
           {{- toYaml . | nindent 12 }}
