@@ -52,19 +52,19 @@ config:
 
   oauth:
     # issuer is the `iss` claim in the exchanged tokens
-    issuer: "a"
+    issuer: ""
 
     # accessTokenLifespan is the lifetime of exchanged tokens
     accessTokenLifespan: 600
 
-    secretName: "b"
+    secretName: ""
 
     # Private keys used to mint JWTs
     privateKeys:
       # secretName specifies the secret where all signing keys live
       # the secret should contain PEM private keys. These are mounted
       # in the container at `/keys/`
-      secretName: "c"
+      secretName: ""
 
       # keys is an array of objects which specify the keys to be
       # used when creating and signing JWTs
