@@ -1,10 +1,10 @@
 ---
 apiVersion: v2
-appVersion: v0.0.2
+appVersion: v0.0.3
 description: A Helm chart for Identity-manager STS a RFC 8693 token exchange server.
 name: identity-manager-sts
 keywords:
-version: v0.0.2
+version: v0.0.3
 home: http://github.com/infratographer/identity-manager-sts
 dependencies:
   - name: common
