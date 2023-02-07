@@ -1,0 +1,41 @@
+---
+{{- $serverPort := include "im-sts.listenPort" . }}
+{{- $serverIP := .Values.identityManagerSTS.config.server.ip }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "common.names.name" . }}-app-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+data:
+  {{- with .Values.identityManagerSTS.config }}
+  identity-manager-sts.yaml: |
+    server:
+      listen: "{{ $serverIP }}:{{ $serverPort }}"
+    otel:
+      enabled: {{ .otel.enabled | default false }}
+      {{- if .otel.enabled }}
+      provider: {{ .otel.provider }}
+      stdout:
+        prettyPrint: {{ .otel.stdout.prettyPrint }}
+      {{- end }}
+    oauth:
+      issuer: {{ .oauth.issuer | quote}}
+      accessTokenLifespan: {{ .oauth.accessTokenLifespan }}
+      privateKeys:
+        {{- if .oauth.privateKeys.keys }}
+        {{- range $i, $value := .oauth.privateKeys.keys }}
+        - keyID: {{ $value.keyID }}
+          path: {{ $value.path }}
+          algorithm: {{ $value.algorithm }}
+        {{- end }}
+        {{- end }}
+    storage:
+      type: {{ .storage.type | default "memory" }}
+      seedData:
+        issuers:
+          {{- range $k, $v := .storage.seedData.issuers }}
+          {{- template "im-sts.seedIssuer" $v }}
+          {{- end }}
+  {{- end }}
