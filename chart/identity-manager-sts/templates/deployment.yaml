@@ -1,0 +1,81 @@
+---
+apiVersion: {{ include "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  labels:
+    {{- include "common.labels.standard" . | nindent 4 }}
+    {{- with .Values.deployment.extraLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.deployment.extraAnnotations }}
+  annotations:
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+  name: {{ template "common.names.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.deployment.replicas }}
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "common.labels.standard" . | nindent 8 }}
+        {{- with .Values.deployment.extraLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.deployment.annotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      initContainers:
+        - name: copy-keys
+          image: "{{ .Values.copyKeys.repository }}:{{ .Values.copyKeys.tag }}"
+          imagePullPolicy: {{ .Values.copyKeys.pullPolicy }}
+          command:
+            - /bin/sh
+            - -c
+            - "cp -f /sts-keys/* /keys/; chown {{ .Values.deployment.containerUserID }} /keys/*"
+          {{- with .Values.deployment.resources }}
+          resources:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: signing-keys-seed
+              mountPath: /sts-keys/
+            - name: signing-keys
+              mountPath: /keys/
+      containers:
+        - name: {{ include "common.names.name" . }}
+          envFrom:
+            - secretRef:
+                name: "{{ .Values.config.oauth.secretName }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy | default "Always" }}
+          volumeMounts:
+            - name: signing-keys
+              mountPath: /keys/
+              readOnly: true
+            - name: app-config
+              mountPath: /etc/identity-manager-sts/
+          ports:
+            - name: web
+              containerPort: {{ include "im-sts.listenPort" . }}
+          {{- with .Values.deployment.resources }}
+          resources:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: signing-keys-seed
+          secret:
+            secretName: "{{ .Values.config.oauth.privateKeys.secretName }}"
+            defaultMode: 0400
+        - name: signing-keys
+          emptyDir:
+        - name: app-config
+          configMap:
+            name: {{ include "common.names.name" . }}-app-config

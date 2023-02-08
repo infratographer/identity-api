@@ -34,6 +34,8 @@ const (
 	ClaimClientID = "client_id"
 	// SubjectPrefix is the prefix added to the beginning of a token before the userID.
 	SubjectPrefix = "urn:infratographer:user"
+
+	responseIssuedTokenType = "issued_token_type"
 )
 
 var (
@@ -268,7 +270,8 @@ func (s *TokenExchangeHandler) PopulateTokenEndpointResponse(ctx context.Context
 	}
 
 	responder.SetAccessToken(token)
-	responder.SetTokenType(TokenTypeJWT)
+	responder.SetExtra(responseIssuedTokenType, TokenTypeJWT)
+	responder.SetTokenType(fosite.BearerAccessToken)
 	responder.SetExpiresIn(s.config.GetAccessTokenLifespan(ctx))
 
 	return nil
