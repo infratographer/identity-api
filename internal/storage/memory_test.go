@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/cockroachdb/cockroach-go/v2/testserver"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
 	"go.infratographer.com/identity-manager-sts/internal/testingx"
@@ -515,6 +516,42 @@ func TestUserInfoStore(t *testing.T) {
 		testingx.RunTests(context.Background(), t, testCases, runFn)
 	})
 
+	t.Run("LookupUserInfoByID", func(t *testing.T) {
+		t.Parallel()
+
+		runFn := func(ctx context.Context, input string) (res testingx.TestResult[*types.UserInfo]) {
+			out, err := svc.LookupUserInfoByID(ctx, input)
+			res.Success = out
+			res.Err = err
+
+			return res
+		}
+
+		cases := []testingx.TestCase[string, *types.UserInfo]{
+			{
+				Name:    "Success",
+				Input:   userInfoStored.ID.String(),
+				SetupFn: setupFn,
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.UserInfo]) {
+					assert.NoError(t, res.Err)
+					assert.Equal(t, userInfoStored, res.Success)
+				},
+				CleanupFn: cleanupFn,
+			},
+			{
+				Name:    "InvalidID",
+				Input:   uuid.NewString(),
+				SetupFn: setupFn,
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.UserInfo]) {
+					assert.ErrorIs(t, res.Err, types.ErrUserInfoNotFound)
+				},
+				CleanupFn: cleanupFn,
+			},
+		}
+
+		testingx.RunTests(context.Background(), t, cases, runFn)
+	})
+
 	t.Run("FetchUserInfoFromIssuer", func(t *testing.T) {
 		t.Parallel()
 
@@ -532,7 +569,7 @@ func TestUserInfoStore(t *testing.T) {
 		exampleResp := `
                   {
                     "name": "adam", "email": "ad@am.com",
-                    "sub": "super-admin", "iss": "https://woo.com"
+                    "sub": "super-admin"
                   }`
 
 		cases := []testingx.TestCase[fetchInput, fetchResult]{
