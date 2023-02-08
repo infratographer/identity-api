@@ -8,7 +8,7 @@ version: v0.0.3
 home: http://github.com/infratographer/identity-manager-sts
 dependencies:
   - name: common
-    version: 2.2.2
+    version: 2.2.3
     repository: https://charts.bitnami.com/bitnami
 maintainers:
   - name: Adam Mohammed
