@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/ory/fosite"
@@ -31,6 +32,8 @@ const (
 	ParamActorTokenType = "actor_token_type"
 	// ClaimClientID is the claim for the client ID.
 	ClaimClientID = "client_id"
+	// SubjectPrefix is the prefix added to the beginning of a token before the userID.
+	SubjectPrefix = "urn:infratographer:user"
 )
 
 var (
@@ -213,6 +216,7 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 	userInfoSvc := s.config.GetUserInfoStrategy(ctx)
 
 	userWithID, err := userInfoSvc.StoreUserInfo(ctx, *userInfo)
+
 	if err != nil {
 		return errorsx.WithStack(fosite.ErrInvalidRequest.WithHintf("unable to store user info: %s", err))
 	}
@@ -245,6 +249,12 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 		Subject:   claims.Subject,
 	}
 
+	userInfoAud, err := url.JoinPath(newClaims.Issuer, "userinfo")
+	if err != nil {
+		return errorsx.WithStack(fosite.ErrServerError.WithHintf("failed to build userinfo audience: %s", err))
+	}
+
+	requester.GrantAudience(userInfoAud)
 	requester.SetSession(&session)
 
 	return nil
@@ -284,6 +294,7 @@ func (s *TokenExchangeHandler) populateUserInfo(ctx context.Context, issuer stri
 		// issuers userinfo endpoint, but if some other error
 		// came back bail.
 		if !errors.Is(err, types.ErrUserInfoNotFound) {
+			fmt.Println("couldn't find issuer in lookup")
 			return nil, err
 		}
 	} else {
@@ -292,6 +303,7 @@ func (s *TokenExchangeHandler) populateUserInfo(ctx context.Context, issuer stri
 
 	userInfo, err = userInfoSvc.FetchUserInfoFromIssuer(ctx, issuer, token)
 	if err != nil {
+		fmt.Println("failed to fetch userinfo")
 		return nil, err
 	}
 
@@ -299,5 +311,5 @@ func (s *TokenExchangeHandler) populateUserInfo(ctx context.Context, issuer stri
 }
 
 func (s *TokenExchangeHandler) formatSubject(info *types.UserInfo) string {
-	return fmt.Sprintf("urn:infratographer:user/%s", info.ID)
+	return fmt.Sprintf("%s/%s", SubjectPrefix, info.ID)
 }

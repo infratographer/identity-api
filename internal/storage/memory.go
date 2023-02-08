@@ -435,6 +435,26 @@ func (s memoryUserInfoService) LookupUserInfoByClaims(ctx context.Context, iss, 
 	return &ui, err
 }
 
+func (s memoryUserInfoService) LookupUserInfoByID(ctx context.Context, id string) (*types.UserInfo, error) {
+	row := s.db.QueryRowContext(ctx, `
+        SELECT ui.id, ui.name, ui.email, ui.sub, i.uri FROM user_info ui
+        JOIN issuers i ON
+           ui.iss_id = i.id
+        WHERE
+           ui.id = $1
+        `, id)
+
+	var ui types.UserInfo
+
+	err := row.Scan(&ui.ID, &ui.Name, &ui.Email, &ui.Subject, &ui.Issuer)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, types.ErrUserInfoNotFound
+	}
+
+	return &ui, err
+}
+
 // StoreUserInfo is used to store user information by issuer and
 // subject pairs. UserInfo is unique to issuer/subject pairs.
 func (s memoryUserInfoService) StoreUserInfo(ctx context.Context, userInfo types.UserInfo) (*types.UserInfo, error) {
@@ -510,6 +530,10 @@ func (s memoryUserInfoService) FetchUserInfoFromIssuer(ctx context.Context, iss,
 	err = json.NewDecoder(resp.Body).Decode(&ui)
 	if err != nil {
 		return nil, err
+	}
+
+	if ui.Issuer == "" {
+		ui.Issuer = iss
 	}
 
 	return &ui, nil

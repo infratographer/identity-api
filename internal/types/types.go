@@ -169,11 +169,11 @@ func BuildClaimsMappingFromMap(in map[string]*exprpb.CheckedExpr) ClaimsMapping 
 // For now we're only providing "name" and "email" in addition to the
 // required "sub" claim.
 type UserInfo struct {
-	ID      uuid.UUID
-	Name    string `json:"name"`
-	Email   string `json:"email"`
-	Issuer  string `json:"iss"`
-	Subject string `json:"sub"`
+	ID      uuid.UUID `json:"-"`
+	Name    string    `json:"name"`
+	Email   string    `json:"email"`
+	Issuer  string    `json:"iss"`
+	Subject string    `json:"sub"`
 }
 
 // ErrUserInfoNotFound is returned if we attempt to fetch user info
@@ -189,6 +189,9 @@ var ErrFetchUserInfo = errors.New("could not fetch user info")
 type UserInfoService interface {
 	// LookupUserInfoByClaims returns the User information object for a issuer, subject pair.
 	LookupUserInfoByClaims(ctx context.Context, iss, sub string) (*UserInfo, error)
+
+	// LookupUserInfoByID returns the user info for a STS user ID
+	LookupUserInfoByID(ctx context.Context, id string) (*UserInfo, error)
 
 	// StoreUserInfo stores the userInfo into the storage backend.
 	StoreUserInfo(ctx context.Context, userInfo UserInfo) (*UserInfo, error)
