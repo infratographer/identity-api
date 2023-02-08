@@ -59,8 +59,6 @@ func serve(ctx context.Context) {
 
 	jwksStrategy := jwks.NewIssuerJWKSURIStrategy(storageEngine)
 
-	userInfoStrategy := storageEngine
-
 	oauth2Config, err := fositex.NewOAuth2Config(config.Config.OAuth)
 	if err != nil {
 		logger.Fatalf("error loading config: %s", err)
@@ -68,7 +66,7 @@ func serve(ctx context.Context) {
 
 	oauth2Config.IssuerJWKSURIStrategy = jwksStrategy
 	oauth2Config.ClaimMappingStrategy = mappingStrategy
-	oauth2Config.UserInfoStrategy = userInfoStrategy
+	oauth2Config.UserInfoStrategy = storageEngine
 
 	keyGetter := func(ctx context.Context) (any, error) {
 		return oauth2Config.GetSigningKey(ctx), nil
