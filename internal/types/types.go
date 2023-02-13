@@ -163,11 +163,8 @@ func BuildClaimsMappingFromMap(in map[string]*exprpb.CheckedExpr) ClaimsMapping 
 	return out
 }
 
-// UserInfo stores information about the user based on issuer/subject
-// pairs.
+// UserInfo contains information about the user from the source OIDC provider.
 // As defined in https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
-// For now we're only providing "name" and "email" in addition to the
-// required "sub" claim.
 type UserInfo struct {
 	ID      uuid.UUID `json:"-"`
 	Name    string    `json:"name"`
