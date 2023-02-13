@@ -6,7 +6,7 @@ We anticipate that these tokens will be used to inform further authorization dec
 
 ### Token Request
 
-This is as defined in [RFC 8693][rfc-8693]. At minimum, an token request includes the following parameters:
+This is as defined in [RFC 8693][rfc-8693]. At minimum, a token request includes the following parameters:
 
 - `grant_type` (always set to `urn:ietf:params:oauth:grant-type:token-exchange`
 - `subject_token`
@@ -14,7 +14,7 @@ This is as defined in [RFC 8693][rfc-8693]. At minimum, an token request include
 
 Issued access tokens can be restricted further through the use of `audience`, `resource`, and `scope` parameters in the token request. `audience` and `resource` restrict the class of resources for which the issued token may be used. `scope` restricts the type of actions the token can perform on resources.
 
-For the first iteration of identity-manager-sts, we are supporting the use of `resource`, which will allow us to expose a set of services that a user may use to restrict the context in which the token is valid. The `resource` parameter maps to the `aud` claim on the issued token, as outlined in [RFC 9068][rfc-9068].
+For the first iteration of identity-manager-sts, we are only supporting the use of `resource`, which will allow us to expose a set of services that a user may use to restrict the context in which the token is valid. The `resource` parameter maps to the `aud` claim on the issued token, as outlined in [RFC 9068][rfc-9068].
 
 
 ### Token Response
@@ -29,7 +29,6 @@ The token returned is an [RFC 9068][rfc-9068]-compliant access token JWT with th
 | exp                | Token expiration time                                                                               |
 | sub                | Subject of the token in the infratographer namespace<br>example "sub": `infratographer:user:{uuid}` |
 | aud                | Resources on which that token may operate                                                           |
-| scope              | Actions which the token is restricted to within the audiences                                       |
 | client_id          | ID of the client requesting the token                                                               |
 | infratographer.sub | Private claim which indicates the subject be used in policy enforcement                             |
 
