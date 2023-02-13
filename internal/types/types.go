@@ -167,8 +167,8 @@ func BuildClaimsMappingFromMap(in map[string]*exprpb.CheckedExpr) ClaimsMapping 
 // As defined in https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
 type UserInfo struct {
 	ID      uuid.UUID `json:"-"`
-	Name    string    `json:"name"`
-	Email   string    `json:"email"`
+	Name    string    `json:"name,omitempty"`
+	Email   string    `json:"email,omitempty"`
 	Issuer  string    `json:"iss"`
 	Subject string    `json:"sub"`
 }

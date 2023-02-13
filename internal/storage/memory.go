@@ -16,23 +16,44 @@ import (
 	"go.infratographer.com/identity-manager-sts/internal/types"
 )
 
-const (
-	issuerColTenantID = "tenant_id"
-	issuerColID       = "id"
-	issuerColName     = "name"
-	issuerColURI      = "uri"
-	issuerColJWKSURI  = "jwksuri"
-	issuerColMappings = "mappings"
-)
+var issuerCols = struct {
+	TenantID string
+	ID       string
+	Name     string
+	URI      string
+	JWKSURI  string
+	Mappings string
+}{
+	TenantID: "tenant_id",
+	ID:       "id",
+	Name:     "name",
+	URI:      "uri",
+	JWKSURI:  "jwksuri",
+	Mappings: "mappings",
+}
+
+var userInfoCols = struct {
+	ID       string
+	Name     string
+	Email    string
+	Subject  string
+	IssuerID string
+}{
+	ID:       "id",
+	Name:     "name",
+	Email:    "email",
+	Subject:  "sub",
+	IssuerID: "iss_id",
+}
 
 var (
 	issuerColumns = []string{
-		issuerColTenantID,
-		issuerColID,
-		issuerColName,
-		issuerColURI,
-		issuerColJWKSURI,
-		issuerColMappings,
+		issuerCols.TenantID,
+		issuerCols.ID,
+		issuerCols.Name,
+		issuerCols.URI,
+		issuerCols.JWKSURI,
+		issuerCols.Mappings,
 	}
 	issuerColumnsStr = strings.Join(issuerColumns, ", ")
 )
@@ -73,9 +94,9 @@ func bindIfNotNil[T any](bindings []colBinding, column string, value *T) []colBi
 func issuerUpdateToColBindings(update types.IssuerUpdate) ([]colBinding, error) {
 	var bindings []colBinding
 
-	bindings = bindIfNotNil(bindings, issuerColName, update.Name)
-	bindings = bindIfNotNil(bindings, issuerColURI, update.URI)
-	bindings = bindIfNotNil(bindings, issuerColJWKSURI, update.JWKSURI)
+	bindings = bindIfNotNil(bindings, issuerCols.Name, update.Name)
+	bindings = bindIfNotNil(bindings, issuerCols.URI, update.URI)
+	bindings = bindIfNotNil(bindings, issuerCols.JWKSURI, update.JWKSURI)
 
 	if update.ClaimMappings != nil {
 		mappingRepr, err := update.ClaimMappings.MarshalJSON()
@@ -85,7 +106,7 @@ func issuerUpdateToColBindings(update types.IssuerUpdate) ([]colBinding, error) 
 
 		mappingStr := string(mappingRepr)
 
-		bindings = bindIfNotNil(bindings, issuerColMappings, &mappingStr)
+		bindings = bindIfNotNil(bindings, issuerCols.Mappings, &mappingStr)
 	}
 
 	return bindings, nil
@@ -416,13 +437,20 @@ func (s *memoryUserInfoService) createTables() error {
 // data to be available, the data must have already be fetched and
 // stored.
 func (s memoryUserInfoService) LookupUserInfoByClaims(ctx context.Context, iss, sub string) (*types.UserInfo, error) {
-	row := s.db.QueryRowContext(ctx, `
-        SELECT ui.name, ui.email, ui.sub, i.uri FROM user_info ui
-        JOIN issuers i ON
-           ui.iss_id = i.id
-        WHERE
-           i.uri = $1 AND ui.sub = $2
-        `, iss, sub)
+	selectCols := withQualifier([]string{
+		userInfoCols.Name,
+		userInfoCols.Email,
+		userInfoCols.Subject,
+	}, "ui")
+
+	selectCols = append(selectCols, "i."+issuerCols.URI)
+
+	selects := strings.Join(selectCols, ",")
+	join := fmt.Sprintf("ui.%s = i.%s", userInfoCols.IssuerID, issuerCols.ID)
+	where := fmt.Sprintf("i.%s = $1 AND ui.%s = $2", issuerCols.URI, userInfoCols.Subject)
+
+	stmt := fmt.Sprintf("SELECT %s FROM user_info ui JOIN issuers i ON %s WHERE %s", selects, join, where)
+	row := s.db.QueryRowContext(ctx, stmt, iss, sub)
 
 	var ui types.UserInfo
 
@@ -436,13 +464,22 @@ func (s memoryUserInfoService) LookupUserInfoByClaims(ctx context.Context, iss, 
 }
 
 func (s memoryUserInfoService) LookupUserInfoByID(ctx context.Context, id string) (*types.UserInfo, error) {
-	row := s.db.QueryRowContext(ctx, `
-        SELECT ui.id, ui.name, ui.email, ui.sub, i.uri FROM user_info ui
-        JOIN issuers i ON
-           ui.iss_id = i.id
-        WHERE
-           ui.id = $1
-        `, id)
+	selectCols := withQualifier([]string{
+		userInfoCols.ID,
+		userInfoCols.Name,
+		userInfoCols.Email,
+		userInfoCols.Subject,
+	}, "ui")
+
+	selectCols = append(selectCols, "i."+issuerCols.URI)
+
+	selects := strings.Join(selectCols, ",")
+	join := fmt.Sprintf("ui.%s = i.%s", userInfoCols.IssuerID, issuerCols.ID)
+	where := fmt.Sprintf("ui.%s = $1", userInfoCols.ID)
+
+	stmt := fmt.Sprintf("SELECT %s FROM user_info ui JOIN issuers i ON %s WHERE %s", selects, join, where)
+
+	row := s.db.QueryRowContext(ctx, stmt, id)
 
 	var ui types.UserInfo
 
@@ -473,13 +510,32 @@ func (s memoryUserInfoService) StoreUserInfo(ctx context.Context, userInfo types
 		return nil, err
 	}
 
-	row = s.db.QueryRowContext(ctx, `
-        INSERT INTO user_info (name, email, sub, iss_id) VALUES (
+	insertCols := strings.Join([]string{
+		userInfoCols.Name,
+		userInfoCols.Email,
+		userInfoCols.Subject,
+		userInfoCols.IssuerID,
+	}, ",")
+
+	conflictCols := []string{
+		userInfoCols.Subject,
+		userInfoCols.IssuerID,
+	}
+
+	onConflictCols := strings.Join(conflictCols, ",")
+
+	updateCols := fmt.Sprintf("%[1]s = excluded.%[1]s, %[2]s = excluded.%[2]s", conflictCols[0], conflictCols[1])
+
+	q := fmt.Sprintf(`INSERT INTO user_info (%s) VALUES (
             $1, $2, $3, $4
-	) ON CONFLICT (sub, iss_id)
-        DO UPDATE SET
-            sub = excluded.sub, iss_id = excluded.iss_id
-        RETURNING id`,
+	) ON CONFLICT (%s)
+        DO UPDATE SET %s RETURNING id`,
+		insertCols,
+		onConflictCols,
+		updateCols,
+	)
+
+	row = s.db.QueryRowContext(ctx, q,
 		userInfo.Name, userInfo.Email, userInfo.Subject, issuerID,
 	)
 
@@ -537,4 +593,15 @@ func (s memoryUserInfoService) FetchUserInfoFromIssuer(ctx context.Context, iss,
 	}
 
 	return &ui, nil
+}
+
+// withQualifier adds a qualifier to a column
+// e.g. withQualifier([]string{"name"}, "ui") = []string{"ui.name"}
+func withQualifier(items []string, qualifier string) []string {
+	out := make([]string, len(items))
+	for i, el := range items {
+		out[i] = fmt.Sprintf("%s.%s", qualifier, el)
+	}
+
+	return out
 }
