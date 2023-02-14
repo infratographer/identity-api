@@ -446,10 +446,17 @@ func (s memoryUserInfoService) LookupUserInfoByClaims(ctx context.Context, iss, 
 	selectCols = append(selectCols, "i."+issuerCols.URI)
 
 	selects := strings.Join(selectCols, ",")
-	join := fmt.Sprintf("ui.%s = i.%s", userInfoCols.IssuerID, issuerCols.ID)
-	where := fmt.Sprintf("i.%s = $1 AND ui.%s = $2", issuerCols.URI, userInfoCols.Subject)
 
-	stmt := fmt.Sprintf("SELECT %s FROM user_info ui JOIN issuers i ON %s WHERE %s", selects, join, where)
+	stmt := fmt.Sprintf(`
+	SELECT %[1]s FROM user_info ui
+        JOIN issuers i ON ui.%[2]s = i.%[3]s
+        WHERE i.%[4]s = $1 and ui.%[5]s = $2`,
+		selects,
+		userInfoCols.IssuerID,
+		issuerCols.ID,
+		issuerCols.URI,
+		userInfoCols.Subject,
+	)
 	row := s.db.QueryRowContext(ctx, stmt, iss, sub)
 
 	var ui types.UserInfo
@@ -474,10 +481,12 @@ func (s memoryUserInfoService) LookupUserInfoByID(ctx context.Context, id string
 	selectCols = append(selectCols, "i."+issuerCols.URI)
 
 	selects := strings.Join(selectCols, ",")
-	join := fmt.Sprintf("ui.%s = i.%s", userInfoCols.IssuerID, issuerCols.ID)
-	where := fmt.Sprintf("ui.%s = $1", userInfoCols.ID)
 
-	stmt := fmt.Sprintf("SELECT %s FROM user_info ui JOIN issuers i ON %s WHERE %s", selects, join, where)
+	stmt := fmt.Sprintf(`
+        SELECT %[1]s FROM user_info ui
+        JOIN issuers i ON ui.%[2]s = i.%[3]s
+        WHERE ui.%[4]s = $1
+        `, selects, userInfoCols.IssuerID, issuerCols.ID, userInfoCols.ID)
 
 	row := s.db.QueryRowContext(ctx, stmt, id)
 
@@ -525,22 +534,14 @@ func (s memoryUserInfoService) StoreUserInfo(ctx context.Context, userInfo types
 		userInfoCols.IssuerID,
 	}, ",")
 
-	conflictCols := []string{
+	q := fmt.Sprintf(`INSERT INTO user_info (%[1]s) VALUES (
+            $1, $2, $3, $4
+	) ON CONFLICT (%[2]s, %[3]s)
+        DO UPDATE SET %[2]s = excluded.%[2]s, %[3]s = excluded.%[3]s
+        RETURNING id`,
+		insertCols,
 		userInfoCols.Subject,
 		userInfoCols.IssuerID,
-	}
-
-	onConflictCols := strings.Join(conflictCols, ",")
-
-	updateCols := fmt.Sprintf("%[1]s = excluded.%[1]s, %[2]s = excluded.%[2]s", conflictCols[0], conflictCols[1])
-
-	q := fmt.Sprintf(`INSERT INTO user_info (%s) VALUES (
-            $1, $2, $3, $4
-	) ON CONFLICT (%s)
-        DO UPDATE SET %s RETURNING id`,
-		insertCols,
-		onConflictCols,
-		updateCols,
 	)
 
 	row = s.db.QueryRowContext(ctx, q,
