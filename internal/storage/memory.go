@@ -422,8 +422,8 @@ func (s *memoryUserInfoService) createTables() error {
 	_, err := s.db.Exec(`
         CREATE TABLE IF NOT EXISTS user_info (
             id    UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
-            name  STRING,
-            email STRING,
+            name  STRING NOT NULL,
+            email STRING NOT NULL,
             sub   STRING NOT NULL,
             iss_id   UUID NOT NULL REFERENCES issuers(id),
             UNIQUE (iss_id, sub)
@@ -495,6 +495,14 @@ func (s memoryUserInfoService) LookupUserInfoByID(ctx context.Context, id string
 // StoreUserInfo is used to store user information by issuer and
 // subject pairs. UserInfo is unique to issuer/subject pairs.
 func (s memoryUserInfoService) StoreUserInfo(ctx context.Context, userInfo types.UserInfo) (*types.UserInfo, error) {
+	if len(userInfo.Issuer) == 0 {
+		return nil, fmt.Errorf("%w: issuer is empty", types.ErrInvalidUserInfo)
+	}
+
+	if len(userInfo.Subject) == 0 {
+		return nil, fmt.Errorf("%w: subject is empty", types.ErrInvalidUserInfo)
+	}
+
 	row := s.db.QueryRowContext(ctx, `
         SELECT id FROM issuers WHERE uri = $1
         `, userInfo.Issuer)

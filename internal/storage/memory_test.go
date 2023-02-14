@@ -572,6 +572,10 @@ func TestUserInfoStore(t *testing.T) {
                     "sub": "super-admin"
                   }`
 
+		emptyResp := `{}`
+
+		nullResp := `{"name": null, "email": null, "sub": null}`
+
 		cases := []testingx.TestCase[fetchInput, fetchResult]{
 			{
 				Name:    "Success",
@@ -615,6 +619,54 @@ func TestUserInfoStore(t *testing.T) {
 					}
 
 					assert.Equal(t, expected, *info)
+				},
+				CleanupFn: cleanupFn,
+			},
+			{
+				Name: "EmptyUserInfo",
+				Input: fetchInput{
+					issuer:   "https://woo.com",
+					token:    "supersecretoken",
+					respBody: &emptyResp,
+				},
+				SetupFn: setupFn,
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[fetchResult]) {
+					err := res.Err
+					assert.NoError(t, err)
+					userinfo := res.Success.ui
+					emptyUserInfo := types.UserInfo{
+						ID:      uuid.Nil,
+						Name:    "",
+						Email:   "",
+						Subject: "",
+						Issuer:  "https://woo.com",
+					}
+
+					assert.Equal(t, emptyUserInfo, *userinfo)
+				},
+				CleanupFn: cleanupFn,
+			},
+			{
+				Name: "NullNameResponse",
+				Input: fetchInput{
+					issuer:   "https://woo.com",
+					token:    "supersecretoken",
+					respBody: &nullResp,
+				},
+				SetupFn: setupFn,
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[fetchResult]) {
+					err := res.Err
+					assert.NoError(t, err)
+					userinfo := res.Success.ui
+					emptyUserInfo := types.UserInfo{
+						ID:      uuid.Nil,
+						Name:    "",
+						Email:   "",
+						Subject: "",
+						Issuer:  "https://woo.com",
+					}
+
+					assert.Equal(t, emptyUserInfo, *userinfo)
 				},
 				CleanupFn: cleanupFn,
 			},
@@ -697,7 +749,8 @@ func TestUserInfoStore(t *testing.T) {
 				},
 				SetupFn: caseSetupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.UserInfo]) {
-					assert.ErrorIs(t, res.Err, types.ErrorIssuerNotFound)
+					assert.ErrorIs(t, res.Err, types.ErrInvalidUserInfo)
+					assert.ErrorContains(t, res.Err, "issuer is empty")
 				},
 				CleanupFn: caseCleanupFn,
 			},
@@ -708,6 +761,21 @@ func TestUserInfoStore(t *testing.T) {
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.UserInfo]) {
 					assert.NoError(t, res.Err)
 					assert.Equal(t, userInfoStored.ID, res.Success.ID)
+				},
+				CleanupFn: caseCleanupFn,
+			},
+			{
+				Name: "EmptySubject",
+				Input: types.UserInfo{
+					Name:    "",
+					Email:   "",
+					Subject: "",
+					Issuer:  "https://example.com",
+				},
+				SetupFn: caseSetupFn,
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.UserInfo]) {
+					assert.ErrorIs(t, res.Err, types.ErrInvalidUserInfo)
+					assert.ErrorContains(t, res.Err, "subject is empty")
 				},
 				CleanupFn: caseCleanupFn,
 			},

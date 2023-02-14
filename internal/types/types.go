@@ -4,7 +4,6 @@ package types
 import (
 	"context"
 	"encoding/json"
-	"errors"
 
 	"github.com/google/cel-go/cel"
 	"github.com/google/uuid"
@@ -172,14 +171,6 @@ type UserInfo struct {
 	Issuer  string    `json:"iss"`
 	Subject string    `json:"sub"`
 }
-
-// ErrUserInfoNotFound is returned if we attempt to fetch user info
-// from the storage backend and no info exists for that user
-var ErrUserInfoNotFound = errors.New("user info does not exist")
-
-// ErrFetchUserInfo occurs when we fail to successfully hit the user
-// info endpoint for a subject token.
-var ErrFetchUserInfo = errors.New("could not fetch user info")
 
 // UserInfoService defines the storage class for storing User
 // information related to the subject tokens.
