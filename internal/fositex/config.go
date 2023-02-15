@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/viper"
 	"go.infratographer.com/x/viperx"
 	"gopkg.in/square/go-jose.v2"
+
+	"go.infratographer.com/identity-manager-sts/internal/types"
 )
 
 const (
@@ -68,6 +70,16 @@ type ClaimMappingStrategyProvider interface {
 	GetClaimMappingStrategy(ctx context.Context) ClaimMappingStrategy
 }
 
+// UserInfoStrategy persists user information in the storage backend.
+type UserInfoStrategy interface {
+	types.UserInfoService
+}
+
+// UserInfoStrategyProvider represents the provider of the UserInfoStrategy.
+type UserInfoStrategyProvider interface {
+	GetUserInfoStrategy(ctx context.Context) UserInfoStrategy
+}
+
 // OAuth2Configurator represents an OAuth2 configuration.
 type OAuth2Configurator interface {
 	fosite.Configurator
@@ -75,6 +87,7 @@ type OAuth2Configurator interface {
 	SigningKeyProvider
 	SigningJWKSProvider
 	ClaimMappingStrategyProvider
+	UserInfoStrategyProvider
 }
 
 // OAuth2Config represents a Fosite OAuth 2.0 provider configuration.
@@ -84,6 +97,7 @@ type OAuth2Config struct {
 	SigningJWKS           *jose.JSONWebKeySet
 	IssuerJWKSURIStrategy IssuerJWKSURIStrategy
 	ClaimMappingStrategy  ClaimMappingStrategy
+	UserInfoStrategy      UserInfoStrategy
 }
 
 // GetIssuerJWKSURIStrategy returns the config's IssuerJWKSURIStrategy.
@@ -104,6 +118,11 @@ func (c *OAuth2Config) GetSigningJWKS(ctx context.Context) *jose.JSONWebKeySet {
 // GetClaimMappingStrategy returns the config's claims mapping strategy.
 func (c *OAuth2Config) GetClaimMappingStrategy(ctx context.Context) ClaimMappingStrategy {
 	return c.ClaimMappingStrategy
+}
+
+// GetUserInfoStrategy returns the config's user info store strategy.
+func (c *OAuth2Config) GetUserInfoStrategy(ctx context.Context) UserInfoStrategy {
+	return c.UserInfoStrategy
 }
 
 // MustViperFlags sets the flags needed for Fosite to work.

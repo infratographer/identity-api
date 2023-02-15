@@ -20,6 +20,7 @@ import (
 	"go.infratographer.com/identity-manager-sts/internal/rfc8693"
 	"go.infratographer.com/identity-manager-sts/internal/routes"
 	"go.infratographer.com/identity-manager-sts/internal/storage"
+	"go.infratographer.com/identity-manager-sts/internal/userinfo"
 )
 
 var serveCmd = &cobra.Command{
@@ -65,6 +66,7 @@ func serve(ctx context.Context) {
 
 	oauth2Config.IssuerJWKSURIStrategy = jwksStrategy
 	oauth2Config.ClaimMappingStrategy = mappingStrategy
+	oauth2Config.UserInfoStrategy = storageEngine
 
 	keyGetter := func(ctx context.Context) (any, error) {
 		return oauth2Config.GetSigningKey(ctx), nil
@@ -82,6 +84,11 @@ func serve(ctx context.Context) {
 		logger.Fatal("error initializing API server: %s", err)
 	}
 
+	userInfoHandler, err := userinfo.NewHandler(storageEngine, oauth2Config)
+	if err != nil {
+		logger.Fatal("error initializing UserInfo handler: %s", err)
+	}
+
 	router := routes.NewRouter(logger, oauth2Config, provider)
 
 	emptyLogFn := func(c *gin.Context) []zapcore.Field {
@@ -94,6 +101,7 @@ func serve(ctx context.Context) {
 
 	router.Routes(engine.Group("/"))
 	apiHandler.Routes(engine.Group("/"))
+	userInfoHandler.Routes(engine.Group("/"))
 
 	srv := &http.Server{
 		Addr:    config.Config.Server.Listen,

@@ -1,3 +1,4 @@
+// Package types defines all non-http types used in the STS.
 package types
 
 import (
@@ -159,4 +160,31 @@ func BuildClaimsMappingFromMap(in map[string]*exprpb.CheckedExpr) ClaimsMapping 
 	}
 
 	return out
+}
+
+// UserInfo contains information about the user from the source OIDC provider.
+// As defined in https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
+type UserInfo struct {
+	ID      uuid.UUID `json:"-"`
+	Name    string    `json:"name,omitempty"`
+	Email   string    `json:"email,omitempty"`
+	Issuer  string    `json:"iss"`
+	Subject string    `json:"sub"`
+}
+
+// UserInfoService defines the storage class for storing User
+// information related to the subject tokens.
+type UserInfoService interface {
+	// LookupUserInfoByClaims returns the User information object for a issuer, subject pair.
+	LookupUserInfoByClaims(ctx context.Context, iss, sub string) (*UserInfo, error)
+
+	// LookupUserInfoByID returns the user info for a STS user ID
+	LookupUserInfoByID(ctx context.Context, id string) (*UserInfo, error)
+
+	// StoreUserInfo stores the userInfo into the storage backend.
+	StoreUserInfo(ctx context.Context, userInfo UserInfo) (*UserInfo, error)
+
+	// FetchUserInfoFromIssuer uses the rawToken to make a userinfo endpoint request
+	// and unpacks it into the UserInfo type.
+	FetchUserInfoFromIssuer(ctx context.Context, iss, rawToken string) (*UserInfo, error)
 }
