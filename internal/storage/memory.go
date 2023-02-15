@@ -457,11 +457,23 @@ func (s memoryUserInfoService) LookupUserInfoByClaims(ctx context.Context, iss, 
 		issuerCols.URI,
 		userInfoCols.Subject,
 	)
-	row := s.db.QueryRowContext(ctx, stmt, iss, sub)
+
+	var row *sql.Row
+
+	tx, err := getContextTx(ctx)
+
+	switch err {
+	case nil:
+		row = tx.QueryRowContext(ctx, stmt, iss, sub)
+	case ErrorMissingContextTx:
+		row = s.db.QueryRowContext(ctx, stmt, iss, sub)
+	default:
+		return nil, err
+	}
 
 	var ui types.UserInfo
 
-	err := row.Scan(&ui.Name, &ui.Email, &ui.Subject, &ui.Issuer)
+	err = row.Scan(&ui.Name, &ui.Email, &ui.Subject, &ui.Issuer)
 
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, types.ErrUserInfoNotFound
@@ -488,11 +500,22 @@ func (s memoryUserInfoService) LookupUserInfoByID(ctx context.Context, id string
         WHERE ui.%[4]s = $1
         `, selects, userInfoCols.IssuerID, issuerCols.ID, userInfoCols.ID)
 
-	row := s.db.QueryRowContext(ctx, stmt, id)
+	var row *sql.Row
+
+	tx, err := getContextTx(ctx)
+
+	switch err {
+	case nil:
+		row = tx.QueryRowContext(ctx, stmt, id)
+	case ErrorMissingContextTx:
+		row = s.db.QueryRowContext(ctx, stmt, id)
+	default:
+		return nil, err
+	}
 
 	var ui types.UserInfo
 
-	err := row.Scan(&ui.ID, &ui.Name, &ui.Email, &ui.Subject, &ui.Issuer)
+	err = row.Scan(&ui.ID, &ui.Name, &ui.Email, &ui.Subject, &ui.Issuer)
 
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, types.ErrUserInfoNotFound
@@ -512,13 +535,18 @@ func (s memoryUserInfoService) StoreUserInfo(ctx context.Context, userInfo types
 		return nil, fmt.Errorf("%w: subject is empty", types.ErrInvalidUserInfo)
 	}
 
-	row := s.db.QueryRowContext(ctx, `
+	tx, err := getContextTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	row := tx.QueryRowContext(ctx, `
         SELECT id FROM issuers WHERE uri = $1
         `, userInfo.Issuer)
 
 	var issuerID string
 
-	err := row.Scan(&issuerID)
+	err = row.Scan(&issuerID)
 	switch err {
 	case nil:
 	case sql.ErrNoRows:
@@ -544,7 +572,7 @@ func (s memoryUserInfoService) StoreUserInfo(ctx context.Context, userInfo types
 		userInfoCols.IssuerID,
 	)
 
-	row = s.db.QueryRowContext(ctx, q,
+	row = tx.QueryRowContext(ctx, q,
 		userInfo.Name, userInfo.Email, userInfo.Subject, issuerID,
 	)
 

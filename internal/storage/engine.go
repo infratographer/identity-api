@@ -15,13 +15,18 @@ const (
 // EngineType represents the type of identity-manager-sts storage engine.
 type EngineType string
 
-// Engine represents a storage engine.
-type Engine interface {
-	types.IssuerService
+// TransactionManager manages the state of sql transactions within a context
+type TransactionManager interface {
 	BeginContext(context.Context) (context.Context, error)
 	CommitContext(context.Context) error
 	RollbackContext(context.Context) error
+}
+
+// Engine represents a storage engine.
+type Engine interface {
+	types.IssuerService
 	types.UserInfoService
+	TransactionManager
 	Shutdown()
 }
 

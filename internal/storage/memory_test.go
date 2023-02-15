@@ -444,7 +444,25 @@ func TestUserInfoStore(t *testing.T) {
 		Subject: "sub0|malikadmin",
 	}
 
-	userInfoStored, err := svc.StoreUserInfo(ctx, user)
+	var userInfoStored *types.UserInfo
+
+	// seed the DB
+	{
+		ctx, err := beginTxContext(ctx, db)
+		if !assert.NoError(t, err) {
+			assert.FailNow(t, "begin transaction for insert user failed")
+		}
+
+		userInfoStored, err = svc.StoreUserInfo(ctx, user)
+		if !assert.NoError(t, err) {
+			assert.FailNow(t, "insert user failed")
+		}
+
+		err = commitContextTx(ctx)
+		if !assert.NoError(t, err) {
+			assert.FailNow(t, "commit transaction insert user failed")
+		}
+	}
 
 	if !assert.NoError(t, err) {
 		assert.FailNow(t, "insert user failed")

@@ -14,6 +14,7 @@ import (
 	"github.com/ory/x/errorsx"
 
 	"go.infratographer.com/identity-manager-sts/internal/fositex"
+	"go.infratographer.com/identity-manager-sts/internal/storage"
 	"go.infratographer.com/identity-manager-sts/internal/types"
 )
 
@@ -210,17 +211,34 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 
 	issuer := claims.Issuer
 
-	userInfo, err := s.populateUserInfo(ctx, issuer, claims.Subject, subjectToken)
+	userInfoSvc := s.config.GetUserInfoStrategy(ctx)
+
+	txManager, ok := userInfoSvc.(storage.TransactionManager)
+	if !ok {
+		return errorsx.WithStack(fosite.ErrServerError.WithHint("unable to find transaction manager"))
+	}
+
+	dbCtx, err := txManager.BeginContext(ctx)
+	if err != nil {
+		return errorsx.WithStack(fosite.ErrServerError.WithHint("could not start transaction"))
+	}
+
+	userInfo, err := s.populateUserInfo(dbCtx, issuer, claims.Subject, subjectToken)
 	if err != nil {
 		return errorsx.WithStack(fosite.ErrInvalidRequest.WithHintf("unable to populate user info: %s", err))
 	}
 
-	userInfoSvc := s.config.GetUserInfoStrategy(ctx)
-
-	userWithID, err := userInfoSvc.StoreUserInfo(ctx, *userInfo)
+	userWithID, err := userInfoSvc.StoreUserInfo(dbCtx, *userInfo)
 
 	if err != nil {
-		return errorsx.WithStack(fosite.ErrInvalidRequest.WithHintf("unable to store user info: %s", err))
+		rbErr := txManager.RollbackContext(dbCtx)
+		return errorsx.WithStack(fosite.ErrInvalidRequest.WithHintf("unable to store user info: %s / rollback error: %s", err, rbErr))
+	}
+
+	err = txManager.CommitContext(dbCtx)
+
+	if err != nil {
+		return errorsx.WithStack(fosite.ErrServerError.WithHintf("could not commit user info: %s", err))
 	}
 
 	var newClaims jwt.JWTClaims
