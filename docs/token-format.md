@@ -8,7 +8,7 @@ We anticipate that these tokens will be used to inform further authorization dec
 
 This is as defined in [RFC 8693][rfc-8693]. At minimum, a token request includes the following parameters:
 
-- `grant_type` (always set to `urn:ietf:params:oauth:grant-type:token-exchange`
+- `grant_type` (always set to `urn:ietf:params:oauth:grant-type:token-exchange`)
 - `subject_token`
 - `subject_token_type`
 
@@ -21,22 +21,24 @@ For the first iteration of identity-manager-sts, we are only supporting the use 
 
 The token returned is an [RFC 9068][rfc-9068]-compliant access token JWT with the following claims:
 
-| claim              | description                                                                                         |
-|--------------------|-----------------------------------------------------------------------------------------------------|
-| iss                | FQDN for identity-manager-sts issuer                                                                |
-| iat                | The time the token was issued                                                                       |
-| jti                | Unique ID for the token issued                                                                      |
-| exp                | Token expiration time                                                                               |
-| sub                | Subject of the token in the infratographer namespace<br>example "sub": `infratographer:user:{uuid}` |
-| aud                | Resources on which that token may operate                                                           |
-| client_id          | ID of the client requesting the token                                                               |
-| infratographer.sub | Private claim which indicates the subject be used in policy enforcement                             |
+| claim              | description                                                                                      |
+|--------------------|--------------------------------------------------------------------------------------------------|
+| iss                | FQDN for identity-manager-sts issuer                                                             |
+| iat                | The time the token was issued                                                                    |
+| jti                | Unique ID for the token issued                                                                   |
+| exp                | Token expiration time                                                                            |
+| sub                | URN of the user in the infratographer namespace, e.g. `urn:infratographer:user/{uuid}`           |
+| aud                | Resources on which the token may operate                                                         |
+| client_id          | ID of the client requesting the token, or `null` if no client was used when requesting the token |
+| infratographer.sub | Private claim which indicates the subject be used in policy enforcement                          |
 
-The following are defined in [RFC 8693][rfc-8693], but for now aren't supported until we run into/identify the use cases for them:
+The following are defined in [RFC 8693][rfc-8693] and [RFC 9068][rfc-9068], but for now aren't supported until we run into/identify the use cases for them:
 
-- `act` describes the acting party to whom access has been delegated. identity-manager-sts currently only supports impersonation semantics, not delegation.
-- `may_act` claims in the subject_token are used together with `actor_token` to determine if the actor is authorized to proceed as the authority for the original subject.
-
+- `act`: Describes the acting party to whom access has been delegated. identity-manager-sts currently only supports impersonation semantics, not delegation.
+- `may_act`: Describes the set of claims that identify an actor that can act on behalf of the subject identified by the subject token.
+- `groups`: Describes groups that the subject is a member of in the context of the issued access token.
+- `roles`: Describes roles assigned to the subject in the context of the issued access token.
+- `entitlements`: Describes individual resources the subject can access in the context of the issued access token.
 
 ### Claim Mapping
 
