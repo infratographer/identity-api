@@ -10,7 +10,7 @@ type SeedIssuer struct {
 	ClaimMappings map[string]string
 }
 
-// SeedData represents the seed data for a identity-manager-sts instance on startup.
+// SeedData represents the seed data for an identity-api instance on startup.
 type SeedData struct {
 	Issuers []SeedIssuer
 }

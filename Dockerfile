@@ -12,15 +12,15 @@ COPY . ./
 
 # Build the binary.
 # -mod=readonly ensures immutable go.mod and go.sum in container builds.
-RUN CGO_ENABLED=0 GOOS=linux go build -mod=readonly -v -o identity-manager-sts
+RUN CGO_ENABLED=0 GOOS=linux go build -mod=readonly -v -o identity-api
 
 FROM gcr.io/distroless/base:nonroot AS runner
 
 # `nonroot` coming from distroless
 USER 65532:65532
 
-COPY --from=builder /app/identity-manager-sts /app/identity-manager-sts
+COPY --from=builder /app/identity-api /app/identity-api
 
 # Run the web service on container startup.
-ENTRYPOINT ["/app/identity-manager-sts"]
+ENTRYPOINT ["/app/identity-api"]
 CMD ["serve"]

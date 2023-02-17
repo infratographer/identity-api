@@ -7,8 +7,8 @@ import (
 	"github.com/google/cel-go/cel"
 	"github.com/stretchr/testify/assert"
 
-	"go.infratographer.com/identity-manager-sts/internal/celutils"
-	"go.infratographer.com/identity-manager-sts/internal/testingx"
+	"go.infratographer.com/identity-api/internal/celutils"
+	"go.infratographer.com/identity-api/internal/testingx"
 )
 
 // TestClaimMappingParse checks that claim mapping expressions parse correctly.

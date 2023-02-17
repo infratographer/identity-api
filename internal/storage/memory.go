@@ -13,7 +13,7 @@ import (
 	"github.com/cockroachdb/cockroach-go/v2/testserver"
 	"github.com/google/uuid"
 
-	"go.infratographer.com/identity-manager-sts/internal/types"
+	"go.infratographer.com/identity-api/internal/types"
 )
 
 var issuerCols = struct {

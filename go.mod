@@ -1,4 +1,4 @@
-module go.infratographer.com/identity-manager-sts
+module go.infratographer.com/identity-api
 
 go 1.19
 

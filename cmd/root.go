@@ -10,14 +10,14 @@ import (
 	"go.infratographer.com/x/loggingx"
 	"go.uber.org/zap"
 
-	"go.infratographer.com/identity-manager-sts/internal/config"
+	"go.infratographer.com/identity-api/internal/config"
 )
 
 var (
-	appName = "identity-manager-sts"
+	appName = "identity-api"
 	rootCmd = &cobra.Command{
-		Use:   "identity-manager-sts",
-		Short: "identity-manager-sts authorization server",
+		Use:   "identity-api",
+		Short: "identity-api authorization server",
 	}
 
 	cfgFile string
@@ -27,21 +27,21 @@ var (
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is /etc/identity-manager-sts/identity-manager-sts.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is /etc/identity-api/identity-api.yaml)")
 }
 
 func initConfig() {
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
 	} else {
-		viper.AddConfigPath("/etc/identity-manager-sts")
+		viper.AddConfigPath("/etc/identity-api")
 		viper.SetConfigType("yaml")
-		viper.SetConfigName("identity-manager-sts")
+		viper.SetConfigName("identity-api")
 	}
 
 	// Allow populating configuration from environment
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	viper.SetEnvPrefix("imsts")
+	viper.SetEnvPrefix("idapi")
 	viper.AutomaticEnv() // read in environment variables that match
 
 	err := viper.ReadInConfig()

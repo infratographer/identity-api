@@ -1,10 +1,10 @@
 all: lint test
 PHONY: deps generate test coverage lint golint clean vendor docker-up docker-down unit-test
 GOOS=linux
-APP_NAME?=identity-manager-sts
+APP_NAME?=identity-api
 
 TEST_PRIVKEY_FILE?=tests/data/privkey.pem
-CONFIG_FILE?=sts.example.yaml
+CONFIG_FILE?=identity-api.example.yaml
 
 # we use a prerelease version of oapi-codegen because the latest version (v1.12.4)
 # produces buggy Gin code

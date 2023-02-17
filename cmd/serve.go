@@ -13,19 +13,19 @@ import (
 	"go.infratographer.com/x/otelx"
 	"go.uber.org/zap/zapcore"
 
-	"go.infratographer.com/identity-manager-sts/internal/api/httpsrv"
-	"go.infratographer.com/identity-manager-sts/internal/config"
-	"go.infratographer.com/identity-manager-sts/internal/fositex"
-	"go.infratographer.com/identity-manager-sts/internal/jwks"
-	"go.infratographer.com/identity-manager-sts/internal/rfc8693"
-	"go.infratographer.com/identity-manager-sts/internal/routes"
-	"go.infratographer.com/identity-manager-sts/internal/storage"
-	"go.infratographer.com/identity-manager-sts/internal/userinfo"
+	"go.infratographer.com/identity-api/internal/api/httpsrv"
+	"go.infratographer.com/identity-api/internal/config"
+	"go.infratographer.com/identity-api/internal/fositex"
+	"go.infratographer.com/identity-api/internal/jwks"
+	"go.infratographer.com/identity-api/internal/rfc8693"
+	"go.infratographer.com/identity-api/internal/routes"
+	"go.infratographer.com/identity-api/internal/storage"
+	"go.infratographer.com/identity-api/internal/userinfo"
 )
 
 var serveCmd = &cobra.Command{
 	Use:   "serve",
-	Short: "starts identity-manager-sts",
+	Short: "starts identity-api",
 	Run: func(cmd *cobra.Command, args []string) {
 		serve(cmd.Context())
 	},

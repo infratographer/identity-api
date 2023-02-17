@@ -8,10 +8,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
-	"go.infratographer.com/identity-manager-sts/internal/storage"
-	"go.infratographer.com/identity-manager-sts/internal/testingx"
-	"go.infratographer.com/identity-manager-sts/internal/types"
-	v1 "go.infratographer.com/identity-manager-sts/pkg/api/v1"
+	"go.infratographer.com/identity-api/internal/storage"
+	"go.infratographer.com/identity-api/internal/testingx"
+	"go.infratographer.com/identity-api/internal/types"
+	v1 "go.infratographer.com/identity-api/pkg/api/v1"
 )
 
 func TestAPIHandler(t *testing.T) {

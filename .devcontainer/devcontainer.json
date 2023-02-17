@@ -1,5 +1,5 @@
 {
-    "name": "identity-manager-sts",
+    "name": "identity-api",
     "dockerComposeFile": "docker-compose.yml",
     "service": "app",
     "workspaceFolder": "/workspace",

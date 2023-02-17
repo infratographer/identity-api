@@ -10,7 +10,7 @@ spec:
     - name: web
       port: 80
       protocol: TCP
-      targetPort: {{ include "im-sts.listenPort" . }}
+      targetPort: {{ include "idapi.listenPort" . }}
   selector: {{- include "common.labels.matchLabels" . | nindent 4 }}
   sessionAffinity: None
   type: ClusterIP

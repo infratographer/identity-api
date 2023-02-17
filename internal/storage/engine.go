@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"go.infratographer.com/identity-manager-sts/internal/types"
+	"go.infratographer.com/identity-api/internal/types"
 )
 
 const (
@@ -12,7 +12,7 @@ const (
 	EngineTypeMemory EngineType = "memory"
 )
 
-// EngineType represents the type of identity-manager-sts storage engine.
+// EngineType represents the type of identity-api storage engine.
 type EngineType string
 
 // TransactionManager manages the state of sql transactions within a context

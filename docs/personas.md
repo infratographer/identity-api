@@ -1,6 +1,6 @@
 # Personas
 
-The following personas make up the bulk of the target audience and use cases for identity-manager-sts.
+The following personas make up the bulk of the target audience and use cases for identity-api.
 
 ## User
 
@@ -20,4 +20,4 @@ An application is a program that is able to perform actions on resources within 
 
 ## Enterprise
 
-An enterprise is an entity that is self-hosting identity-manager-sts along with other Infratographer services.
+An enterprise is an entity that is self-hosting identity-api along with other Infratographer services.

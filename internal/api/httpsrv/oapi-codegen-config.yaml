@@ -5,4 +5,4 @@ generate:
   strict-server: true
 additional-imports:
   - alias: .
-    package: go.infratographer.com/identity-manager-sts/pkg/api/v1
+    package: go.infratographer.com/identity-api/pkg/api/v1

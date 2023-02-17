@@ -13,9 +13,9 @@ import (
 	"github.com/ory/fosite/token/jwt"
 	"github.com/ory/x/errorsx"
 
-	"go.infratographer.com/identity-manager-sts/internal/fositex"
-	"go.infratographer.com/identity-manager-sts/internal/storage"
-	"go.infratographer.com/identity-manager-sts/internal/types"
+	"go.infratographer.com/identity-api/internal/fositex"
+	"go.infratographer.com/identity-api/internal/storage"
+	"go.infratographer.com/identity-api/internal/types"
 )
 
 const (

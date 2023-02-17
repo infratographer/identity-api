@@ -1,2 +1,2 @@
-// Package routes contains route handlers and logic for identity-manager-sts.
+// Package routes contains route handlers and logic for identity-api.
 package routes

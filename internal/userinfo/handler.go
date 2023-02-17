@@ -13,9 +13,9 @@ import (
 	"go.hollow.sh/toolbox/ginjwt"
 	"gopkg.in/square/go-jose.v2"
 
-	"go.infratographer.com/identity-manager-sts/internal/fositex"
-	"go.infratographer.com/identity-manager-sts/internal/rfc8693"
-	"go.infratographer.com/identity-manager-sts/internal/types"
+	"go.infratographer.com/identity-api/internal/fositex"
+	"go.infratographer.com/identity-api/internal/rfc8693"
+	"go.infratographer.com/identity-api/internal/types"
 )
 
 // Handler provides the endpoint for /userinfo

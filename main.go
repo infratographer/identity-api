@@ -2,7 +2,7 @@
 package main
 
 import (
-	"go.infratographer.com/identity-manager-sts/cmd"
+	"go.infratographer.com/identity-api/cmd"
 )
 
 func main() {
