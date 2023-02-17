@@ -15,7 +15,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.15.0
 	github.com/stretchr/testify v1.8.1
-	go.hollow.sh/toolbox v0.5.0
+	go.hollow.sh/toolbox v0.5.1
 	go.infratographer.com/x v0.0.2
 	go.uber.org/zap v1.24.0
 	google.golang.org/genproto v0.0.0-20230209215440-0dfe4f8abfcc

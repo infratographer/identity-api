@@ -458,6 +458,8 @@ github.com/zsais/go-gin-prometheus v0.1.0 h1:bkLv1XCdzqVgQ36ScgRi09MA2UC1t3tAB6n
 github.com/zsais/go-gin-prometheus v0.1.0/go.mod h1:Slirjzuz8uM8Cw0jmPNqbneoqcUtY2GGjn2bEd4NRLY=
 go.hollow.sh/toolbox v0.5.0 h1:aFzj/FZM8b6K9nVlYQycUVx1ScmubmUu37lcP7K0rHM=
 go.hollow.sh/toolbox v0.5.0/go.mod h1:nfUNHobFfItossU5I0m7h2dw+0nY7rQt3DSUm2wGI5Q=
+go.hollow.sh/toolbox v0.5.1 h1:x/tRdpgUFckT/pw6FySxUpSFxhw+Sc66zxbwlra+br4=
+go.hollow.sh/toolbox v0.5.1/go.mod h1:nfUNHobFfItossU5I0m7h2dw+0nY7rQt3DSUm2wGI5Q=
 go.infratographer.com/x v0.0.2 h1:x/vjD4k8qBgHUdP92oBzPOkh54K8HTh6Rjm03rY+Txw=
 go.infratographer.com/x v0.0.2/go.mod h1:X87s1QHNKOrY2W3VowdoOK2OtXeR8o9kaJp1P5NCbDE=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
