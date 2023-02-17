@@ -6,7 +6,7 @@ import (
 	"github.com/ory/fosite"
 	"go.uber.org/zap"
 
-	"go.infratographer.com/identity-manager-sts/internal/fositex"
+	"go.infratographer.com/identity-api/internal/fositex"
 )
 
 // Router is the router for the application.

@@ -1,5 +1,5 @@
 ---
-{{- $serverPort := include "im-sts.listenPort" . }}
+{{- $serverPort := include "idapi.listenPort" . }}
 {{- $serverIP := .Values.config.server.ip }}
 apiVersion: v1
 kind: ConfigMap
@@ -10,7 +10,7 @@ metadata:
     {{- include "common.labels.standard" . | nindent 4 }}
 data:
   {{- with .Values.config }}
-  identity-manager-sts.yaml: |
+  identity-api.yaml: |
     server:
       listen: "{{ $serverIP }}:{{ $serverPort }}"
     otel:
@@ -36,6 +36,6 @@ data:
       seedData:
         issuers:
           {{- range $k, $v := .storage.seedData.issuers }}
-          {{- template "im-sts.seedIssuer" $v }}
+          {{- template "idapi.seedIssuer" $v }}
           {{- end }}
   {{- end }}

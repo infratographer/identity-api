@@ -1,12 +1,12 @@
 # User stories
 
-The following user stories comprise the bulk of functionality identity-manager-sts aims to provide, based on the described [personas][personas].
+The following user stories comprise the bulk of functionality identity-api aims to provide, based on the described [personas][personas].
 
 [personas]: ./personas.md
 
 ## As a customer, I want to use my existing OIDC provider's access tokens to access protected resources
 
-Customers may access resources using any OIDC provider that identity-manager-sts supports and which issues appropriately formatted JWTs. Upstream services should support consuming these tokens directly and exchanging them in identity-manager-sts, as well as consuming and validating tokens issued by identity-manager-sts.
+Customers may access resources using any OIDC provider that identity-api supports and which issues appropriately formatted JWTs. Upstream services should support consuming these tokens directly and exchanging them in identity-api, as well as consuming and validating tokens issued by identity-api.
 
 ## As a service, I want to trust exactly one JWT issuer for authenticating requests
 
@@ -26,4 +26,4 @@ Users should be able to revoke, rotate, and issue tokens for applications when t
 
 ## As an enterprise, I want to define the mappings from an OIDC provider to a known token format
 
-OIDC providers, assuming they issue access tokens as JWTs, support a number of different claims and formats for those claim values. Enterprises that manage an identity-manager-sts instance should be able to define mappings from these claims to other values when constructing access tokens during token exchange.
+OIDC providers, assuming they issue access tokens as JWTs, support a number of different claims and formats for those claim values. Enterprises that manage an identity-api instance should be able to define mappings from these claims to other values when constructing access tokens during token exchange.

@@ -2,7 +2,7 @@
 {{/*
 Create the SeedIssuer object to bootstrap the token exchange with an issuer.
 */}}
-{{- define "im-sts.seedIssuer" }}
+{{- define "idapi.seedIssuer" }}
           - tenantID: {{ .tenantID }}
             id:  {{ .id }}
             name: {{ .name }}
@@ -14,6 +14,6 @@ Create the SeedIssuer object to bootstrap the token exchange with an issuer.
             {{- end }}
 {{- end }}
 
-{{- define "im-sts.listenPort" }}
+{{- define "idapi.listenPort" }}
 {{- .Values.config.server.port | default 8080 }}
 {{- end }}

@@ -5,8 +5,8 @@ import (
 	"context"
 	"fmt"
 
-	"go.infratographer.com/identity-manager-sts/internal/fositex"
-	"go.infratographer.com/identity-manager-sts/internal/types"
+	"go.infratographer.com/identity-api/internal/fositex"
+	"go.infratographer.com/identity-api/internal/types"
 )
 
 var (

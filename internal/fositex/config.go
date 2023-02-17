@@ -10,7 +10,7 @@ import (
 	"go.infratographer.com/x/viperx"
 	"gopkg.in/square/go-jose.v2"
 
-	"go.infratographer.com/identity-manager-sts/internal/types"
+	"go.infratographer.com/identity-api/internal/types"
 )
 
 const (

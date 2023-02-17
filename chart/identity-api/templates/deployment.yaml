@@ -61,10 +61,10 @@ spec:
               mountPath: /keys/
               readOnly: true
             - name: app-config
-              mountPath: /etc/identity-manager-sts/
+              mountPath: /etc/identity-api/
           ports:
             - name: web
-              containerPort: {{ include "im-sts.listenPort" . }}
+              containerPort: {{ include "idapi.listenPort" . }}
           {{- with .Values.deployment.resources }}
           resources:
           {{- toYaml . | nindent 12 }}

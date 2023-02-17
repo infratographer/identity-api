@@ -10,21 +10,21 @@ import (
 	exprpb "google.golang.org/genproto/googleapis/api/expr/v1alpha1"
 	"google.golang.org/protobuf/encoding/prototext"
 
-	"go.infratographer.com/identity-manager-sts/internal/celutils"
-	v1 "go.infratographer.com/identity-manager-sts/pkg/api/v1"
+	"go.infratographer.com/identity-api/internal/celutils"
+	v1 "go.infratographer.com/identity-api/pkg/api/v1"
 )
 
 // Issuer represents a token issuer.
 type Issuer struct {
 	// TenantID represents the ID of the tenant the issuer belongs to.
 	TenantID string
-	// ID represents the ID of the issuer in identity-manager-sts.
+	// ID represents the ID of the issuer in identity-api.
 	ID string
 	// Name represents the human-readable name of the issuer.
 	Name string
 	// URI represents the issuer URI as found in the "iss" claim of a JWT.
 	URI string
-	// JWKSURI represents the URI where the issuer's JWKS lives. Must be accessible by identity-manager-sts.
+	// JWKSURI represents the URI where the issuer's JWKS lives. Must be accessible by identity-api.
 	JWKSURI string
 	// ClaimMappings represents a map of claims to a CEL expression that will be evaluated
 	ClaimMappings ClaimsMapping

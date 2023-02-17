@@ -7,9 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	"go.infratographer.com/identity-manager-sts/internal/storage"
-	"go.infratographer.com/identity-manager-sts/internal/types"
-	v1 "go.infratographer.com/identity-manager-sts/pkg/api/v1"
+	"go.infratographer.com/identity-api/internal/storage"
+	"go.infratographer.com/identity-api/internal/types"
+	v1 "go.infratographer.com/identity-api/pkg/api/v1"
 )
 
 func validationErrorHandler(ctx *gin.Context, err error, status int) {
@@ -242,7 +242,7 @@ func (h *apiHandler) DeleteIssuer(ctx context.Context, req DeleteIssuerRequestOb
 	return DeleteIssuer200JSONResponse(out), nil
 }
 
-// APIHandler represents an identity-manager-sts management API handler.
+// APIHandler represents an identity-api management API handler.
 type APIHandler struct {
 	handler              *apiHandler
 	validationMiddleware gin.HandlerFunc

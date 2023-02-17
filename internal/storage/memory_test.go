@@ -12,8 +12,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
-	"go.infratographer.com/identity-manager-sts/internal/testingx"
-	"go.infratographer.com/identity-manager-sts/internal/types"
+	"go.infratographer.com/identity-api/internal/testingx"
+	"go.infratographer.com/identity-api/internal/types"
 )
 
 func compareIssuers(t *testing.T, exp types.Issuer, obs types.Issuer) {

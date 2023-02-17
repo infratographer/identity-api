@@ -1,2 +1,2 @@
-// Package types contains domain types internal to identity-manager-sts.
+// Package types contains domain types internal to identity-api.
 package types

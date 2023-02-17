@@ -12,7 +12,7 @@ import (
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 	"github.com/gin-gonic/gin"
-	. "go.infratographer.com/identity-manager-sts/pkg/api/v1"
+	. "go.infratographer.com/identity-api/pkg/api/v1"
 )
 
 // ServerInterface represents all server handlers.
