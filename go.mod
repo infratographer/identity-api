@@ -10,7 +10,7 @@ require (
 	github.com/google/cel-go v0.13.0
 	github.com/google/uuid v1.3.0
 	github.com/ory/fosite v0.44.0
-	github.com/ory/x v0.0.539
+	github.com/ory/x v0.0.541
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.15.0
