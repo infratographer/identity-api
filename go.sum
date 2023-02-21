@@ -365,8 +365,6 @@ github.com/ory/go-acc v0.2.9-0.20230103102148-6b1c9a70dbbe h1:rvu4obdvqR0fkSIJ8I
 github.com/ory/go-acc v0.2.9-0.20230103102148-6b1c9a70dbbe/go.mod h1:z4n3u6as84LbV4YmgjHhnwtccQqzf4cZlSk9f1FhygI=
 github.com/ory/go-convenience v0.1.0 h1:zouLKfF2GoSGnJwGq+PE/nJAE6dj2Zj5QlTgmMTsTS8=
 github.com/ory/go-convenience v0.1.0/go.mod h1:uEY/a60PL5c12nYz4V5cHY03IBmwIAEm8TWB0yn9KNs=
-github.com/ory/x v0.0.535 h1:muhBRYkAz52J00yEGw6LtwJDF5HhyxM2w0E0V4w5z+o=
-github.com/ory/x v0.0.535/go.mod h1:CQopDsCC9t0tQsddE9UlyRFVEFd2xjKBVcw4nLMMMS0=
 github.com/ory/x v0.0.539 h1:xtXO/kT6fidaMHeC3Y2IIUEiPepsKKS78sCvtRfABwk=
 github.com/ory/x v0.0.539/go.mod h1:Ea5UmrGESM86aRrDMxbO5HkoY0hSQdvEEv2xKybsO8U=
 github.com/pborman/uuid v1.2.1 h1:+ZZIw58t/ozdjRaXh/3awHfmWRbzYxJoAdNJxe/3pvw=
@@ -456,8 +454,6 @@ github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1
 github.com/zenazn/goji v0.9.0/go.mod h1:7S9M489iMyHBNxwZnk9/EHS098H4/F6TATF2mIxtB1Q=
 github.com/zsais/go-gin-prometheus v0.1.0 h1:bkLv1XCdzqVgQ36ScgRi09MA2UC1t3tAB6nsfErsGO4=
 github.com/zsais/go-gin-prometheus v0.1.0/go.mod h1:Slirjzuz8uM8Cw0jmPNqbneoqcUtY2GGjn2bEd4NRLY=
-go.hollow.sh/toolbox v0.5.0 h1:aFzj/FZM8b6K9nVlYQycUVx1ScmubmUu37lcP7K0rHM=
-go.hollow.sh/toolbox v0.5.0/go.mod h1:nfUNHobFfItossU5I0m7h2dw+0nY7rQt3DSUm2wGI5Q=
 go.hollow.sh/toolbox v0.5.1 h1:x/tRdpgUFckT/pw6FySxUpSFxhw+Sc66zxbwlra+br4=
 go.hollow.sh/toolbox v0.5.1/go.mod h1:nfUNHobFfItossU5I0m7h2dw+0nY7rQt3DSUm2wGI5Q=
 go.infratographer.com/x v0.0.2 h1:x/vjD4k8qBgHUdP92oBzPOkh54K8HTh6Rjm03rY+Txw=
@@ -502,7 +498,7 @@ go.uber.org/atomic v1.7.0/go.mod h1:fEN4uk6kAWBTFdckzkM89CLk9XfWZrxpCo0nPH17wJc=
 go.uber.org/atomic v1.10.0 h1:9qC72Qh0+3MqyJbAn8YU5xVq1frD8bn3JtD2oXtafVQ=
 go.uber.org/atomic v1.10.0/go.mod h1:LUxbIzbOniOlMKjJjyPfpl4v+PKK2cNJn91OQbhoJI0=
 go.uber.org/goleak v1.1.11/go.mod h1:cwTWslyiVhfpKIDGSZEM2HlOvcqm+tG4zioyIeLoqMQ=
-go.uber.org/goleak v1.2.0 h1:xqgm/S+aQvhWFTtR0XK3Jvg7z8kGV8P4X14IzwN3Eqk=
+go.uber.org/goleak v1.2.1 h1:NBol2c7O1ZokfZ0LEU9K6Whx/KnwvepVetCUhtKja4A=
 go.uber.org/multierr v1.1.0/go.mod h1:wR5kodmAFQ0UK8QlbwjlSNy0Z68gJhDJUG5sjR94q/0=
 go.uber.org/multierr v1.3.0/go.mod h1:VgVr7evmIr6uPjLBxg28wmKNXyqE9akIJ5XnfpiKl+4=
 go.uber.org/multierr v1.5.0/go.mod h1:FeouvMocqHpRaaGuG9EjoKcStLC43Zu/fmqdUMPcKYU=
