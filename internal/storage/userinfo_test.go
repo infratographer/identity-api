@@ -45,7 +45,6 @@ func TestUserInfoStore(t *testing.T) {
 	}
 
 	config := Config{
-		db: db,
 		SeedData: SeedData{
 			Issuers: []SeedIssuer{
 				{
@@ -60,10 +59,10 @@ func TestUserInfoStore(t *testing.T) {
 		},
 	}
 
-	_, err = newIssuerService(config)
+	_, err = newIssuerService(config, db)
 	assert.Nil(t, err)
 
-	svc, err := newUserInfoService(config, WithHTTPClient(httpClient))
+	svc, err := newUserInfoService(config, db, WithHTTPClient(httpClient))
 	assert.NoError(t, err)
 
 	ctx := context.Background()
@@ -323,7 +322,7 @@ func TestUserInfoStore(t *testing.T) {
 		runFn := func(ctx context.Context, input fetchInput) testingx.TestResult[fetchResult] {
 			tr := recordingTransport{body: input.respBody}
 			client := http.Client{Transport: &tr}
-			svc, err := newUserInfoService(config, WithHTTPClient(&client))
+			svc, err := newUserInfoService(config, db, WithHTTPClient(&client))
 			if !assert.NoError(t, err) {
 				assert.FailNow(t, "failed to create new fake transport: %v", err)
 			}

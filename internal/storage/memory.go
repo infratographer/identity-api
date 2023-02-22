@@ -32,14 +32,12 @@ func newMemoryEngine(config Config) (*memoryEngine, error) {
 		return nil, err
 	}
 
-	config.db = db
-
-	issSvc, err := newIssuerService(config)
+	issSvc, err := newIssuerService(config, db)
 	if err != nil {
 		return nil, err
 	}
 
-	userInfoSvc, err := newUserInfoService(config)
+	userInfoSvc, err := newUserInfoService(config, db)
 	if err != nil {
 		return nil, err
 	}

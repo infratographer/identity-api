@@ -43,10 +43,10 @@ type issuerService struct {
 	db *sql.DB
 }
 
-func newIssuerService(config Config) (*issuerService, error) {
-	svc := &issuerService{db: config.db}
+func newIssuerService(config Config, db *sql.DB) (*issuerService, error) {
+	svc := &issuerService{db: db}
 
-	ctx, err := beginTxContext(context.Background(), config.db)
+	ctx, err := beginTxContext(context.Background(), db)
 	if err != nil {
 		return nil, err
 	}

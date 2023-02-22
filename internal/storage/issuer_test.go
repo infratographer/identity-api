@@ -65,7 +65,6 @@ func TestIssuerService(t *testing.T) {
 	}
 
 	config := Config{
-		db: db,
 		SeedData: SeedData{
 			Issuers: []SeedIssuer{
 				{
@@ -80,7 +79,7 @@ func TestIssuerService(t *testing.T) {
 		},
 	}
 
-	issSvc, err := newIssuerService(config)
+	issSvc, err := newIssuerService(config, db)
 	assert.Nil(t, err)
 
 	t.Run("CreateIssuer", func(t *testing.T) {
