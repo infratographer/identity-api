@@ -48,7 +48,7 @@ func newDB(t *testing.T) (*sql.DB, func()) {
 	return db, shutdown
 }
 
-func TestMemoryIssuerService(t *testing.T) {
+func TestIssuerService(t *testing.T) {
 	t.Parallel()
 
 	db, shutdown := newDB(t)
@@ -92,7 +92,7 @@ func TestMemoryIssuerService(t *testing.T) {
 		},
 	}
 
-	issSvc, err := newMemoryIssuerService(config)
+	issSvc, err := newIssuerService(config)
 	assert.Nil(t, err)
 
 	t.Run("CreateIssuer", func(t *testing.T) {
@@ -444,7 +444,7 @@ func TestUserInfoStore(t *testing.T) {
 		},
 	}
 
-	_, err := newMemoryIssuerService(config)
+	_, err := newIssuerService(config)
 	assert.Nil(t, err)
 
 	svc, err := newUserInfoService(config, WithHTTPClient(httpClient))

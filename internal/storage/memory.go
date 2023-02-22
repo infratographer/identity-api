@@ -113,8 +113,8 @@ func issuerUpdateToColBindings(update types.IssuerUpdate) ([]colBinding, error) 
 }
 
 type memoryEngine struct {
-	*memoryIssuerService
-	*memoryUserInfoService
+	*issuerService
+	*userInfoService
 	crdb testserver.TestServer
 	db   *sql.DB
 }
@@ -137,7 +137,7 @@ func newMemoryEngine(config Config) (*memoryEngine, error) {
 
 	config.db = db
 
-	issSvc, err := newMemoryIssuerService(config)
+	issSvc, err := newIssuerService(config)
 	if err != nil {
 		return nil, err
 	}
@@ -148,10 +148,10 @@ func newMemoryEngine(config Config) (*memoryEngine, error) {
 	}
 
 	out := &memoryEngine{
-		memoryIssuerService:   issSvc,
-		memoryUserInfoService: userInfoSvc,
-		crdb:                  crdb,
-		db:                    db,
+		issuerService:   issSvc,
+		userInfoService: userInfoSvc,
+		crdb:            crdb,
+		db:              db,
 	}
 
 	return out, nil
@@ -191,14 +191,13 @@ func buildIssuerFromSeed(seed SeedIssuer) (types.Issuer, error) {
 	return out, nil
 }
 
-// memoryIssuerService represents an in-memory issuer service.
-type memoryIssuerService struct {
+// issuerService represents a SQL-backed issuer service.
+type issuerService struct {
 	db *sql.DB
 }
 
-// newMemoryEngine creates a new in-memory storage engine.
-func newMemoryIssuerService(config Config) (*memoryIssuerService, error) {
-	svc := &memoryIssuerService{db: config.db}
+func newIssuerService(config Config) (*issuerService, error) {
+	svc := &issuerService{db: config.db}
 
 	ctx, err := beginTxContext(context.Background(), config.db)
 	if err != nil {
@@ -230,7 +229,7 @@ func newMemoryIssuerService(config Config) (*memoryIssuerService, error) {
 }
 
 // CreateIssuer creates an issuer.
-func (s *memoryIssuerService) CreateIssuer(ctx context.Context, iss types.Issuer) (*types.Issuer, error) {
+func (s *issuerService) CreateIssuer(ctx context.Context, iss types.Issuer) (*types.Issuer, error) {
 	err := s.insertIssuer(ctx, iss)
 	if err != nil {
 		return nil, err
@@ -241,7 +240,7 @@ func (s *memoryIssuerService) CreateIssuer(ctx context.Context, iss types.Issuer
 
 // GetIssuerByID gets an issuer by ID. This function will use a transaction in the context if one
 // exists.
-func (s *memoryIssuerService) GetIssuerByID(ctx context.Context, id string) (*types.Issuer, error) {
+func (s *issuerService) GetIssuerByID(ctx context.Context, id string) (*types.Issuer, error) {
 	query := fmt.Sprintf("SELECT %s FROM issuers WHERE id = $1", issuerColumnsStr)
 
 	var row *sql.Row
@@ -262,7 +261,7 @@ func (s *memoryIssuerService) GetIssuerByID(ctx context.Context, id string) (*ty
 
 // GetByURI looks up the given issuer by URI, returning the issuer if one exists. This function will
 // use a transaction in the context if one exists.
-func (s *memoryIssuerService) GetIssuerByURI(ctx context.Context, uri string) (*types.Issuer, error) {
+func (s *issuerService) GetIssuerByURI(ctx context.Context, uri string) (*types.Issuer, error) {
 	query := fmt.Sprintf("SELECT %s FROM issuers WHERE uri = $1", issuerColumnsStr)
 
 	var row *sql.Row
@@ -282,7 +281,7 @@ func (s *memoryIssuerService) GetIssuerByURI(ctx context.Context, uri string) (*
 }
 
 // UpdateIssuer updates an issuer with the given values.
-func (s *memoryIssuerService) UpdateIssuer(ctx context.Context, id string, update types.IssuerUpdate) (*types.Issuer, error) {
+func (s *issuerService) UpdateIssuer(ctx context.Context, id string, update types.IssuerUpdate) (*types.Issuer, error) {
 	tx, err := getContextTx(ctx)
 	if err != nil {
 		return nil, err
@@ -305,7 +304,7 @@ func (s *memoryIssuerService) UpdateIssuer(ctx context.Context, id string, updat
 }
 
 // DeleteIssuer deletes an issuer with the given ID.
-func (s *memoryIssuerService) DeleteIssuer(ctx context.Context, id string) error {
+func (s *issuerService) DeleteIssuer(ctx context.Context, id string) error {
 	tx, err := getContextTx(ctx)
 	if err != nil {
 		return err
@@ -329,7 +328,7 @@ func (s *memoryIssuerService) DeleteIssuer(ctx context.Context, id string) error
 	return nil
 }
 
-func (s *memoryIssuerService) scanIssuer(row *sql.Row) (*types.Issuer, error) {
+func (s *issuerService) scanIssuer(row *sql.Row) (*types.Issuer, error) {
 	var iss types.Issuer
 
 	var mapping sql.NullString
@@ -358,7 +357,7 @@ func (s *memoryIssuerService) scanIssuer(row *sql.Row) (*types.Issuer, error) {
 	return &iss, nil
 }
 
-func (s *memoryIssuerService) insertIssuer(ctx context.Context, iss types.Issuer) error {
+func (s *issuerService) insertIssuer(ctx context.Context, iss types.Issuer) error {
 	tx, err := getContextTx(ctx)
 	if err != nil {
 		return err
@@ -405,15 +404,15 @@ func inMemoryCRDB() (testserver.TestServer, error) {
 	return ts, nil
 }
 
-type memoryUserInfoService struct {
+type userInfoService struct {
 	db         *sql.DB
 	httpClient *http.Client
 }
 
-type userInfoServiceOpt func(*memoryUserInfoService)
+type userInfoServiceOpt func(*userInfoService)
 
-func newUserInfoService(config Config, opts ...userInfoServiceOpt) (*memoryUserInfoService, error) {
-	s := &memoryUserInfoService{
+func newUserInfoService(config Config, opts ...userInfoServiceOpt) (*userInfoService, error) {
+	s := &userInfoService{
 		db:         config.db,
 		httpClient: http.DefaultClient,
 	}
@@ -426,9 +425,9 @@ func newUserInfoService(config Config, opts ...userInfoServiceOpt) (*memoryUserI
 }
 
 // WithHTTPClient allows configuring the HTTP client used by
-// memoryUserInfoService to call out to userinfo endpoints.
-func WithHTTPClient(client *http.Client) func(svc *memoryUserInfoService) {
-	return func(svc *memoryUserInfoService) {
+// userInfoService to call out to userinfo endpoints.
+func WithHTTPClient(client *http.Client) func(svc *userInfoService) {
+	return func(svc *userInfoService) {
 		svc.httpClient = client
 	}
 }
@@ -437,7 +436,7 @@ func WithHTTPClient(client *http.Client) func(svc *memoryUserInfoService) {
 // This does not make an HTTP call with the subject token, so for this
 // data to be available, the data must have already be fetched and
 // stored.
-func (s memoryUserInfoService) LookupUserInfoByClaims(ctx context.Context, iss, sub string) (*types.UserInfo, error) {
+func (s userInfoService) LookupUserInfoByClaims(ctx context.Context, iss, sub string) (*types.UserInfo, error) {
 	selectCols := withQualifier([]string{
 		userInfoCols.Name,
 		userInfoCols.Email,
@@ -483,7 +482,7 @@ func (s memoryUserInfoService) LookupUserInfoByClaims(ctx context.Context, iss, 
 	return &ui, err
 }
 
-func (s memoryUserInfoService) LookupUserInfoByID(ctx context.Context, id string) (*types.UserInfo, error) {
+func (s userInfoService) LookupUserInfoByID(ctx context.Context, id string) (*types.UserInfo, error) {
 	selectCols := withQualifier([]string{
 		userInfoCols.ID,
 		userInfoCols.Name,
@@ -527,7 +526,7 @@ func (s memoryUserInfoService) LookupUserInfoByID(ctx context.Context, id string
 
 // StoreUserInfo is used to store user information by issuer and
 // subject pairs. UserInfo is unique to issuer/subject pairs.
-func (s memoryUserInfoService) StoreUserInfo(ctx context.Context, userInfo types.UserInfo) (*types.UserInfo, error) {
+func (s userInfoService) StoreUserInfo(ctx context.Context, userInfo types.UserInfo) (*types.UserInfo, error) {
 	if len(userInfo.Issuer) == 0 {
 		return nil, fmt.Errorf("%w: issuer is empty", types.ErrInvalidUserInfo)
 	}
@@ -591,7 +590,7 @@ func (s memoryUserInfoService) StoreUserInfo(ctx context.Context, userInfo types
 
 // FetchUserInfoFromIssuer uses the subject access token to retrieve
 // information from the OIDC /userinfo endpoint.
-func (s memoryUserInfoService) FetchUserInfoFromIssuer(ctx context.Context, iss, rawToken string) (*types.UserInfo, error) {
+func (s userInfoService) FetchUserInfoFromIssuer(ctx context.Context, iss, rawToken string) (*types.UserInfo, error) {
 	endpoint, err := url.JoinPath(iss, "userinfo")
 	if err != nil {
 		return nil, err
