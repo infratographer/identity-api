@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/ory/fosite"
+	"github.com/ory/fosite/compose"
 	"gopkg.in/square/go-jose.v2"
 )
 
@@ -158,7 +159,40 @@ func NewOAuth2Config(config Config) (*OAuth2Config, error) {
 
 // NewOAuth2Provider creates a new fosite.OAuth2Provider given an OAuth2Configurator instance
 // and a storage config.
-func NewOAuth2Provider(config OAuth2Configurator, store fosite.Storage) fosite.OAuth2Provider {
-	provider := fosite.NewOAuth2Provider(store, config)
-	return provider
+// This is slightly modified from `compose.Compose`, here we accept a
+// `OAuth2Configurator` but Compose accepts a `*fosite.Config` since
+// it manipulates the config within the function. The downstream handlers
+// need the `OAuth2Configurator`, but we still want to register the
+// handlers in the `*fosite.Config`
+func NewOAuth2Provider(cfg *OAuth2Config, store interface{}, strategy interface{}, factories ...compose.Factory) fosite.OAuth2Provider {
+	config := cfg.Config
+	storage := store
+
+	f := fosite.NewOAuth2Provider(storage.(fosite.Storage), config)
+
+	for _, factory := range factories {
+		res := factory(cfg, storage, strategy)
+
+		if ah, ok := res.(fosite.AuthorizeEndpointHandler); ok {
+			config.AuthorizeEndpointHandlers.Append(ah)
+		}
+
+		if th, ok := res.(fosite.TokenEndpointHandler); ok {
+			config.TokenEndpointHandlers.Append(th)
+		}
+
+		if tv, ok := res.(fosite.TokenIntrospector); ok {
+			config.TokenIntrospectionHandlers.Append(tv)
+		}
+
+		if rh, ok := res.(fosite.RevocationHandler); ok {
+			config.RevocationHandlers.Append(rh)
+		}
+
+		if ph, ok := res.(fosite.PushedAuthorizeEndpointHandler); ok {
+			config.PushedAuthorizeEndpointHandlers.Append(ph)
+		}
+	}
+
+	return f
 }
