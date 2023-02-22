@@ -3,6 +3,7 @@ package storage
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"errors"
 	"io"
 	"net/http"
@@ -35,9 +36,22 @@ func compareIssuers(t *testing.T, exp types.Issuer, obs types.Issuer) {
 	assert.Equal(t, expMappings, obsMappings)
 }
 
-func TestMemoryIssuerService(t *testing.T) {
+func newDB(t *testing.T) (*sql.DB, func()) {
 	db, shutdown := testserver.NewDBForTest(t)
+
+	err := RunMigrations(db)
+	if err != nil {
+		shutdown()
+		t.Fatal(err)
+	}
+
+	return db, shutdown
+}
+
+func TestMemoryIssuerService(t *testing.T) {
 	t.Parallel()
+
+	db, shutdown := newDB(t)
 
 	t.Cleanup(func() {
 		shutdown()
@@ -395,7 +409,7 @@ func TestMemoryIssuerService(t *testing.T) {
 func TestUserInfoStore(t *testing.T) {
 	t.Parallel()
 
-	db, shutdown := testserver.NewDBForTest(t)
+	db, shutdown := newDB(t)
 
 	t.Cleanup(shutdown)
 
