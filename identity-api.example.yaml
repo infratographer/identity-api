@@ -14,7 +14,9 @@ otel:
   stdout:
     prettyPrint: true
 storage:
-  type: memory
+  type: crdb
+  crdb:
+    uri: postgresql://root@cockroachdb:26257/defaultdb?sslmode=disable
   seedData:
     issuers:
       - tenantID: 67787b34-866e-4b75-a395-5aba096b2c1b
