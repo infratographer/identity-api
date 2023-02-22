@@ -27,7 +27,7 @@ func newMemoryEngine(config Config) (*memoryEngine, error) {
 		return nil, err
 	}
 
-	err = RunMigrations(db)
+	err = runMigrations(db)
 	if err != nil {
 		return nil, err
 	}

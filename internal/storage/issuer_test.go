@@ -35,7 +35,7 @@ func TestIssuerService(t *testing.T) {
 
 	db, shutdown := testserver.NewDBForTest(t)
 
-	err := RunMigrations(db)
+	err := runMigrations(db)
 	if err != nil {
 		shutdown()
 		t.Fatal(err)
@@ -80,6 +80,9 @@ func TestIssuerService(t *testing.T) {
 	}
 
 	issSvc, err := newIssuerService(config, db)
+	assert.Nil(t, err)
+
+	err = issSvc.seedDatabase(context.Background(), config.SeedData.Issuers)
 	assert.Nil(t, err)
 
 	t.Run("CreateIssuer", func(t *testing.T) {

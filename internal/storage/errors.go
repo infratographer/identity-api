@@ -11,11 +11,11 @@ var ErrorMissingContextTx = fmt.Errorf("no transaction provided in context")
 // ErrorInvalidContextTx represents an error where the given context transaction is of the wrong type.
 var ErrorInvalidContextTx = fmt.Errorf("invalid type for transaction context")
 
-// ErrorUnknownEngineType represents an error where an invalid engine type was provided.
-type ErrorUnknownEngineType struct {
+// ErrorUnsupportedEngineType represents an error where an invalid engine type was provided.
+type ErrorUnsupportedEngineType struct {
 	engineType EngineType
 }
 
-func (e *ErrorUnknownEngineType) Error() string {
-	return fmt.Sprintf("unknown engine type '%s'", e.engineType)
+func (e *ErrorUnsupportedEngineType) Error() string {
+	return fmt.Sprintf("unsupported engine type '%s'", e.engineType)
 }

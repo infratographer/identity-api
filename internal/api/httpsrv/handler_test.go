@@ -39,21 +39,24 @@ func TestAPIHandler(t *testing.T) {
 
 	config := storage.Config{
 		Type: storage.EngineTypeMemory,
-		SeedData: storage.SeedData{
-			Issuers: []storage.SeedIssuer{
-				{
-					TenantID:      tenantID,
-					ID:            issuer.ID,
-					Name:          issuer.Name,
-					URI:           issuer.URI,
-					JWKSURI:       issuer.JWKSURI,
-					ClaimMappings: mappingStrs,
-				},
-			},
-		},
 	}
 
 	issSvc, err := storage.NewEngine(config)
+	if !assert.NoError(t, err) {
+		assert.FailNow(t, "initialization failed")
+	}
+
+	ctx, err := issSvc.BeginContext(context.Background())
+	if !assert.NoError(t, err) {
+		assert.FailNow(t, "initialization failed")
+	}
+
+	_, err = issSvc.CreateIssuer(ctx, issuer)
+	if !assert.NoError(t, err) {
+		assert.FailNow(t, "initialization failed")
+	}
+
+	err = issSvc.CommitContext(ctx)
 	if !assert.NoError(t, err) {
 		assert.FailNow(t, "initialization failed")
 	}

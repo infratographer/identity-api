@@ -42,7 +42,7 @@ func NewEngine(config Config) (Engine, error) {
 	case EngineTypeCRDB:
 		return newCRDBEngine(config)
 	default:
-		err := &ErrorUnknownEngineType{
+		err := &ErrorUnsupportedEngineType{
 			engineType: config.Type,
 		}
 
