@@ -10,14 +10,16 @@ import (
 //go:embed migrations/*
 var embedMigrations embed.FS
 
-// RunMigrations runs all migrations against the given SQL database.
-func RunMigrations(db *sql.DB) error {
+func init() {
 	goose.SetBaseFS(embedMigrations)
 
 	if err := goose.SetDialect("postgres"); err != nil {
-		return err
+		panic(err)
 	}
+}
 
+// RunMigrations runs all migrations against the given SQL database.
+func RunMigrations(db *sql.DB) error {
 	if err := goose.Up(db, "migrations"); err != nil {
 		return err
 	}
