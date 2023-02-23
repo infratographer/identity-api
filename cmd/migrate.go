@@ -10,18 +10,18 @@ import (
 )
 
 func init() {
-	rootCmd.AddCommand(runMigrationsCmd)
+	rootCmd.AddCommand(migrateCmd)
 }
 
-var runMigrationsCmd = &cobra.Command{
-	Use:   "run-migrations",
+var migrateCmd = &cobra.Command{
+	Use:   "migrate",
 	Short: "runs identity-api database migrations",
 	Run: func(cmd *cobra.Command, args []string) {
-		runMigrations(cmd.Context())
+		migrate(cmd.Context())
 	},
 }
 
-func runMigrations(ctx context.Context) {
+func migrate(ctx context.Context) {
 	logger.Info("running database migrations")
 
 	err := storage.RunMigrations(config.Config.Storage)

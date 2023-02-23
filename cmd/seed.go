@@ -15,7 +15,7 @@ func init() {
 
 var seedDatabaseCmd = &cobra.Command{
 	Use:   "seed-database",
-	Short: "seeds identity-api database",
+	Short: "seeds identity-api database with seed data from storage configs",
 	Run: func(cmd *cobra.Command, args []string) {
 		seedDatabase(cmd.Context())
 	},
