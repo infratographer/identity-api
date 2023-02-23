@@ -21,32 +21,10 @@ jobs:
           branch: gh-pages
 
   image-build:
-    runs-on: ubuntu-latest
-    permissions:
-      packages: write
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Registry Login
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Docker Metadata
-        id: metadata
-        uses: docker/metadata-action@v4
-        with:
-          images: |
-            ghcr.io/${{ github.repository }}
-          tags: |
-            type=ref,event=tag
-      - name: Build+Push
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.metadata.outputs.tags }}
+    uses: metal-toolbox/container-push/.github/workflows/container-push.yml@main
+    with:
+      name: identity-api
+      tag: ${{ github.ref_name }}
+      registry_org: ${{ github.repository_owner }}
+      dockerfile_path: Dockerfile
+      platforms: linux/amd64,linux/arm64
