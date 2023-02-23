@@ -1,8 +1,6 @@
 linters-settings:
   goimports:
     local-prefixes: go.infratographer.com/identity-manager-sts
-  gofumpt:
-    extra-rules: true
 
 run:
   # default timeout is 1m
@@ -11,16 +9,13 @@ run:
 linters:
   enable:
     # default linters
-    - deadcode
     - errcheck
     - gosimple
     - govet
     - ineffassign
     - staticcheck
-    - structcheck
     - typecheck
     - unused
-    - varcheck
 
     # additional linters
     - bodyclose
@@ -28,7 +23,6 @@ linters:
     - gocyclo
     - goerr113
     - gofmt
-    # - gofumpt
     - goimports
     - gomnd
     - govet
