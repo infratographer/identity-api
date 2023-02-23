@@ -119,6 +119,44 @@ type memoryEngine struct {
 	db   *sql.DB
 }
 
+func newMemoryEngine(config Config) (*memoryEngine, error) {
+	crdb, err := inMemoryCRDB()
+	if err != nil {
+		return nil, err
+	}
+
+	db, err := sql.Open("postgres", crdb.PGURL().String())
+	if err != nil {
+		return nil, err
+	}
+
+	err = RunMigrations(db)
+	if err != nil {
+		return nil, err
+	}
+
+	config.db = db
+
+	issSvc, err := newMemoryIssuerService(config)
+	if err != nil {
+		return nil, err
+	}
+
+	userInfoSvc, err := newUserInfoService(config)
+	if err != nil {
+		return nil, err
+	}
+
+	out := &memoryEngine{
+		memoryIssuerService:   issSvc,
+		memoryUserInfoService: userInfoSvc,
+		crdb:                  crdb,
+		db:                    db,
+	}
+
+	return out, nil
+}
+
 func (eng *memoryEngine) Shutdown() {
 	eng.crdb.Stop()
 }
@@ -161,11 +199,6 @@ type memoryIssuerService struct {
 // newMemoryEngine creates a new in-memory storage engine.
 func newMemoryIssuerService(config Config) (*memoryIssuerService, error) {
 	svc := &memoryIssuerService{db: config.db}
-
-	err := svc.createTables()
-	if err != nil {
-		return nil, err
-	}
 
 	ctx, err := beginTxContext(context.Background(), config.db)
 	if err != nil {
@@ -325,22 +358,6 @@ func (s *memoryIssuerService) scanIssuer(row *sql.Row) (*types.Issuer, error) {
 	return &iss, nil
 }
 
-func (s *memoryIssuerService) createTables() error {
-	stmt := `
-        CREATE TABLE IF NOT EXISTS issuers (
-            id        uuid PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
-            tenant_id uuid NOT NULL,
-            uri       STRING NOT NULL UNIQUE,
-            name      STRING NOT NULL,
-            jwksuri   STRING NOT NULL,
-            mappings  STRING
-        );
-        `
-	_, err := s.db.Exec(stmt)
-
-	return err
-}
-
 func (s *memoryIssuerService) insertIssuer(ctx context.Context, iss types.Issuer) error {
 	tx, err := getContextTx(ctx)
 	if err != nil {
@@ -405,9 +422,7 @@ func newUserInfoService(config Config, opts ...userInfoServiceOpt) (*memoryUserI
 		opt(s)
 	}
 
-	err := s.createTables()
-
-	return s, err
+	return s, nil
 }
 
 // WithHTTPClient allows configuring the HTTP client used by
@@ -416,20 +431,6 @@ func WithHTTPClient(client *http.Client) func(svc *memoryUserInfoService) {
 	return func(svc *memoryUserInfoService) {
 		svc.httpClient = client
 	}
-}
-
-func (s *memoryUserInfoService) createTables() error {
-	_, err := s.db.Exec(`
-        CREATE TABLE IF NOT EXISTS user_info (
-            id    UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
-            name  STRING NOT NULL,
-            email STRING NOT NULL,
-            sub   STRING NOT NULL,
-            iss_id   UUID NOT NULL REFERENCES issuers(id),
-            UNIQUE (iss_id, sub)
-        )`)
-
-	return err
 }
 
 // LookupUserInfoByClaims fetches UserInfo from the store.

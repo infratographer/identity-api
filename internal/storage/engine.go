@@ -2,7 +2,6 @@ package storage
 
 import (
 	"context"
-	"database/sql"
 
 	"go.infratographer.com/identity-api/internal/types"
 )
@@ -36,36 +35,7 @@ func NewEngine(config Config) (Engine, error) {
 	case "":
 		return nil, ErrorMissingEngineType
 	case EngineTypeMemory:
-		crdb, err := inMemoryCRDB()
-		if err != nil {
-			return nil, err
-		}
-
-		db, err := sql.Open("postgres", crdb.PGURL().String())
-		if err != nil {
-			return nil, err
-		}
-
-		config.db = db
-
-		issSvc, err := newMemoryIssuerService(config)
-		if err != nil {
-			return nil, err
-		}
-
-		userInfoSvc, err := newUserInfoService(config)
-		if err != nil {
-			return nil, err
-		}
-
-		out := &memoryEngine{
-			memoryIssuerService:   issSvc,
-			memoryUserInfoService: userInfoSvc,
-			crdb:                  crdb,
-			db:                    db,
-		}
-
-		return out, nil
+		return newMemoryEngine(config)
 	default:
 		err := &ErrorUnknownEngineType{
 			engineType: config.Type,
