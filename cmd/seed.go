@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"go.infratographer.com/x/crdbx"
 
 	"go.infratographer.com/identity-api/internal/config"
 	"go.infratographer.com/identity-api/internal/storage"
@@ -11,6 +13,11 @@ import (
 
 func init() {
 	rootCmd.AddCommand(seedDatabaseCmd)
+
+	v := viper.GetViper()
+	flags := seedDatabaseCmd.Flags()
+
+	crdbx.MustViperFlags(v, flags)
 }
 
 var seedDatabaseCmd = &cobra.Command{

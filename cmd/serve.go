@@ -9,6 +9,7 @@ import (
 	fositestorage "github.com/ory/fosite/storage"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"go.infratographer.com/x/crdbx"
 	"go.infratographer.com/x/ginx"
 	"go.infratographer.com/x/otelx"
 	"go.uber.org/zap/zapcore"
@@ -38,8 +39,12 @@ var (
 func init() {
 	rootCmd.AddCommand(serveCmd)
 
-	ginx.MustViperFlags(viper.GetViper(), serveCmd.Flags(), defaultListen)
-	otelx.MustViperFlags(viper.GetViper(), serveCmd.Flags())
+	v := viper.GetViper()
+	flags := serveCmd.Flags()
+
+	crdbx.MustViperFlags(v, flags)
+	ginx.MustViperFlags(v, flags, defaultListen)
+	otelx.MustViperFlags(v, flags)
 }
 
 func serve(ctx context.Context) {

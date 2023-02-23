@@ -1,13 +1,11 @@
 package storage
 
-// CRDBConfig represents CRDB-specific configuration for identity-api.
-type CRDBConfig struct {
-	URI string
-}
+import "go.infratographer.com/x/crdbx"
 
 // Config represents the storage configuration for identity-api.
 type Config struct {
 	Type     EngineType
-	CRDB     CRDBConfig
+	Tracing  bool
+	CRDB     crdbx.Config
 	SeedData SeedData
 }

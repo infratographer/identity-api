@@ -3,6 +3,8 @@ package storage
 import (
 	"context"
 	"database/sql"
+
+	"go.infratographer.com/x/crdbx"
 )
 
 type crdbEngine struct {
@@ -12,7 +14,7 @@ type crdbEngine struct {
 }
 
 func newCRDBEngine(config Config) (*crdbEngine, error) {
-	db, err := sql.Open("postgres", config.CRDB.URI)
+	db, err := crdbx.NewDB(config.CRDB, config.Tracing)
 	if err != nil {
 		return nil, err
 	}

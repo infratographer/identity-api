@@ -15,6 +15,7 @@ otel:
     prettyPrint: true
 storage:
   type: crdb
+  tracing: false
   crdb:
     uri: postgresql://root@cockroachdb:26257/defaultdb?sslmode=disable
   seedData:
