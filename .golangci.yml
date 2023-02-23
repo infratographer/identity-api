@@ -4,6 +4,10 @@ linters-settings:
   gofumpt:
     extra-rules: true
 
+run:
+  # default timeout is 1m
+  timeout: 3m
+
 linters:
   enable:
     # default linters
