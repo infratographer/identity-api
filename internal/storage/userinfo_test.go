@@ -21,7 +21,7 @@ func TestUserInfoStore(t *testing.T) {
 
 	db, shutdown := testserver.NewDBForTest(t)
 
-	err := RunMigrations(db)
+	err := runMigrations(db)
 	if err != nil {
 		shutdown()
 		t.Fatal(err)
@@ -59,7 +59,10 @@ func TestUserInfoStore(t *testing.T) {
 		},
 	}
 
-	_, err = newIssuerService(config, db)
+	issSvc, err := newIssuerService(config, db)
+	assert.Nil(t, err)
+
+	err = issSvc.seedDatabase(context.Background(), config.SeedData.Issuers)
 	assert.Nil(t, err)
 
 	svc, err := newUserInfoService(config, db, WithHTTPClient(httpClient))

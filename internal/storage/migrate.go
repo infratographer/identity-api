@@ -18,8 +18,31 @@ func init() {
 	}
 }
 
-// RunMigrations runs all migrations against the given SQL database.
-func RunMigrations(db *sql.DB) error {
+// RunMigrations runs all migrations using the given storage config.
+func RunMigrations(config Config) error {
+	switch config.Type {
+	case "":
+		return ErrorMissingEngineType
+	case EngineTypeCRDB:
+	default:
+		err := &ErrorUnsupportedEngineType{
+			engineType: config.Type,
+		}
+
+		return err
+	}
+
+	db, err := sql.Open("postgres", config.CRDB.URI)
+	if err != nil {
+		return err
+	}
+
+	defer db.Close()
+
+	return runMigrations(db)
+}
+
+func runMigrations(db *sql.DB) error {
 	if err := goose.Up(db, "migrations"); err != nil {
 		return err
 	}

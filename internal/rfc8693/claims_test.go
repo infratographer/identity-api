@@ -38,7 +38,9 @@ func TestClaimMappingEval(t *testing.T) {
 	}
 
 	storageEngine, err := storage.NewEngine(cfg)
-	assert.NoError(t, err, "failed to create storage engine")
+	if !assert.NoError(t, err) {
+		assert.FailNow(t, "initialization failed")
+	}
 
 	strategy := NewClaimMappingStrategy(storageEngine)
 

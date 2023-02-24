@@ -44,35 +44,41 @@ type issuerService struct {
 }
 
 func newIssuerService(config Config, db *sql.DB) (*issuerService, error) {
-	svc := &issuerService{db: db}
-
-	ctx, err := beginTxContext(context.Background(), db)
-	if err != nil {
-		return nil, err
+	svc := &issuerService{
+		db: db,
 	}
 
-	for _, seed := range config.SeedData.Issuers {
+	return svc, nil
+}
+
+func (s *issuerService) seedDatabase(ctx context.Context, issuers []SeedIssuer) error {
+	ctx, err := beginTxContext(ctx, s.db)
+	if err != nil {
+		return err
+	}
+
+	for _, seed := range issuers {
 		iss, err := buildIssuerFromSeed(seed)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		err = svc.insertIssuer(ctx, iss)
+		err = s.insertIssuer(ctx, iss)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
 	err = commitContextTx(ctx)
 	if err != nil {
 		if err := rollbackContextTx(ctx); err != nil {
-			return nil, err
+			return err
 		}
 
-		return nil, err
+		return err
 	}
 
-	return svc, nil
+	return nil
 }
 
 // CreateIssuer creates an issuer.

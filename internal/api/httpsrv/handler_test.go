@@ -42,11 +42,11 @@ func TestAPIHandler(t *testing.T) {
 		SeedData: storage.SeedData{
 			Issuers: []storage.SeedIssuer{
 				{
-					TenantID:      tenantID,
-					ID:            issuer.ID,
-					Name:          issuer.Name,
-					URI:           issuer.URI,
-					JWKSURI:       issuer.JWKSURI,
+					TenantID:      "b8bfd705-b768-47a4-85a0-fe006f5bcfca",
+					ID:            "e495a393-ae79-4a02-a78d-9798c7d9d252",
+					Name:          "Example",
+					URI:           "https://example.com/",
+					JWKSURI:       "https://example.com/.well-known/jwks.json",
 					ClaimMappings: mappingStrs,
 				},
 			},

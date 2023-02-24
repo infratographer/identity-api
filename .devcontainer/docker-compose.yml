@@ -18,7 +18,30 @@ services:
         target: /home/vscode/.ssh/authorized_keys
         read_only: true
     networks:
-      stsnet:
+      idapinet:
+
+  cockroachdb:
+    image: cockroachdb/cockroach:v22.2.5
+    init: true
+    volumes:
+      - cockroach-data:/cockroach/cockroach-data
+    command:
+      - start-single-node
+      - "--insecure"
+    networks:
+      idapinet:
+    ports:
+      - "26257:26257"
+      - "9090:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health?ready=1"]
+      interval: 10s
+      timeout: 40s
+      retries: 3
+      start_period: 5s
 
 networks:
-  stsnet:
+  idapinet:
+
+volumes:
+  cockroach-data:

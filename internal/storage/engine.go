@@ -9,6 +9,9 @@ import (
 const (
 	// EngineTypeMemory represents an in-memory storage engine.
 	EngineTypeMemory EngineType = "memory"
+
+	// EngineTypeCRDB represents an external CockroachDB storage engine.
+	EngineTypeCRDB EngineType = "crdb"
 )
 
 // EngineType represents the type of identity-api storage engine.
@@ -36,8 +39,10 @@ func NewEngine(config Config) (Engine, error) {
 		return nil, ErrorMissingEngineType
 	case EngineTypeMemory:
 		return newMemoryEngine(config)
+	case EngineTypeCRDB:
+		return newCRDBEngine(config)
 	default:
-		err := &ErrorUnknownEngineType{
+		err := &ErrorUnsupportedEngineType{
 			engineType: config.Type,
 		}
 
