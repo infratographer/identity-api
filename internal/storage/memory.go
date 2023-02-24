@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/cockroachdb/cockroach-go/v2/testserver"
+	"github.com/ory/fosite"
 
 	"go.infratographer.com/identity-api/internal/types"
 )
@@ -14,6 +15,21 @@ type memoryEngine struct {
 	*userInfoService
 	crdb testserver.TestServer
 	db   *sql.DB
+}
+
+// CreateAccessTokenSession implements oauth2.AccessTokenStorage
+func (memoryEngine) CreateAccessTokenSession(ctx context.Context, signature string, request fosite.Requester) (err error) {
+	panic("unimplemented")
+}
+
+// DeleteAccessTokenSession implements oauth2.AccessTokenStorage
+func (memoryEngine) DeleteAccessTokenSession(ctx context.Context, signature string) (err error) {
+	panic("unimplemented")
+}
+
+// GetAccessTokenSession implements oauth2.AccessTokenStorage
+func (memoryEngine) GetAccessTokenSession(ctx context.Context, signature string, session fosite.Session) (request fosite.Requester, err error) {
+	panic("unimplemented")
 }
 
 func newMemoryEngine(config Config) (*memoryEngine, error) {

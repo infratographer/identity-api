@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/ory/fosite"
 	"go.infratographer.com/x/crdbx"
 )
 
@@ -55,4 +56,19 @@ func (eng *crdbEngine) RollbackContext(ctx context.Context) error {
 
 func (eng *crdbEngine) seedDatabase(ctx context.Context, data SeedData) error {
 	return eng.issuerService.seedDatabase(ctx, data.Issuers)
+}
+
+// CreateAccessTokenSession implements oauth2.AccessTokenStorage
+func (*crdbEngine) CreateAccessTokenSession(ctx context.Context, signature string, request fosite.Requester) (err error) {
+	panic("unimplemented")
+}
+
+// DeleteAccessTokenSession implements oauth2.AccessTokenStorage
+func (*crdbEngine) DeleteAccessTokenSession(ctx context.Context, signature string) (err error) {
+	panic("unimplemented")
+}
+
+// GetAccessTokenSession implements oauth2.AccessTokenStorage
+func (*crdbEngine) GetAccessTokenSession(ctx context.Context, signature string, session fosite.Session) (request fosite.Requester, err error) {
+	panic("unimplemented")
 }

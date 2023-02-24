@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 
+	"github.com/ory/fosite/handler/oauth2"
 	"go.infratographer.com/identity-api/internal/types"
 )
 
@@ -49,3 +50,6 @@ func NewEngine(config Config) (Engine, error) {
 		return nil, err
 	}
 }
+
+var _ oauth2.AccessTokenStorage = &memoryEngine{}
+var _ oauth2.AccessTokenStorage = &crdbEngine{}

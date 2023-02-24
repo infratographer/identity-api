@@ -6,7 +6,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/ory/fosite/compose"
-	fositestorage "github.com/ory/fosite/storage"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.infratographer.com/x/crdbx"
@@ -80,11 +79,10 @@ func serve(ctx context.Context) {
 
 	hmacStrategy := compose.NewOAuth2HMACStrategy(oauth2Config)
 	jwtStrategy := compose.NewOAuth2JWTStrategy(keyGetter, hmacStrategy, oauth2Config)
-	store := fositestorage.NewExampleStore()
 
 	provider := fositex.NewOAuth2Provider(
 		oauth2Config,
-		store,
+		storageEngine,
 		jwtStrategy,
 		rfc8693.NewTokenExchangeHandler,
 		oauth2.NewClientCredentialsHandlerFactory,
