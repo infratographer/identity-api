@@ -18,6 +18,7 @@ import (
 	"go.infratographer.com/identity-api/internal/config"
 	"go.infratographer.com/identity-api/internal/fositex"
 	"go.infratographer.com/identity-api/internal/jwks"
+	"go.infratographer.com/identity-api/internal/oauth2"
 	"go.infratographer.com/identity-api/internal/rfc8693"
 	"go.infratographer.com/identity-api/internal/routes"
 	"go.infratographer.com/identity-api/internal/storage"
@@ -86,6 +87,7 @@ func serve(ctx context.Context) {
 		store,
 		jwtStrategy,
 		rfc8693.NewTokenExchangeHandler,
+		oauth2.NewClientCredentialsHandlerFactory,
 	)
 
 	apiHandler, err := httpsrv.NewAPIHandler(storageEngine)
