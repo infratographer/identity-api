@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/ory/fosite"
-	"github.com/ory/fosite/compose"
 	"gopkg.in/square/go-jose.v2"
 )
 
@@ -164,7 +163,7 @@ func NewOAuth2Config(config Config) (*OAuth2Config, error) {
 // it manipulates the config within the function. The downstream handlers
 // need the `OAuth2Config`, but we still want to register the
 // handlers in the `*fosite.Config`
-func NewOAuth2Provider(cfg *OAuth2Config, store interface{}, strategy interface{}, factories ...compose.Factory) fosite.OAuth2Provider {
+func NewOAuth2Provider(cfg *OAuth2Config, store interface{}, strategy interface{}, factories ...Factory) fosite.OAuth2Provider {
 	config := cfg.Config
 	storage := store.(fosite.Storage)
 
@@ -196,3 +195,8 @@ func NewOAuth2Provider(cfg *OAuth2Config, store interface{}, strategy interface{
 
 	return f
 }
+
+// Factory is a constructor which is used to create a OAuth Handler type.
+// NewOAuth2Provider handles consuming the new struct and attaching it
+// to the parts of the config that it implements.
+type Factory func(config OAuth2Configurator, store any, strategy any) any

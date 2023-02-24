@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/ory/fosite"
-	"github.com/ory/fosite/compose"
 	"github.com/ory/fosite/handler/oauth2"
 	"github.com/ory/fosite/token/jwt"
 	"github.com/ory/x/errorsx"
@@ -114,15 +113,15 @@ type TokenExchangeHandler struct {
 // implement the fosite.TokenEndpointHandler interface
 var _ fosite.TokenEndpointHandler = new(TokenExchangeHandler)
 
-// NewTokenExchangeHandler works as a compose.Factory for creating the fosite provider.
-var _ compose.Factory = NewTokenExchangeHandler
+// NewTokenExchangeHandler works as a fositex.Factory to register this handler.
+var _ fositex.Factory = NewTokenExchangeHandler
 
 // NewTokenExchangeHandler creates a new TokenExchangeHandler,
-func NewTokenExchangeHandler(config fosite.Configurator, storage any, strategy any) any {
+func NewTokenExchangeHandler(config fositex.OAuth2Configurator, storage any, strategy any) any {
 	return &TokenExchangeHandler{
 		accessTokenStrategy: strategy.(oauth2.AccessTokenStrategy),
 		accessTokenStorage:  storage.(oauth2.AccessTokenStorage),
-		config:              config.(fositex.OAuth2Configurator),
+		config:              config,
 	}
 }
 
