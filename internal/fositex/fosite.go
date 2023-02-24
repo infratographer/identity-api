@@ -157,18 +157,18 @@ func NewOAuth2Config(config Config) (*OAuth2Config, error) {
 	return out, nil
 }
 
-// NewOAuth2Provider creates a new fosite.OAuth2Provider given an OAuth2Configurator instance
+// NewOAuth2Provider creates a new fosite.OAuth2Provider given a *OAuth2Config
 // and a storage config.
 // This is slightly modified from `compose.Compose`, here we accept a
-// `OAuth2Configurator` but Compose accepts a `*fosite.Config` since
+// `*OAuth2Config` but Compose accepts a `*fosite.Config` since
 // it manipulates the config within the function. The downstream handlers
-// need the `OAuth2Configurator`, but we still want to register the
+// need the `OAuth2Config`, but we still want to register the
 // handlers in the `*fosite.Config`
 func NewOAuth2Provider(cfg *OAuth2Config, store interface{}, strategy interface{}, factories ...compose.Factory) fosite.OAuth2Provider {
 	config := cfg.Config
-	storage := store
+	storage := store.(fosite.Storage)
 
-	f := fosite.NewOAuth2Provider(storage.(fosite.Storage), config)
+	f := fosite.NewOAuth2Provider(storage, config)
 
 	for _, factory := range factories {
 		res := factory(cfg, storage, strategy)
