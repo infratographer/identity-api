@@ -10,7 +10,6 @@ import (
 	"go.infratographer.com/identity-api/internal/celutils"
 	"go.infratographer.com/identity-api/internal/storage"
 	"go.infratographer.com/identity-api/internal/testingx"
-	"go.infratographer.com/identity-api/internal/types"
 )
 
 // TestClaimMappingEval checks that claim mapping expressions evaluate correctly.
@@ -22,38 +21,23 @@ func TestClaimMappingEval(t *testing.T) {
 		"infratographer:sub": "'infratographer://example.com/' + subSHA256",
 	}
 
-	claimMappings, err := types.NewClaimsMapping(cm)
-	assert.NoError(t, err)
-
 	cfg := storage.Config{
 		Type: storage.EngineTypeMemory,
-	}
-
-	iss := types.Issuer{
-		TenantID:      "b8bfd705-b768-47a4-85a0-fe006f5bcfca",
-		ID:            "e495a393-ae79-4a02-a78d-9798c7d9d252",
-		Name:          "Example",
-		URI:           "https://example.com/",
-		JWKSURI:       "https://example.com/.well-known/jwks.json",
-		ClaimMappings: claimMappings,
+		SeedData: storage.SeedData{
+			Issuers: []storage.SeedIssuer{
+				{
+					TenantID:      "b8bfd705-b768-47a4-85a0-fe006f5bcfca",
+					ID:            "e495a393-ae79-4a02-a78d-9798c7d9d252",
+					Name:          "Example",
+					URI:           "https://example.com/",
+					JWKSURI:       "https://example.com/.well-known/jwks.json",
+					ClaimMappings: cm,
+				},
+			},
+		},
 	}
 
 	storageEngine, err := storage.NewEngine(cfg)
-	if !assert.NoError(t, err) {
-		assert.FailNow(t, "initialization failed")
-	}
-
-	ctx, err := storageEngine.BeginContext(context.Background())
-	if !assert.NoError(t, err) {
-		assert.FailNow(t, "initialization failed")
-	}
-
-	_, err = storageEngine.CreateIssuer(ctx, iss)
-	if !assert.NoError(t, err) {
-		assert.FailNow(t, "initialization failed")
-	}
-
-	err = storageEngine.CommitContext(ctx)
 	if !assert.NoError(t, err) {
 		assert.FailNow(t, "initialization failed")
 	}

@@ -18,7 +18,7 @@ type SeedData struct {
 }
 
 // SeedDatabase seeds the database using the given storage config.
-func SeedDatabase(config Config) error {
+func SeedDatabase(ctx context.Context, config Config) error {
 	switch config.Type {
 	case "":
 		return ErrorMissingEngineType
@@ -36,5 +36,5 @@ func SeedDatabase(config Config) error {
 		return err
 	}
 
-	return engine.issuerService.seedDatabase(context.Background(), config.SeedData.Issuers)
+	return engine.seedDatabase(ctx, config.SeedData)
 }

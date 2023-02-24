@@ -31,7 +31,7 @@ var seedDatabaseCmd = &cobra.Command{
 func seedDatabase(ctx context.Context) {
 	logger.Info("seeding database")
 
-	err := storage.SeedDatabase(config.Config.Storage)
+	err := storage.SeedDatabase(ctx, config.Config.Storage)
 	if err != nil {
 		logger.Fatalf("error seeding database: %s", err)
 	}

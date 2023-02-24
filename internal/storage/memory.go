@@ -49,6 +49,11 @@ func newMemoryEngine(config Config) (*memoryEngine, error) {
 		db:              db,
 	}
 
+	err = out.seedDatabase(context.Background(), config.SeedData)
+	if err != nil {
+		return nil, err
+	}
+
 	return out, nil
 }
 
@@ -66,6 +71,10 @@ func (eng *memoryEngine) CommitContext(ctx context.Context) error {
 
 func (eng *memoryEngine) RollbackContext(ctx context.Context) error {
 	return rollbackContextTx(ctx)
+}
+
+func (eng *memoryEngine) seedDatabase(ctx context.Context, data SeedData) error {
+	return eng.issuerService.seedDatabase(ctx, data.Issuers)
 }
 
 func buildIssuerFromSeed(seed SeedIssuer) (types.Issuer, error) {

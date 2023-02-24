@@ -39,24 +39,21 @@ func TestAPIHandler(t *testing.T) {
 
 	config := storage.Config{
 		Type: storage.EngineTypeMemory,
+		SeedData: storage.SeedData{
+			Issuers: []storage.SeedIssuer{
+				{
+					TenantID:      "b8bfd705-b768-47a4-85a0-fe006f5bcfca",
+					ID:            "e495a393-ae79-4a02-a78d-9798c7d9d252",
+					Name:          "Example",
+					URI:           "https://example.com/",
+					JWKSURI:       "https://example.com/.well-known/jwks.json",
+					ClaimMappings: mappingStrs,
+				},
+			},
+		},
 	}
 
 	issSvc, err := storage.NewEngine(config)
-	if !assert.NoError(t, err) {
-		assert.FailNow(t, "initialization failed")
-	}
-
-	ctx, err := issSvc.BeginContext(context.Background())
-	if !assert.NoError(t, err) {
-		assert.FailNow(t, "initialization failed")
-	}
-
-	_, err = issSvc.CreateIssuer(ctx, issuer)
-	if !assert.NoError(t, err) {
-		assert.FailNow(t, "initialization failed")
-	}
-
-	err = issSvc.CommitContext(ctx)
 	if !assert.NoError(t, err) {
 		assert.FailNow(t, "initialization failed")
 	}

@@ -52,3 +52,7 @@ func (eng *crdbEngine) CommitContext(ctx context.Context) error {
 func (eng *crdbEngine) RollbackContext(ctx context.Context) error {
 	return rollbackContextTx(ctx)
 }
+
+func (eng *crdbEngine) seedDatabase(ctx context.Context, data SeedData) error {
+	return eng.issuerService.seedDatabase(ctx, data.Issuers)
+}
