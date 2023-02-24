@@ -70,7 +70,7 @@ func (c *ClientCredentialsGrantHandler) HandleTokenEndpointRequest(ctx context.C
 
 	dbCtx, err := c.BeginContext(ctx)
 	if err != nil {
-		return errorsx.WithStack(fosite.ErrServerError.WithHint("could not start transaction"))
+		return errorsx.WithStack(fosite.ErrServerError.WithHintf("could not start transaction: %v", err))
 	}
 
 	userInfo := types.UserInfo{
