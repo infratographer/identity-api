@@ -156,21 +156,18 @@ func NewOAuth2Config(config Config) (*OAuth2Config, error) {
 	return out, nil
 }
 
-// NewOAuth2Provider creates a new fosite.OAuth2Provider given a *OAuth2Config
-// and a storage config.
-// This is slightly modified from `compose.Compose`, here we accept a
-// `*OAuth2Config` but Compose accepts a `*fosite.Config` since
-// it manipulates the config within the function. The downstream handlers
-// need the `OAuth2Config`, but we still want to register the
-// handlers in the `*fosite.Config`
-func NewOAuth2Provider(cfg *OAuth2Config, store interface{}, strategy interface{}, factories ...Factory) fosite.OAuth2Provider {
-	config := cfg.Config
+// NewOAuth2Provider creates a new fosite.OAuth2Provider given a
+// *OAuth2Config and a storage config.
+// Given a config, store, and strategy, this will use the factories to
+// create and register all endpoint handlers.
+func NewOAuth2Provider(configurator *OAuth2Config, store interface{}, strategy interface{}, factories ...Factory) fosite.OAuth2Provider {
+	config := configurator.Config
 	storage := store.(fosite.Storage)
 
 	f := fosite.NewOAuth2Provider(storage, config)
 
 	for _, factory := range factories {
-		res := factory(cfg, storage, strategy)
+		res := factory(configurator, storage, strategy)
 
 		if ah, ok := res.(fosite.AuthorizeEndpointHandler); ok {
 			config.AuthorizeEndpointHandlers.Append(ah)
