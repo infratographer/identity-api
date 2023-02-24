@@ -80,9 +80,13 @@ func serve(ctx context.Context) {
 	hmacStrategy := compose.NewOAuth2HMACStrategy(oauth2Config)
 	jwtStrategy := compose.NewOAuth2JWTStrategy(keyGetter, hmacStrategy, oauth2Config)
 	store := fositestorage.NewExampleStore()
-	tokenExchangeHandler := rfc8693.NewTokenExchangeHandler(oauth2Config, jwtStrategy, store)
-	oauth2Config.TokenEndpointHandlers.Append(tokenExchangeHandler)
-	provider := fositex.NewOAuth2Provider(oauth2Config, store)
+
+	provider := fositex.NewOAuth2Provider(
+		oauth2Config,
+		store,
+		jwtStrategy,
+		rfc8693.NewTokenExchangeHandler,
+	)
 
 	apiHandler, err := httpsrv.NewAPIHandler(storageEngine)
 	if err != nil {

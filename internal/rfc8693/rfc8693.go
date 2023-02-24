@@ -113,11 +113,14 @@ type TokenExchangeHandler struct {
 // implement the fosite.TokenEndpointHandler interface
 var _ fosite.TokenEndpointHandler = new(TokenExchangeHandler)
 
-// NewTokenExchangeHandler creates a new TokenExchangeHandler.
-func NewTokenExchangeHandler(config fositex.OAuth2Configurator, strategy oauth2.AccessTokenStrategy, storage oauth2.AccessTokenStorage) *TokenExchangeHandler {
+// NewTokenExchangeHandler works as a fositex.Factory to register this handler.
+var _ fositex.Factory = NewTokenExchangeHandler
+
+// NewTokenExchangeHandler creates a new TokenExchangeHandler,
+func NewTokenExchangeHandler(config fositex.OAuth2Configurator, storage any, strategy any) any {
 	return &TokenExchangeHandler{
-		accessTokenStrategy: strategy,
-		accessTokenStorage:  storage,
+		accessTokenStrategy: strategy.(oauth2.AccessTokenStrategy),
+		accessTokenStorage:  storage.(oauth2.AccessTokenStorage),
 		config:              config,
 	}
 }

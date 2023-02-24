@@ -156,9 +156,43 @@ func NewOAuth2Config(config Config) (*OAuth2Config, error) {
 	return out, nil
 }
 
-// NewOAuth2Provider creates a new fosite.OAuth2Provider given an OAuth2Configurator instance
-// and a storage config.
-func NewOAuth2Provider(config OAuth2Configurator, store fosite.Storage) fosite.OAuth2Provider {
-	provider := fosite.NewOAuth2Provider(store, config)
-	return provider
+// NewOAuth2Provider creates a new fosite.OAuth2Provider.
+// The configurator, store, and strategy are all passed to the factories
+// and the resulting endpoint handlers are registered to the fosite.Config.
+func NewOAuth2Provider(configurator *OAuth2Config, store interface{}, strategy interface{}, factories ...Factory) fosite.OAuth2Provider {
+	config := configurator.Config
+	storage := store.(fosite.Storage)
+
+	f := fosite.NewOAuth2Provider(storage, config)
+
+	for _, factory := range factories {
+		res := factory(configurator, storage, strategy)
+
+		if ah, ok := res.(fosite.AuthorizeEndpointHandler); ok {
+			config.AuthorizeEndpointHandlers.Append(ah)
+		}
+
+		if th, ok := res.(fosite.TokenEndpointHandler); ok {
+			config.TokenEndpointHandlers.Append(th)
+		}
+
+		if tv, ok := res.(fosite.TokenIntrospector); ok {
+			config.TokenIntrospectionHandlers.Append(tv)
+		}
+
+		if rh, ok := res.(fosite.RevocationHandler); ok {
+			config.RevocationHandlers.Append(rh)
+		}
+
+		if ph, ok := res.(fosite.PushedAuthorizeEndpointHandler); ok {
+			config.PushedAuthorizeEndpointHandlers.Append(ph)
+		}
+	}
+
+	return f
 }
+
+// Factory is a constructor which is used to create an OAuth2 endpoin handler.
+// NewOAuth2Provider handles consuming the new struct and attaching it
+// to the parts of the config that it implements.
+type Factory func(config OAuth2Configurator, store any, strategy any) any
