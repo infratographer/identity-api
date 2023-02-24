@@ -156,10 +156,9 @@ func NewOAuth2Config(config Config) (*OAuth2Config, error) {
 	return out, nil
 }
 
-// NewOAuth2Provider creates a new fosite.OAuth2Provider given a
-// *OAuth2Config and a storage config.
-// Given a config, store, and strategy, this will use the factories to
-// create and register all endpoint handlers.
+// NewOAuth2Provider creates a new fosite.OAuth2Provider.
+// The configurator, store, and strategy are all passed to the factories
+// and the resulting endpoint handlers are registered to the fosite.Config.
 func NewOAuth2Provider(configurator *OAuth2Config, store interface{}, strategy interface{}, factories ...Factory) fosite.OAuth2Provider {
 	config := configurator.Config
 	storage := store.(fosite.Storage)
