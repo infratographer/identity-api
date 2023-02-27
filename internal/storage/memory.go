@@ -12,6 +12,7 @@ import (
 type memoryEngine struct {
 	*issuerService
 	*userInfoService
+	*oauthClientManager
 	crdb testserver.TestServer
 	db   *sql.DB
 }
@@ -42,11 +43,17 @@ func newMemoryEngine(config Config) (*memoryEngine, error) {
 		return nil, err
 	}
 
+	oauthClientManager, err := newOAuthClientManager(config, db)
+	if err != nil {
+		return nil, err
+	}
+
 	out := &memoryEngine{
-		issuerService:   issSvc,
-		userInfoService: userInfoSvc,
-		crdb:            crdb,
-		db:              db,
+		issuerService:      issSvc,
+		userInfoService:    userInfoSvc,
+		crdb:               crdb,
+		oauthClientManager: oauthClientManager,
+		db:                 db,
 	}
 
 	err = out.seedDatabase(context.Background(), config.SeedData)

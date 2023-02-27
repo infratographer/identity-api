@@ -28,6 +28,7 @@ type TransactionManager interface {
 type Engine interface {
 	types.IssuerService
 	types.UserInfoService
+	types.OAuthClientManager
 	TransactionManager
 	Shutdown()
 }
