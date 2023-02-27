@@ -298,10 +298,9 @@ func (s *TokenExchangeHandler) PopulateTokenEndpointResponse(ctx context.Context
 	return nil
 }
 
-// CanSkipClientAuth is currently not supported by this handler.
-// It returns false.
+// CanSkipClientAuth always returns true, as client auth is not required for token exchange.
 func (s *TokenExchangeHandler) CanSkipClientAuth(ctx context.Context, requester fosite.AccessRequester) bool {
-	return false
+	return true
 }
 
 // CanHandleTokenEndpointRequest returns true if the grant type is token exchange.
