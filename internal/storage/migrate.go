@@ -11,7 +11,7 @@ import (
 //go:embed migrations/*
 var embedMigrations embed.FS
 
-var migrationWG sync.WaitGroup
+var migrationMutex sync.Mutex
 
 func init() {
 	goose.SetBaseFS(embedMigrations)
@@ -48,10 +48,8 @@ func RunMigrations(config Config) error {
 // runMigrations runs all embedded migrations against the given database. Subsequent calls
 // will have no effect. This function is safe to run across multiple goroutines.
 func runMigrations(db *sql.DB) error {
-	migrationWG.Wait()
-	migrationWG.Add(1)
-
-	defer migrationWG.Done()
+	migrationMutex.Lock()
+	defer migrationMutex.Unlock()
 
 	err := goose.Up(db, "migrations")
 
