@@ -1,7 +1,10 @@
+---
 openapi: 3.0.3
 info:
   title: Security Token Service Management API
-  description: Security Token Service (STS) Management API is an API for managing STS configurations.
+  description:
+    Security Token Service (STS) Management API is an API
+    for  managing STS configurations.
   version: 0.0.1
 
 paths:
@@ -32,6 +35,77 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Issuer'
+
+  /api/v1/tenants/{tenantID}/clients:
+    post:
+      tags:
+        - OAuthClients
+      summary: Creates an oauth client.
+      operationId: createOAuthClient
+      parameters:
+        - in: path
+          name: tenantID
+          required: true
+          description: OAuth client should be bound to this tenantID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOAuthClient'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthClient'
+
+  /api/v1/clients/{clientID}:
+    get:
+      tags:
+        - OAuthClients
+      summary: Gets information about an OAuth 2.0 Client.
+      operationId: getOAuthClient
+      parameters:
+        - in: path
+          name: clientID
+          required: true
+          description: OAuth client ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthClient'
+
+    delete:
+      tags:
+        - OAuthClients
+      summary: Delets an OAuthClient
+      operationId: deleteOAuthClient
+      parameters:
+        - in: path
+          name: clientID
+          required: true
+          description: OAuth client ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
 
   /api/v1/issuers/{id}:
     get:
@@ -125,7 +199,9 @@ components:
         uri:
           x-go-name: URI
           type: string
-          description: URI for the issuer. Must match the "iss" claim value in incoming JWTs
+          description:
+            URI for the issuer.
+            Must match the "iss" claim value in incoming JWTs
         jwks_uri:
           x-go-name: JWKSURI
           type: string
@@ -144,7 +220,9 @@ components:
         uri:
           x-go-name: URI
           type: string
-          description: URI for the issuer. Must match the "iss" claim value in incoming JWTs
+          description: |-
+            URI for the issuer.
+            Must match the "iss" claim value in incoming JWTs
         jwks_uri:
           x-go-name: JWKSURI
           type: string
@@ -174,7 +252,9 @@ components:
         uri:
           x-go-name: URI
           type: string
-          description: URI for the issuer. Must match the "iss" claim value in incoming JWTs
+          description: |-
+            URI for the issuer.
+            Must match the "iss" claim value in incoming JWTs
         jwks_uri:
           x-go-name: JWKSURI
           type: string
@@ -185,3 +265,38 @@ components:
           additionalProperties:
             type: string
 
+    CreateOAuthClient:
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: A human-readable name for the client
+
+    OAuthClient:
+      required:
+        - id
+        - name
+        - secret
+        - audience
+        - scope
+      properties:
+        id:
+          x-go-name: ID
+          type: string
+          format: uuid
+          description: OAuth 2.0 Client ID
+        name:
+          type: string
+          description: Description of Client
+        secret:
+          type: string
+          description: OAuth2.0 Client Secret
+        audience:
+          type: array
+          items:
+            type: string
+          description: Grantable audiences
+        scope:
+          type: string
+          description: Grantable scopes

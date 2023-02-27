@@ -17,6 +17,12 @@ import (
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// Delets an OAuthClient
+	// (DELETE /api/v1/clients/{clientID})
+	DeleteOAuthClient(c *gin.Context, clientID openapi_types.UUID)
+	// Gets information about an OAuth 2.0 Client.
+	// (GET /api/v1/clients/{clientID})
+	GetOAuthClient(c *gin.Context, clientID openapi_types.UUID)
 	// Deletes an issuer with the given ID.
 	// (DELETE /api/v1/issuers/{id})
 	DeleteIssuer(c *gin.Context, id openapi_types.UUID)
@@ -26,6 +32,9 @@ type ServerInterface interface {
 	// Updates an issuer.
 	// (PATCH /api/v1/issuers/{id})
 	UpdateIssuer(c *gin.Context, id openapi_types.UUID)
+	// Creates an oauth client.
+	// (POST /api/v1/tenants/{tenantID}/clients)
+	CreateOAuthClient(c *gin.Context, tenantID openapi_types.UUID)
 	// Creates an issuer.
 	// (POST /api/v1/tenants/{tenantID}/issuers)
 	CreateIssuer(c *gin.Context, tenantID openapi_types.UUID)
@@ -39,6 +48,54 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(c *gin.Context)
+
+// DeleteOAuthClient operation middleware
+func (siw *ServerInterfaceWrapper) DeleteOAuthClient(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "clientID" -------------
+	var clientID openapi_types.UUID
+
+	err = runtime.BindStyledParameter("simple", false, "clientID", c.Param("clientID"), &clientID)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter clientID: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.DeleteOAuthClient(c, clientID)
+}
+
+// GetOAuthClient operation middleware
+func (siw *ServerInterfaceWrapper) GetOAuthClient(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "clientID" -------------
+	var clientID openapi_types.UUID
+
+	err = runtime.BindStyledParameter("simple", false, "clientID", c.Param("clientID"), &clientID)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter clientID: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.GetOAuthClient(c, clientID)
+}
 
 // DeleteIssuer operation middleware
 func (siw *ServerInterfaceWrapper) DeleteIssuer(c *gin.Context) {
@@ -112,6 +169,30 @@ func (siw *ServerInterfaceWrapper) UpdateIssuer(c *gin.Context) {
 	siw.Handler.UpdateIssuer(c, id)
 }
 
+// CreateOAuthClient operation middleware
+func (siw *ServerInterfaceWrapper) CreateOAuthClient(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "tenantID" -------------
+	var tenantID openapi_types.UUID
+
+	err = runtime.BindStyledParameter("simple", false, "tenantID", c.Param("tenantID"), &tenantID)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter tenantID: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.CreateOAuthClient(c, tenantID)
+}
+
 // CreateIssuer operation middleware
 func (siw *ServerInterfaceWrapper) CreateIssuer(c *gin.Context) {
 
@@ -163,10 +244,47 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 		ErrorHandler:       errorHandler,
 	}
 
+	router.DELETE(options.BaseURL+"/api/v1/clients/:clientID", wrapper.DeleteOAuthClient)
+	router.GET(options.BaseURL+"/api/v1/clients/:clientID", wrapper.GetOAuthClient)
 	router.DELETE(options.BaseURL+"/api/v1/issuers/:id", wrapper.DeleteIssuer)
 	router.GET(options.BaseURL+"/api/v1/issuers/:id", wrapper.GetIssuerByID)
 	router.PATCH(options.BaseURL+"/api/v1/issuers/:id", wrapper.UpdateIssuer)
+	router.POST(options.BaseURL+"/api/v1/tenants/:tenantID/clients", wrapper.CreateOAuthClient)
 	router.POST(options.BaseURL+"/api/v1/tenants/:tenantID/issuers", wrapper.CreateIssuer)
+}
+
+type DeleteOAuthClientRequestObject struct {
+	ClientID openapi_types.UUID `json:"clientID"`
+}
+
+type DeleteOAuthClientResponseObject interface {
+	VisitDeleteOAuthClientResponse(w http.ResponseWriter) error
+}
+
+type DeleteOAuthClient200JSONResponse DeleteResponse
+
+func (response DeleteOAuthClient200JSONResponse) VisitDeleteOAuthClientResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetOAuthClientRequestObject struct {
+	ClientID openapi_types.UUID `json:"clientID"`
+}
+
+type GetOAuthClientResponseObject interface {
+	VisitGetOAuthClientResponse(w http.ResponseWriter) error
+}
+
+type GetOAuthClient200JSONResponse OAuthClient
+
+func (response GetOAuthClient200JSONResponse) VisitGetOAuthClientResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
 }
 
 type DeleteIssuerRequestObject struct {
@@ -221,6 +339,24 @@ func (response UpdateIssuer200JSONResponse) VisitUpdateIssuerResponse(w http.Res
 	return json.NewEncoder(w).Encode(response)
 }
 
+type CreateOAuthClientRequestObject struct {
+	TenantID openapi_types.UUID `json:"tenantID"`
+	Body     *CreateOAuthClientJSONRequestBody
+}
+
+type CreateOAuthClientResponseObject interface {
+	VisitCreateOAuthClientResponse(w http.ResponseWriter) error
+}
+
+type CreateOAuthClient200JSONResponse OAuthClient
+
+func (response CreateOAuthClient200JSONResponse) VisitCreateOAuthClientResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type CreateIssuerRequestObject struct {
 	TenantID openapi_types.UUID `json:"tenantID"`
 	Body     *CreateIssuerJSONRequestBody
@@ -241,6 +377,12 @@ func (response CreateIssuer200JSONResponse) VisitCreateIssuerResponse(w http.Res
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// Delets an OAuthClient
+	// (DELETE /api/v1/clients/{clientID})
+	DeleteOAuthClient(ctx context.Context, request DeleteOAuthClientRequestObject) (DeleteOAuthClientResponseObject, error)
+	// Gets information about an OAuth 2.0 Client.
+	// (GET /api/v1/clients/{clientID})
+	GetOAuthClient(ctx context.Context, request GetOAuthClientRequestObject) (GetOAuthClientResponseObject, error)
 	// Deletes an issuer with the given ID.
 	// (DELETE /api/v1/issuers/{id})
 	DeleteIssuer(ctx context.Context, request DeleteIssuerRequestObject) (DeleteIssuerResponseObject, error)
@@ -250,6 +392,9 @@ type StrictServerInterface interface {
 	// Updates an issuer.
 	// (PATCH /api/v1/issuers/{id})
 	UpdateIssuer(ctx context.Context, request UpdateIssuerRequestObject) (UpdateIssuerResponseObject, error)
+	// Creates an oauth client.
+	// (POST /api/v1/tenants/{tenantID}/clients)
+	CreateOAuthClient(ctx context.Context, request CreateOAuthClientRequestObject) (CreateOAuthClientResponseObject, error)
 	// Creates an issuer.
 	// (POST /api/v1/tenants/{tenantID}/issuers)
 	CreateIssuer(ctx context.Context, request CreateIssuerRequestObject) (CreateIssuerResponseObject, error)
@@ -266,6 +411,58 @@ func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareF
 type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
+}
+
+// DeleteOAuthClient operation middleware
+func (sh *strictHandler) DeleteOAuthClient(ctx *gin.Context, clientID openapi_types.UUID) {
+	var request DeleteOAuthClientRequestObject
+
+	request.ClientID = clientID
+
+	handler := func(ctx *gin.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteOAuthClient(ctx, request.(DeleteOAuthClientRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteOAuthClient")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		ctx.Error(err)
+	} else if validResponse, ok := response.(DeleteOAuthClientResponseObject); ok {
+		if err := validResponse.VisitDeleteOAuthClientResponse(ctx.Writer); err != nil {
+			ctx.Error(err)
+		}
+	} else if response != nil {
+		ctx.Error(fmt.Errorf("Unexpected response type: %T", response))
+	}
+}
+
+// GetOAuthClient operation middleware
+func (sh *strictHandler) GetOAuthClient(ctx *gin.Context, clientID openapi_types.UUID) {
+	var request GetOAuthClientRequestObject
+
+	request.ClientID = clientID
+
+	handler := func(ctx *gin.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetOAuthClient(ctx, request.(GetOAuthClientRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetOAuthClient")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		ctx.Error(err)
+	} else if validResponse, ok := response.(GetOAuthClientResponseObject); ok {
+		if err := validResponse.VisitGetOAuthClientResponse(ctx.Writer); err != nil {
+			ctx.Error(err)
+		}
+	} else if response != nil {
+		ctx.Error(fmt.Errorf("Unexpected response type: %T", response))
+	}
 }
 
 // DeleteIssuer operation middleware
@@ -347,6 +544,40 @@ func (sh *strictHandler) UpdateIssuer(ctx *gin.Context, id openapi_types.UUID) {
 		ctx.Error(err)
 	} else if validResponse, ok := response.(UpdateIssuerResponseObject); ok {
 		if err := validResponse.VisitUpdateIssuerResponse(ctx.Writer); err != nil {
+			ctx.Error(err)
+		}
+	} else if response != nil {
+		ctx.Error(fmt.Errorf("Unexpected response type: %T", response))
+	}
+}
+
+// CreateOAuthClient operation middleware
+func (sh *strictHandler) CreateOAuthClient(ctx *gin.Context, tenantID openapi_types.UUID) {
+	var request CreateOAuthClientRequestObject
+
+	request.TenantID = tenantID
+
+	var body CreateOAuthClientJSONRequestBody
+	if err := ctx.ShouldBind(&body); err != nil {
+		ctx.Status(http.StatusBadRequest)
+		ctx.Error(err)
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx *gin.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateOAuthClient(ctx, request.(CreateOAuthClientRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateOAuthClient")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		ctx.Error(err)
+	} else if validResponse, ok := response.(CreateOAuthClientResponseObject); ok {
+		if err := validResponse.VisitCreateOAuthClientResponse(ctx.Writer); err != nil {
 			ctx.Error(err)
 		}
 	} else if response != nil {
