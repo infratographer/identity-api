@@ -257,7 +257,13 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 		fosite.AccessToken: expiry,
 	}
 
-	clientID := requester.GetClient().GetID()
+	var clientID *string
+
+	maybeClientID := requester.GetClient().GetID()
+	if len(maybeClientID) > 0 {
+		clientID = &maybeClientID
+	}
+
 	newClaims.Add(ClaimClientID, clientID)
 
 	kid := s.config.GetSigningKey(ctx).KeyID
