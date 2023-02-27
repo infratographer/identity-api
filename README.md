@@ -18,7 +18,7 @@ To perform a token exchange, grab a JWT from somewhere and add its issuer and JW
 
 ```
 $ read -s -p 'Enter your token: ' AUTH_TOKEN && echo
-$ curl --user my-client:foobar -XPOST -d "grant_type=urn:ietf:params:oauth:grant-type:token-exchange&subject_token=$AUTH_TOKEN&subject_token_type=urn:ietf:params:oauth:token-type:jwt" http://localhost:8000/token | jq
+$ curl -XPOST -d "grant_type=urn:ietf:params:oauth:grant-type:token-exchange&subject_token=$AUTH_TOKEN&subject_token_type=urn:ietf:params:oauth:token-type:jwt" http://localhost:8000/token | jq
 ```
 
 This sends an RFC 8693 token exchange request to identity-api, which then will validate the given subject token against the configured subject token issuers. If the token is valid, you will receive a response like so (access token truncated for brevity):
