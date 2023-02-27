@@ -3,12 +3,15 @@ package storage
 import (
 	"database/sql"
 	"embed"
+	"sync"
 
 	"github.com/pressly/goose/v3"
 )
 
 //go:embed migrations/*
 var embedMigrations embed.FS
+
+var migrationMutex sync.Mutex
 
 func init() {
 	goose.SetBaseFS(embedMigrations)
@@ -42,10 +45,13 @@ func RunMigrations(config Config) error {
 	return runMigrations(db)
 }
 
+// runMigrations runs all embedded migrations against the given database. Subsequent calls
+// will have no effect. This function is safe to run across multiple goroutines.
 func runMigrations(db *sql.DB) error {
-	if err := goose.Up(db, "migrations"); err != nil {
-		return err
-	}
+	migrationMutex.Lock()
+	defer migrationMutex.Unlock()
 
-	return nil
+	err := goose.Up(db, "migrations")
+
+	return err
 }
