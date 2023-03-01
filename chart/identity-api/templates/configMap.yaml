@@ -32,10 +32,5 @@ data:
         {{- end }}
         {{- end }}
     storage:
-      type: {{ .storage.type | default "memory" }}
-      seedData:
-        issuers:
-          {{- range $k, $v := .storage.seedData.issuers }}
-          {{- template "idapi.seedIssuer" $v }}
-          {{- end }}
+      type: crdb
   {{- end }}

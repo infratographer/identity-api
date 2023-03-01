@@ -33,22 +33,11 @@ config:
       prettyPrint: true
 
   storage:
-    type: memory
+    migrateOnInit: false
 
-    # Configure the issuers to trust upon initial deployment
-    seedData:
-
-      # Issuers is how you configure the issuers to trust when
-      # bootstrapping the application issuers is a map with the
-      # following format:
-      # ```yaml
-      #   - name: "Example"
-      #     uri: "https://auth.example.com/"
-      #     jwksURI: "https://auth.example.com/.well-known/jwks.json"
-      #     claimMappings:
-      #       "infratographer:sub": "'infratographer://example.com/' + subSHA256"
-      #```
-      issuers: []
+    crdb:
+      caSecretName: ""
+      uriSecretName: ""
 
   oauth:
     # issuer is the `iss` claim in the exchanged tokens
