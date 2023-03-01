@@ -51,9 +51,14 @@ spec:
               mountPath: /keys/
       containers:
         - name: {{ include "common.names.name" . }}
+          env:
+            - name: PGSSLROOTCERT
+              value: /etc/ssl/certs/crdb/ca.crt
           envFrom:
             - secretRef:
                 name: "{{ .Values.config.oauth.secretName }}"
+            - secretRef:
+                name: "{{ .Values.config.storage.crdb.uriSecretName }}"
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy | default "Always" }}
           volumeMounts:
@@ -62,6 +67,8 @@ spec:
               readOnly: true
             - name: app-config
               mountPath: /etc/identity-api/
+            - name: crdb-ca
+              mountPath: /etc/ssl/crdb/
           ports:
             - name: web
               containerPort: {{ include "idapi.listenPort" . }}
@@ -79,3 +86,6 @@ spec:
         - name: app-config
           configMap:
             name: {{ include "common.names.name" . }}-app-config
+        - name: crdb-ca
+          secret:
+            secretName: {{ .Values.config.storage.crdb.caSecretName }}

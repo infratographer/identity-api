@@ -33,7 +33,9 @@ config:
       prettyPrint: true
 
   storage:
-    type: memory
+    crdb:
+      caSecretName: ""
+      uriSecretName: ""
 
     # Configure the issuers to trust upon initial deployment
     seedData:

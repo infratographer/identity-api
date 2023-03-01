@@ -32,7 +32,7 @@ data:
         {{- end }}
         {{- end }}
     storage:
-      type: {{ .storage.type | default "memory" }}
+      type: crdb
       seedData:
         issuers:
           {{- range $k, $v := .storage.seedData.issuers }}
