@@ -33,9 +33,4 @@ data:
         {{- end }}
     storage:
       type: crdb
-      seedData:
-        issuers:
-          {{- range $k, $v := .storage.seedData.issuers }}
-          {{- template "idapi.seedIssuer" $v }}
-          {{- end }}
   {{- end }}
