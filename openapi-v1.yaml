@@ -83,7 +83,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OAuthClient'
-
+        '404':
+          $ref: '#/components/responses/NotFound'
     delete:
       tags:
         - OAuthClients
@@ -176,7 +177,25 @@ paths:
                 $ref: '#/components/schemas/DeleteResponse'
 
 components:
+  responses:
+    NotFound:
+      description: Resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
   schemas:
+    Error:
+      type: object
+      required:
+        - errors
+      properties:
+        errors:
+          description: List of error messages
+          type: array
+          items:
+            type: string
+
     DeleteResponse:
       required:
         - success
@@ -264,6 +283,16 @@ components:
         name:
           type: string
           description: A human-readable name for the client
+        audience:
+          description: Audiences that this client can request
+          type: array
+          items:
+            type: string
+        scope:
+          description: Scopes that this client can request
+          type: array
+          items:
+            type: string
 
     OAuthClient:
       required:

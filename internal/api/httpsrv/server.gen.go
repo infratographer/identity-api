@@ -253,6 +253,8 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 	router.POST(options.BaseURL+"/api/v1/tenants/:tenantID/issuers", wrapper.CreateIssuer)
 }
 
+type NotFoundJSONResponse Error
+
 type DeleteOAuthClientRequestObject struct {
 	ClientID openapi_types.UUID `json:"clientID"`
 }
@@ -283,6 +285,15 @@ type GetOAuthClient200JSONResponse OAuthClient
 func (response GetOAuthClient200JSONResponse) VisitGetOAuthClientResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetOAuthClient404JSONResponse struct{ NotFoundJSONResponse }
+
+func (response GetOAuthClient404JSONResponse) VisitGetOAuthClientResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
 
 	return json.NewEncoder(w).Encode(response)
 }
