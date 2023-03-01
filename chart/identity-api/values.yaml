@@ -33,6 +33,8 @@ config:
       prettyPrint: true
 
   storage:
+    migrateOnInit: false
+
     crdb:
       caSecretName: ""
       uriSecretName: ""

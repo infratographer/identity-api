@@ -49,6 +49,24 @@ spec:
               mountPath: /sts-keys/
             - name: signing-keys
               mountPath: /keys/
+        {{- if .Values.config.storage.migrateOnInit }}
+        - name: db-migrate
+          env:
+            - name: PGSSLROOTCERT
+              value: /etc/ssl/certs/crdb/ca.crt
+          envFrom:
+            - secretRef:
+                name: "{{ .Values.config.storage.crdb.uriSecretName }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy | default "Always" }}
+          command:
+            - migrate
+          volumeMounts:
+            - name: app-config
+              mountPath: /etc/identity-api/
+            - name: crdb-ca
+              mountPath: /etc/ssl/crdb/
+        {{- end }}
       containers:
         - name: {{ include "common.names.name" . }}
           env:
