@@ -1,3 +1,4 @@
+---
 openapi: 3.0.3
 info:
   title: Security Token Service Management API
@@ -32,6 +33,77 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Issuer'
+
+  /api/v1/tenants/{tenantID}/clients:
+    post:
+      tags:
+        - OAuthClients
+      summary: Creates an OAuth client.
+      operationId: createOAuthClient
+      parameters:
+        - in: path
+          name: tenantID
+          required: true
+          description: Tenant to provision the OAuth client under
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOAuthClient'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthClient'
+
+  /api/v1/clients/{clientID}:
+    get:
+      tags:
+        - OAuthClients
+      summary: Gets information about an OAuth 2.0 Client.
+      operationId: getOAuthClient
+      parameters:
+        - in: path
+          name: clientID
+          required: true
+          description: OAuth client ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthClient'
+
+    delete:
+      tags:
+        - OAuthClients
+      summary: Deletes an OAuth Client
+      operationId: deleteOAuthClient
+      parameters:
+        - in: path
+          name: clientID
+          required: true
+          description: OAuth client ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
 
   /api/v1/issuers/{id}:
     get:
@@ -185,3 +257,33 @@ components:
           additionalProperties:
             type: string
 
+    CreateOAuthClient:
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: A human-readable name for the client
+
+    OAuthClient:
+      required:
+        - id
+        - name
+        - audience
+      properties:
+        id:
+          x-go-name: ID
+          type: string
+          format: uuid
+          description: OAuth 2.0 Client ID
+        name:
+          type: string
+          description: Description of Client
+        secret:
+          type: string
+          description: OAuth2.0 Client Secret
+        audience:
+          type: array
+          items:
+            type: string
+          description: Grantable audiences

@@ -16,4 +16,7 @@ var (
 	// ErrInvalidUserInfo represents an error condition where the
 	// UserInfo provided fails validation prior to storage.
 	ErrInvalidUserInfo = errors.New("failed to store user info")
+
+	// ErrOAuthClientNotFound is returned if the OAuthClient doesn't exist.
+	ErrOAuthClientNotFound = errors.New("oauth client does not exist")
 )
