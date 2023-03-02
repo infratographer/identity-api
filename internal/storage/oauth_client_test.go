@@ -68,7 +68,6 @@ func TestOAuthClientManager(t *testing.T) {
 		Name:     "my-client",
 		Secret:   "foobar",
 		Audience: []string{"aud1", "aud2"},
-		Scope:    "openid profile email",
 	}
 
 	seedCtx, err := beginTxContext(context.Background(), db)
@@ -97,20 +96,19 @@ func TestOAuthClientManager(t *testing.T) {
 	t.Run("LookupClientByID", func(t *testing.T) {
 		t.Parallel()
 
-		runFn := func(ctx context.Context, input string) testingx.TestResult[*types.OAuthClient] {
+		runFn := func(ctx context.Context, input string) testingx.TestResult[types.OAuthClient] {
 			res, err := oauthClientStore.LookupOAuthClientByID(ctx, input)
-			return testingx.TestResult[*types.OAuthClient]{
+			return testingx.TestResult[types.OAuthClient]{
 				Success: res,
 				Err:     err,
 			}
 		}
 
-		testCases := []testingx.TestCase[string, *types.OAuthClient]{
+		testCases := []testingx.TestCase[string, types.OAuthClient]{
 			{
 				Name:  "NotFoundWithoutTx",
 				Input: uuid.NewString(),
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.OAuthClient]) {
-					assert.Nil(t, res.Success)
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.OAuthClient]) {
 					assert.ErrorIs(t, res.Err, types.ErrOAuthClientNotFound)
 				},
 			},
@@ -118,8 +116,7 @@ func TestOAuthClientManager(t *testing.T) {
 				Name:    "NotFoundWithTx",
 				Input:   uuid.NewString(),
 				SetupFn: setupWithTx,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.OAuthClient]) {
-					assert.Nil(t, res.Success)
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.OAuthClient]) {
 					assert.ErrorIs(t, res.Err, types.ErrOAuthClientNotFound)
 				},
 				CleanupFn: cleanupWithTx,
@@ -128,9 +125,9 @@ func TestOAuthClientManager(t *testing.T) {
 				Name:    "FoundWithTx",
 				Input:   defaultClient.ID,
 				SetupFn: setupWithTx,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.OAuthClient]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.OAuthClient]) {
 					assert.NoError(t, res.Err)
-					assert.Equal(t, defaultClient, *res.Success)
+					assert.Equal(t, defaultClient, res.Success)
 					assert.NotEqual(t, "foobar", res.Success.Secret)
 				},
 				CleanupFn: cleanupWithTx,
@@ -160,7 +157,6 @@ func TestOAuthClientManager(t *testing.T) {
 					Name:     "newclient",
 					Secret:   secret,
 					Audience: []string{"abc", "def", "ghi"},
-					Scope:    "openid profile email api",
 				},
 				SetupFn:   setupWithTx,
 				CleanupFn: cleanupWithTx,
@@ -171,7 +167,6 @@ func TestOAuthClientManager(t *testing.T) {
 					assert.Equal(t, tenantID, client.TenantID)
 					assert.Equal(t, "newclient", client.Name)
 					assert.Equal(t, []string{"abc", "def", "ghi"}, client.Audience)
-					assert.Equal(t, "openid profile email api", client.Scope)
 				},
 			},
 		}
@@ -197,9 +192,8 @@ func TestOAuthClientManager(t *testing.T) {
 				CleanupFn: cleanupWithTx,
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[any]) {
 					assert.NoError(t, res.Err)
-					c, err := oauthClientStore.LookupOAuthClientByID(ctx, defaultClient.ID)
+					_, err := oauthClientStore.LookupOAuthClientByID(ctx, defaultClient.ID)
 					assert.ErrorIs(t, err, types.ErrOAuthClientNotFound)
-					assert.Nil(t, c)
 				},
 			},
 			{

@@ -3,8 +3,7 @@ openapi: 3.0.3
 info:
   title: Security Token Service Management API
   description:
-    Security Token Service (STS) Management API is an API
-    for  managing STS configurations.
+    Security Token Service (STS) Management API is an API for  managing STS configurations.
   version: 0.0.1
 
 paths:
@@ -40,13 +39,13 @@ paths:
     post:
       tags:
         - OAuthClients
-      summary: Creates an oauth client.
+      summary: Creates an OAuth client.
       operationId: createOAuthClient
       parameters:
         - in: path
           name: tenantID
           required: true
-          description: OAuth client should be bound to this tenantID
+          description: Tenant to provision the OAuth client under
           schema:
             type: string
             format: uuid
@@ -89,7 +88,7 @@ paths:
     delete:
       tags:
         - OAuthClients
-      summary: Delets an OAuthClient
+      summary: Deletes an OAuth Client
       operationId: deleteOAuthClient
       parameters:
         - in: path
@@ -199,9 +198,7 @@ components:
         uri:
           x-go-name: URI
           type: string
-          description:
-            URI for the issuer.
-            Must match the "iss" claim value in incoming JWTs
+          description: URI for the issuer. Must match the "iss" claim value in incoming JWTs
         jwks_uri:
           x-go-name: JWKSURI
           type: string
@@ -220,9 +217,7 @@ components:
         uri:
           x-go-name: URI
           type: string
-          description:
-            URI for the issuer.
-            Must match the "iss" claim value in incoming JWTs
+          description: URI for the issuer. Must match the "iss" claim value in incoming JWTs
         jwks_uri:
           x-go-name: JWKSURI
           type: string
@@ -278,7 +273,6 @@ components:
         - id
         - name
         - audience
-        - scope
       properties:
         id:
           x-go-name: ID
@@ -296,6 +290,3 @@ components:
           items:
             type: string
           description: Grantable audiences
-        scope:
-          type: string
-          description: Grantable scopes

@@ -17,14 +17,12 @@ var oauthClientCols = struct {
 	Name     string
 	Secret   string
 	Audience string
-	Scope    string
 }{
 	ID:       "id",
 	TenantID: "tenant_id",
 	Name:     "name",
 	Secret:   "secret",
 	Audience: "audience",
-	Scope:    "scope",
 }
 
 var (
@@ -33,7 +31,6 @@ var (
 		oauthClientCols.Name,
 		oauthClientCols.Secret,
 		oauthClientCols.Audience,
-		oauthClientCols.Scope,
 	}
 	oauthClientColumnsStr = strings.Join(oauthClientColumns, ", ")
 )
@@ -82,7 +79,7 @@ func (s *oauthClientManager) CreateOAuthClient(ctx context.Context, client types
         INSERT INTO oauth_clients (
            %s
         ) VALUES
-        ($1, $2, $3, $4, $5) RETURNING id;
+        ($1, $2, $3, $4) RETURNING id;
        `
 	q = fmt.Sprintf(q, oauthClientColumnsStr)
 
@@ -100,7 +97,6 @@ func (s *oauthClientManager) CreateOAuthClient(ctx context.Context, client types
 		client.Name,
 		client.Secret,
 		strings.Join(client.Audience, " "),
-		client.Scope,
 	)
 
 	err = row.Scan(&client.ID)
@@ -124,7 +120,7 @@ func (*oauthClientManager) DeleteOAuthClient(ctx context.Context, clientID strin
 }
 
 // LookupOAuthClientByID fetches an OAuth client from the store.
-func (s *oauthClientManager) LookupOAuthClientByID(ctx context.Context, clientID string) (*types.OAuthClient, error) {
+func (s *oauthClientManager) LookupOAuthClientByID(ctx context.Context, clientID string) (types.OAuthClient, error) {
 	q := fmt.Sprintf(`SELECT %s FROM oauth_clients WHERE id = $1`, oauthClientColumnsStr)
 
 	var row *sql.Row
@@ -137,7 +133,7 @@ func (s *oauthClientManager) LookupOAuthClientByID(ctx context.Context, clientID
 	case ErrorMissingContextTx:
 		row = s.db.QueryRowContext(ctx, q, clientID)
 	default:
-		return nil, err
+		return types.OAuthClient{}, err
 	}
 
 	var model types.OAuthClient
@@ -149,19 +145,18 @@ func (s *oauthClientManager) LookupOAuthClientByID(ctx context.Context, clientID
 		&model.Name,
 		&model.Secret,
 		&aud,
-		&model.Scope,
 	)
 
 	switch err {
 	case nil:
 	case sql.ErrNoRows:
-		return nil, types.ErrOAuthClientNotFound
+		return types.OAuthClient{}, types.ErrOAuthClientNotFound
 	default:
-		return nil, err
+		return types.OAuthClient{}, err
 	}
 
 	model.ID = clientID
 	model.Audience = strings.Fields(aud)
 
-	return &model, nil
+	return model, nil
 }

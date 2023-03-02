@@ -17,7 +17,7 @@ import (
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// Delets an OAuthClient
+	// Deletes an OAuth Client
 	// (DELETE /api/v1/clients/{clientID})
 	DeleteOAuthClient(c *gin.Context, clientID openapi_types.UUID)
 	// Gets information about an OAuth 2.0 Client.
@@ -32,7 +32,7 @@ type ServerInterface interface {
 	// Updates an issuer.
 	// (PATCH /api/v1/issuers/{id})
 	UpdateIssuer(c *gin.Context, id openapi_types.UUID)
-	// Creates an oauth client.
+	// Creates an OAuth client.
 	// (POST /api/v1/tenants/{tenantID}/clients)
 	CreateOAuthClient(c *gin.Context, tenantID openapi_types.UUID)
 	// Creates an issuer.
@@ -377,7 +377,7 @@ func (response CreateIssuer200JSONResponse) VisitCreateIssuerResponse(w http.Res
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
-	// Delets an OAuthClient
+	// Deletes an OAuth Client
 	// (DELETE /api/v1/clients/{clientID})
 	DeleteOAuthClient(ctx context.Context, request DeleteOAuthClientRequestObject) (DeleteOAuthClientResponseObject, error)
 	// Gets information about an OAuth 2.0 Client.
@@ -392,7 +392,7 @@ type StrictServerInterface interface {
 	// Updates an issuer.
 	// (PATCH /api/v1/issuers/{id})
 	UpdateIssuer(ctx context.Context, request UpdateIssuerRequestObject) (UpdateIssuerResponseObject, error)
-	// Creates an oauth client.
+	// Creates an OAuth client.
 	// (POST /api/v1/tenants/{tenantID}/clients)
 	CreateOAuthClient(ctx context.Context, request CreateOAuthClientRequestObject) (CreateOAuthClientResponseObject, error)
 	// Creates an issuer.

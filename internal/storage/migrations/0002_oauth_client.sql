@@ -4,6 +4,5 @@ CREATE TABLE oauth_clients (
     tenant_id UUID NOT NULL,
     name      STRING NOT NULL,
     secret    STRING NOT NULL,
-    audience  STRING NOT NULL,
-    scope     STRING NOT NULL
+    audience  STRING NOT NULL
 );

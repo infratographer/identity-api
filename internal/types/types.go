@@ -192,6 +192,6 @@ type UserInfoService interface {
 // OAuthClientManager defines the storage interface for OAuth clients.
 type OAuthClientManager interface {
 	CreateOAuthClient(ctx context.Context, client OAuthClient) (OAuthClient, error)
-	LookupOAuthClientByID(ctx context.Context, clientID string) (*OAuthClient, error)
+	LookupOAuthClientByID(ctx context.Context, clientID string) (OAuthClient, error)
 	DeleteOAuthClient(ctx context.Context, clientID string) error
 }

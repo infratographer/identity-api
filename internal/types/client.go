@@ -1,8 +1,6 @@
 package types
 
 import (
-	"strings"
-
 	"github.com/google/uuid"
 	"github.com/ory/fosite"
 	v1 "go.infratographer.com/identity-api/pkg/api/v1"
@@ -15,7 +13,6 @@ type OAuthClient struct {
 	Name     string
 	Secret   string
 	Audience []string
-	Scope    string
 }
 
 // GetAudience implements fosite.Client
@@ -50,7 +47,7 @@ func (OAuthClient) GetResponseTypes() fosite.Arguments {
 
 // GetScopes implements fosite.Client
 func (c OAuthClient) GetScopes() fosite.Arguments {
-	return fosite.Arguments(strings.Fields(c.Scope))
+	panic("unimplemented")
 }
 
 // IsPublic implements fosite.Client
@@ -66,7 +63,6 @@ func (c OAuthClient) ToV1OAuthClient() (v1.OAuthClient, error) {
 	client.Name = c.Name
 	client.Secret = &c.Secret
 	client.Audience = c.Audience
-	client.Scope = c.Scope
 
 	return client, nil
 }
