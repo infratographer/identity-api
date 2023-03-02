@@ -44,28 +44,24 @@ func TestUserInfoStore(t *testing.T) {
 		ClaimMappings: types.ClaimsMapping{},
 	}
 
-	config := Config{
-		SeedData: SeedData{
-			Issuers: []SeedIssuer{
-				{
-					TenantID:      tenantID,
-					ID:            issuer.ID,
-					Name:          issuer.Name,
-					URI:           issuer.URI,
-					JWKSURI:       issuer.JWKSURI,
-					ClaimMappings: map[string]string{},
-				},
-			},
+	seedIssuers := []SeedIssuer{
+		{
+			TenantID:      tenantID,
+			ID:            issuer.ID,
+			Name:          issuer.Name,
+			URI:           issuer.URI,
+			JWKSURI:       issuer.JWKSURI,
+			ClaimMappings: map[string]string{},
 		},
 	}
 
-	issSvc, err := newIssuerService(config, db)
+	issSvc, err := newIssuerService(db)
 	assert.Nil(t, err)
 
-	err = issSvc.seedDatabase(context.Background(), config.SeedData.Issuers)
+	err = issSvc.seedDatabase(context.Background(), seedIssuers)
 	assert.Nil(t, err)
 
-	svc, err := newUserInfoService(config, db, WithHTTPClient(httpClient))
+	svc, err := newUserInfoService(db, WithHTTPClient(httpClient))
 	assert.NoError(t, err)
 
 	ctx := context.Background()
@@ -325,7 +321,7 @@ func TestUserInfoStore(t *testing.T) {
 		runFn := func(ctx context.Context, input fetchInput) testingx.TestResult[fetchResult] {
 			tr := recordingTransport{body: input.respBody}
 			client := http.Client{Transport: &tr}
-			svc, err := newUserInfoService(config, db, WithHTTPClient(&client))
+			svc, err := newUserInfoService(db, WithHTTPClient(&client))
 			if !assert.NoError(t, err) {
 				assert.FailNow(t, "failed to create new fake transport: %v", err)
 			}

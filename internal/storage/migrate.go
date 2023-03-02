@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/pressly/goose/v3"
+	"go.infratographer.com/x/crdbx"
 )
 
 //go:embed migrations/*
@@ -22,20 +23,8 @@ func init() {
 }
 
 // RunMigrations runs all migrations using the given storage config.
-func RunMigrations(config Config) error {
-	switch config.Type {
-	case "":
-		return ErrorMissingEngineType
-	case EngineTypeCRDB:
-	default:
-		err := &ErrorUnsupportedEngineType{
-			engineType: config.Type,
-		}
-
-		return err
-	}
-
-	db, err := sql.Open("postgres", config.CRDB.URI)
+func RunMigrations(config crdbx.Config) error {
+	db, err := crdbx.NewDB(config, false)
 	if err != nil {
 		return err
 	}

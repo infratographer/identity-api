@@ -2,12 +2,12 @@
 package config
 
 import (
+	"go.infratographer.com/x/crdbx"
 	"go.infratographer.com/x/ginx"
 	"go.infratographer.com/x/loggingx"
 	"go.infratographer.com/x/otelx"
 
 	"go.infratographer.com/identity-api/internal/fositex"
-	"go.infratographer.com/identity-api/internal/storage"
 )
 
 // Config is the configuration for the application.
@@ -16,5 +16,5 @@ var Config struct {
 	Logging loggingx.Config
 	OAuth   fositex.Config
 	OTel    otelx.Config
-	Storage storage.Config
+	CRDB    crdbx.Config
 }

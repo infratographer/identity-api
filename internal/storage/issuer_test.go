@@ -64,25 +64,21 @@ func TestIssuerService(t *testing.T) {
 		ClaimMappings: mappings,
 	}
 
-	config := Config{
-		SeedData: SeedData{
-			Issuers: []SeedIssuer{
-				{
-					TenantID:      tenantID,
-					ID:            issuer.ID,
-					Name:          issuer.Name,
-					URI:           issuer.URI,
-					JWKSURI:       issuer.JWKSURI,
-					ClaimMappings: mappingStrs,
-				},
-			},
+	seedIssuers := []SeedIssuer{
+		{
+			TenantID:      tenantID,
+			ID:            issuer.ID,
+			Name:          issuer.Name,
+			URI:           issuer.URI,
+			JWKSURI:       issuer.JWKSURI,
+			ClaimMappings: mappingStrs,
 		},
 	}
 
-	issSvc, err := newIssuerService(config, db)
+	issSvc, err := newIssuerService(db)
 	assert.Nil(t, err)
 
-	err = issSvc.seedDatabase(context.Background(), config.SeedData.Issuers)
+	err = issSvc.seedDatabase(context.Background(), seedIssuers)
 	assert.Nil(t, err)
 
 	t.Run("CreateIssuer", func(t *testing.T) {

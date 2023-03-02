@@ -31,7 +31,7 @@ var migrateCmd = &cobra.Command{
 func migrate(ctx context.Context) {
 	logger.Info("running database migrations")
 
-	err := storage.RunMigrations(config.Config.Storage)
+	err := storage.RunMigrations(config.Config.CRDB)
 	if err != nil {
 		logger.Fatalf("error running migrations: %s", err)
 	}
