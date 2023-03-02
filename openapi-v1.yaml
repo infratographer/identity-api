@@ -2,7 +2,7 @@
 openapi: 3.0.3
 info:
   title: Security Token Service Management API
-  description: Security Token Service (STS) Management API is an API for  managing STS configurations.
+  description: Security Token Service (STS) Management API is an API for managing STS configurations.
   version: 0.0.1
 
 paths:

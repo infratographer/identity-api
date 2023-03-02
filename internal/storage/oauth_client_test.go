@@ -87,7 +87,7 @@ func TestOAuthClientManager(t *testing.T) {
 	}
 
 	cleanupWithTx := func(ctx context.Context) {
-		err = rollbackContextTx(ctx)
+		err := rollbackContextTx(ctx)
 		if err != nil {
 			t.Fatal("failed to roll back transaction")
 		}
