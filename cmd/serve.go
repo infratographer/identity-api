@@ -64,13 +64,6 @@ func serve(ctx context.Context) {
 		logger.Fatalf("error initializing storage: %s", err)
 	}
 
-	defer func() {
-		err := storageEngine.Shutdown()
-		if err != nil {
-			logger.Errorf("error shutting down storage engine: %s", err)
-		}
-	}()
-
 	mappingStrategy := rfc8693.NewClaimMappingStrategy(storageEngine)
 
 	jwksStrategy := jwks.NewIssuerJWKSURIStrategy(storageEngine)

@@ -22,7 +22,6 @@ type Engine interface {
 	types.UserInfoService
 	types.OAuthClientManager
 	TransactionManager
-	Shutdown() error
 }
 
 // EngineOption defines an initialization option for a storage engine.
