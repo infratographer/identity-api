@@ -55,7 +55,7 @@ func (*oauthClientManager) SetClientAssertionJWT(ctx context.Context, jti string
 	panic("unimplemented")
 }
 
-func newOAuthClientManager(config Config, db *sql.DB) (*oauthClientManager, error) {
+func newOAuthClientManager(db *sql.DB) (*oauthClientManager, error) {
 	return &oauthClientManager{
 		db: db,
 		hasher: &fosite.BCrypt{

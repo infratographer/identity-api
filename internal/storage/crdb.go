@@ -30,7 +30,7 @@ func newCRDBEngine(config Config) (*crdbEngine, error) {
 		return nil, err
 	}
 
-	oauthClientManager, err := newOAuthClientManager(config, db)
+	oauthClientManager, err := newOAuthClientManager(db)
 	if err != nil {
 		return nil, err
 	}

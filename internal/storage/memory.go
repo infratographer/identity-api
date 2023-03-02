@@ -43,7 +43,7 @@ func newMemoryEngine(config Config) (*memoryEngine, error) {
 		return nil, err
 	}
 
-	oauthClientManager, err := newOAuthClientManager(config, db)
+	oauthClientManager, err := newOAuthClientManager(db)
 	if err != nil {
 		return nil, err
 	}

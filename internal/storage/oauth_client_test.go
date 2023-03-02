@@ -60,7 +60,7 @@ func TestOAuthClientManager(t *testing.T) {
 
 	assert.NoError(t, issSvc.seedDatabase(context.Background(), config.SeedData.Issuers))
 
-	oauthClientStore, err := newOAuthClientManager(config, db)
+	oauthClientStore, err := newOAuthClientManager(db)
 	assert.NoError(t, err)
 
 	defaultClient := types.OAuthClient{
