@@ -52,7 +52,8 @@ func newCRDBEngine(config crdbx.Config, options ...EngineOption) (*engine, error
 	return out, nil
 }
 
-func (eng *engine) Shutdown() {
+func (eng *engine) Shutdown() error {
+	return eng.db.Close()
 }
 
 func (eng *engine) BeginContext(ctx context.Context) (context.Context, error) {
