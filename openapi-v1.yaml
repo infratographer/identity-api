@@ -2,8 +2,7 @@
 openapi: 3.0.3
 info:
   title: Security Token Service Management API
-  description:
-    Security Token Service (STS) Management API is an API for  managing STS configurations.
+  description: Security Token Service (STS) Management API is an API for  managing STS configurations.
   version: 0.0.1
 
 paths:
@@ -247,9 +246,7 @@ components:
         uri:
           x-go-name: URI
           type: string
-          description:
-            URI for the issuer.
-            Must match the "iss" claim value in incoming JWTs
+          description: URI for the issuer. Must match the "iss" claim value in incoming JWTs
         jwks_uri:
           x-go-name: JWKSURI
           type: string
