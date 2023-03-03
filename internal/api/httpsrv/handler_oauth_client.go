@@ -7,6 +7,8 @@ import (
 	"go.infratographer.com/identity-api/internal/types"
 )
 
+const defaultTokenLength = 26
+
 // CreateOAuthClient creates a client for a tenant with a set name.
 // This endpoint returns the OAuth client ID and secret that the client
 // needs to provide to authenticate when requesting a token.
@@ -18,7 +20,7 @@ func (h *apiHandler) CreateOAuthClient(ctx context.Context, request CreateOAuthC
 		newClient.Audience = *request.Body.Audience
 	}
 
-	secret, err := crypto.GenerateSecureToken()
+	secret, err := crypto.GenerateSecureToken(defaultTokenLength)
 	if err != nil {
 		return nil, err
 	}

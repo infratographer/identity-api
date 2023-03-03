@@ -2,25 +2,20 @@
 package crypto
 
 import (
-	"crypto/md5"
-	"crypto/rand"
-	"encoding/hex"
+	"github.com/ory/x/randx"
 )
+
+var secretCharSet = randx.AlphaNum
 
 // SecureToken is a randomly generated token.
 type SecureToken string
 
 // GenerateSecureToken creates a cryptographically random SecureToken.
-func GenerateSecureToken() (SecureToken, error) {
-	randomData := make([]byte, md5.Size)
-
-	_, err := rand.Read(randomData)
+func GenerateSecureToken(length int) (SecureToken, error) {
+	secret, err := randx.RuneSequence(length, secretCharSet)
 	if err != nil {
 		return SecureToken(""), err
 	}
 
-	hasher := md5.New()
-	output := hasher.Sum(randomData)
-
-	return SecureToken(hex.EncodeToString(output)), nil
+	return SecureToken(secret), nil
 }
