@@ -12,9 +12,26 @@ import (
 	"go.infratographer.com/identity-api/internal/testingx"
 	"go.infratographer.com/identity-api/internal/types"
 	v1 "go.infratographer.com/identity-api/pkg/api/v1"
+	"go.infratographer.com/x/crdbx"
 )
 
 func TestAPIHandler(t *testing.T) {
+	t.Parallel()
+
+	testServer, err := storage.InMemoryCRDB()
+	if !assert.NoError(t, err) {
+		assert.FailNow(t, "initialization failed")
+	}
+
+	err = testServer.Start()
+	if !assert.NoError(t, err) {
+		assert.FailNow(t, "initialization failed")
+	}
+
+	t.Cleanup(func() {
+		testServer.Stop()
+	})
+
 	mappingStrs := map[string]string{
 		"foo": "123",
 	}
@@ -37,23 +54,24 @@ func TestAPIHandler(t *testing.T) {
 		ClaimMappings: mappings,
 	}
 
-	config := storage.Config{
-		Type: storage.EngineTypeMemory,
-		SeedData: storage.SeedData{
-			Issuers: []storage.SeedIssuer{
-				{
-					TenantID:      "b8bfd705-b768-47a4-85a0-fe006f5bcfca",
-					ID:            "e495a393-ae79-4a02-a78d-9798c7d9d252",
-					Name:          "Example",
-					URI:           "https://example.com/",
-					JWKSURI:       "https://example.com/.well-known/jwks.json",
-					ClaimMappings: mappingStrs,
-				},
+	config := crdbx.Config{
+		URI: testServer.PGURL().String(),
+	}
+
+	seedData := storage.SeedData{
+		Issuers: []storage.SeedIssuer{
+			{
+				TenantID:      "b8bfd705-b768-47a4-85a0-fe006f5bcfca",
+				ID:            "e495a393-ae79-4a02-a78d-9798c7d9d252",
+				Name:          "Example",
+				URI:           "https://example.com/",
+				JWKSURI:       "https://example.com/.well-known/jwks.json",
+				ClaimMappings: mappingStrs,
 			},
 		},
 	}
 
-	issSvc, err := storage.NewEngine(config)
+	issSvc, err := storage.NewEngine(config, storage.WithMigrations(), storage.WithSeedData(seedData))
 	if !assert.NoError(t, err) {
 		assert.FailNow(t, "initialization failed")
 	}

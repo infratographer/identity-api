@@ -3,19 +3,11 @@ package storage
 import (
 	"context"
 
+	"github.com/cockroachdb/cockroach-go/v2/testserver"
+	"go.infratographer.com/x/crdbx"
+
 	"go.infratographer.com/identity-api/internal/types"
 )
-
-const (
-	// EngineTypeMemory represents an in-memory storage engine.
-	EngineTypeMemory EngineType = "memory"
-
-	// EngineTypeCRDB represents an external CockroachDB storage engine.
-	EngineTypeCRDB EngineType = "crdb"
-)
-
-// EngineType represents the type of identity-api storage engine.
-type EngineType string
 
 // TransactionManager manages the state of sql transactions within a context
 type TransactionManager interface {
@@ -30,23 +22,78 @@ type Engine interface {
 	types.UserInfoService
 	types.OAuthClientManager
 	TransactionManager
-	Shutdown()
+}
+
+// EngineOption defines an initialization option for a storage engine.
+type EngineOption func(*engine) error
+
+// WithTracing enables tracing for the storage engine.
+func WithTracing(config crdbx.Config) EngineOption {
+	return func(e *engine) error {
+		// Shut down the old database and replace it with a new one
+		err := e.db.Close()
+		if err != nil {
+			return err
+		}
+
+		db, err := crdbx.NewDB(config, true)
+		if err != nil {
+			return err
+		}
+
+		e.db = db
+
+		return nil
+	}
+}
+
+// WithSeedData adds seed data to the storage engine.
+func WithSeedData(data SeedData) EngineOption {
+	return func(e *engine) error {
+		return e.seedDatabase(context.Background(), data)
+	}
+}
+
+// WithMigrations runs migrations on the storage engine.
+func WithMigrations() EngineOption {
+	return func(e *engine) error {
+		return runMigrations(e.db)
+	}
 }
 
 // NewEngine creates a new storage engine based on the given config.
-func NewEngine(config Config) (Engine, error) {
-	switch config.Type {
-	case "":
-		return nil, ErrorMissingEngineType
-	case EngineTypeMemory:
-		return newMemoryEngine(config)
-	case EngineTypeCRDB:
-		return newCRDBEngine(config)
-	default:
-		err := &ErrorUnsupportedEngineType{
-			engineType: config.Type,
-		}
+func NewEngine(config crdbx.Config, opts ...EngineOption) (Engine, error) {
+	return newCRDBEngine(config, opts...)
+}
 
+func buildIssuerFromSeed(seed SeedIssuer) (types.Issuer, error) {
+	claimMappings, err := types.NewClaimsMapping(seed.ClaimMappings)
+	if err != nil {
+		return types.Issuer{}, err
+	}
+
+	out := types.Issuer{
+		TenantID:      seed.TenantID,
+		ID:            seed.ID,
+		Name:          seed.Name,
+		URI:           seed.URI,
+		JWKSURI:       seed.JWKSURI,
+		ClaimMappings: claimMappings,
+	}
+
+	return out, nil
+}
+
+// InMemoryCRDB creates an in-memory CRDB test server.
+func InMemoryCRDB() (testserver.TestServer, error) {
+	ts, err := testserver.NewTestServer()
+	if err != nil {
 		return nil, err
 	}
+
+	if err := ts.Start(); err != nil {
+		return nil, err
+	}
+
+	return ts, nil
 }

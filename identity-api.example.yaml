@@ -13,17 +13,5 @@ otel:
   provider: stdout
   stdout:
     prettyPrint: true
-storage:
-  type: crdb
-  tracing: false
-  crdb:
-    uri: postgresql://root@cockroachdb:26257/defaultdb?sslmode=disable
-  seedData:
-    issuers:
-      - tenantID: 67787b34-866e-4b75-a395-5aba096b2c1b
-        id: 54f1973b-f7df-4b80-86ab-2238a934d7bb
-        name: "Example"
-        uri: "https://auth.example.com/"
-        jwksURI: "https://auth.example.com/.well-known/jwks.json"
-        claimMappings:
-          "infratographer:sub": "'infratographer://example.com/' + subSHA256"
+crdb:
+  uri: postgresql://root@cockroachdb:26257/defaultdb?sslmode=disable

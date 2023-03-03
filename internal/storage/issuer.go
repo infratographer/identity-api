@@ -43,7 +43,7 @@ type issuerService struct {
 	db *sql.DB
 }
 
-func newIssuerService(config Config, db *sql.DB) (*issuerService, error) {
+func newIssuerService(db *sql.DB) (*issuerService, error) {
 	svc := &issuerService{
 		db: db,
 	}

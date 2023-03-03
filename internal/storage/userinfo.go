@@ -36,7 +36,7 @@ type userInfoService struct {
 
 type userInfoServiceOpt func(*userInfoService)
 
-func newUserInfoService(config Config, db *sql.DB, opts ...userInfoServiceOpt) (*userInfoService, error) {
+func newUserInfoService(db *sql.DB, opts ...userInfoServiceOpt) (*userInfoService, error) {
 	s := &userInfoService{
 		db:         db,
 		httpClient: http.DefaultClient,

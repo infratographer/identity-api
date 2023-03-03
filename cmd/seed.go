@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.infratographer.com/x/crdbx"
+	"go.infratographer.com/x/viperx"
 
 	"go.infratographer.com/identity-api/internal/config"
 	"go.infratographer.com/identity-api/internal/storage"
@@ -18,6 +19,9 @@ func init() {
 	flags := seedDatabaseCmd.Flags()
 
 	crdbx.MustViperFlags(v, flags)
+
+	flags.String("data", "", "location of data file on disk")
+	viperx.MustBindFlag(v, "data", flags.Lookup("data"))
 }
 
 var seedDatabaseCmd = &cobra.Command{
@@ -31,7 +35,12 @@ var seedDatabaseCmd = &cobra.Command{
 func seedDatabase(ctx context.Context) {
 	logger.Info("seeding database")
 
-	err := storage.SeedDatabase(ctx, config.Config.Storage)
+	path := viper.GetString("data")
+	if path == "" {
+		logger.Fatal("no data path provided")
+	}
+
+	err := storage.SeedDatabase(config.Config.CRDB, path)
 	if err != nil {
 		logger.Fatalf("error seeding database: %s", err)
 	}

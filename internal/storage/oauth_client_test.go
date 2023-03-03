@@ -41,24 +41,20 @@ func TestOAuthClientManager(t *testing.T) {
 		JWKSURI:  "https://example.com/.well-known/jwks.json",
 	}
 
-	config := Config{
-		SeedData: SeedData{
-			Issuers: []SeedIssuer{
-				{
-					TenantID: issuer.TenantID,
-					ID:       issuer.ID,
-					Name:     issuer.Name,
-					URI:      issuer.URI,
-					JWKSURI:  issuer.JWKSURI,
-				},
-			},
+	seedIssuers := []SeedIssuer{
+		{
+			TenantID: tenantID,
+			ID:       issuer.ID,
+			Name:     issuer.Name,
+			URI:      issuer.URI,
+			JWKSURI:  issuer.JWKSURI,
 		},
 	}
 
-	issSvc, err := newIssuerService(config, db)
+	issSvc, err := newIssuerService(db)
 	assert.NoError(t, err)
 
-	assert.NoError(t, issSvc.seedDatabase(context.Background(), config.SeedData.Issuers))
+	assert.NoError(t, issSvc.seedDatabase(context.Background(), seedIssuers))
 
 	oauthClientStore, err := newOAuthClientManager(db)
 	assert.NoError(t, err)

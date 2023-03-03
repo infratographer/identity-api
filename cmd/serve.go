@@ -53,12 +53,16 @@ func serve(ctx context.Context) {
 		logger.Fatalf("error initializing tracing: %s", err)
 	}
 
-	storageEngine, err := storage.NewEngine(config.Config.Storage)
+	var engineOpts []storage.EngineOption
+
+	if config.Config.OTel.Enabled {
+		engineOpts = append(engineOpts, storage.WithTracing(config.Config.CRDB))
+	}
+
+	storageEngine, err := storage.NewEngine(config.Config.CRDB, engineOpts...)
 	if err != nil {
 		logger.Fatalf("error initializing storage: %s", err)
 	}
-
-	defer storageEngine.Shutdown()
 
 	mappingStrategy := rfc8693.NewClaimMappingStrategy(storageEngine)
 
