@@ -2,7 +2,6 @@ package httpsrv
 
 import (
 	"context"
-	"strings"
 
 	"go.infratographer.com/identity-api/internal/crypto"
 	"go.infratographer.com/identity-api/internal/types"
@@ -17,11 +16,6 @@ func (h *apiHandler) CreateOAuthClient(ctx context.Context, request CreateOAuthC
 
 	if request.Body.Audience != nil {
 		newClient.Audience = *request.Body.Audience
-	}
-
-	if request.Body.Scope != nil {
-		scopes := strings.Join(*request.Body.Scope, " ")
-		newClient.Scope = scopes
 	}
 
 	secret, err := crypto.GenerateSecureToken()
