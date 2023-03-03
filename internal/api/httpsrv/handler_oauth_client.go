@@ -2,6 +2,7 @@ package httpsrv
 
 import (
 	"context"
+	"net/http"
 
 	"go.infratographer.com/identity-api/internal/crypto"
 	"go.infratographer.com/identity-api/internal/types"
@@ -47,7 +48,10 @@ func (h *apiHandler) GetOAuthClient(ctx context.Context, request GetOAuthClientR
 	switch err {
 	case nil:
 	case types.ErrOAuthClientNotFound:
-		return GetOAuthClient404JSONResponse{}, err
+		return nil, errorWithStatus{
+			status:  http.StatusNotFound,
+			message: err.Error(),
+		}
 	default:
 		return nil, err
 	}

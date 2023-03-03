@@ -83,8 +83,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OAuthClient'
-        '404':
-          $ref: '#/components/responses/NotFound'
     delete:
       tags:
         - OAuthClients
@@ -177,13 +175,6 @@ paths:
                 $ref: '#/components/schemas/DeleteResponse'
 
 components:
-  responses:
-    NotFound:
-      description: Resource was not found
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
   schemas:
     Error:
       type: object
