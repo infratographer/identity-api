@@ -1,3 +1,4 @@
+// Package oauth2 provides token endpoint handlers.
 package oauth2
 
 import (
@@ -17,7 +18,7 @@ import (
 
 var _ fosite.TokenEndpointHandler = &ClientCredentialsGrantHandler{}
 
-type ClientCredentialsConfigurator interface {
+type clientCredentialsConfigurator interface {
 	fosite.ScopeStrategyProvider
 	fosite.AudienceStrategyProvider
 	fosite.AccessTokenLifespanProvider
@@ -26,16 +27,16 @@ type ClientCredentialsConfigurator interface {
 	fositex.SigningKeyProvider
 }
 
+// ClientCredentialsGrantHandler handles the RFC6749 client credentials grant type.
 type ClientCredentialsGrantHandler struct {
 	*oauth2.HandleHelper
 	types.UserInfoService
 	storage.TransactionManager
-	Config ClientCredentialsConfigurator
+	Config clientCredentialsConfigurator
 }
 
 // HandleTokenEndpointRequest implements https://tools.ietf.org/html/rfc6749#section-4.4.2
 func (c *ClientCredentialsGrantHandler) HandleTokenEndpointRequest(ctx context.Context, request fosite.AccessRequester) error {
-
 	client := request.GetClient()
 	// The client MUST authenticate with the authorization server as described in Section 3.2.1.
 	// This requirement is already fulfilled because fosite requires all token requests to be authenticated as described
@@ -84,7 +85,7 @@ func (c *ClientCredentialsGrantHandler) HandleTokenEndpointRequest(ctx context.C
 		Subject: request.GetClient().GetID(),
 	}
 
-	uiWithId, err := c.StoreUserInfo(dbCtx, userInfo)
+	uiWithID, err := c.StoreUserInfo(dbCtx, userInfo)
 	if err != nil {
 		return errorsx.WithStack(fosite.ErrServerError.WithHintf("unable to create user info for client: %v", err))
 	}
@@ -93,7 +94,7 @@ func (c *ClientCredentialsGrantHandler) HandleTokenEndpointRequest(ctx context.C
 		return errorsx.WithStack(fosite.ErrServerError.WithHintf("unable to store userinfo for client: %v", err))
 	}
 
-	session.JWTClaims.Subject = fmt.Sprintf("urn:infratographer:user/%s", uiWithId.ID)
+	session.JWTClaims.Subject = fmt.Sprintf("urn:infratographer:user/%s", uiWithID.ID)
 
 	return nil
 }
@@ -106,13 +107,16 @@ func (c *ClientCredentialsGrantHandler) PopulateTokenEndpointResponse(ctx contex
 	}
 
 	atLifespan := fosite.GetEffectiveLifespan(request.GetClient(), fosite.GrantTypeClientCredentials, fosite.AccessToken, c.Config.GetAccessTokenLifespan(ctx))
+
 	return c.IssueAccessToken(ctx, atLifespan, request, response)
 }
 
+// CanSkipClientAuth determines if the client must be authenticated to use this handler.
 func (c *ClientCredentialsGrantHandler) CanSkipClientAuth(ctx context.Context, requester fosite.AccessRequester) bool {
 	return false
 }
 
+// CanHandleTokenEndpointRequest checks if this handler can handle the request.
 func (c *ClientCredentialsGrantHandler) CanHandleTokenEndpointRequest(ctx context.Context, requester fosite.AccessRequester) bool {
 	// grant_type REQUIRED.
 	// Value MUST be set to "client_credentials".
@@ -121,6 +125,8 @@ func (c *ClientCredentialsGrantHandler) CanHandleTokenEndpointRequest(ctx contex
 
 var _ fositex.Factory = NewClientCredentialsHandlerFactory
 
+// NewClientCredentialsHandlerFactory is a fositex.Factory that
+// produces a handler for the 'client_credentials' grant type.
 func NewClientCredentialsHandlerFactory(config fositex.OAuth2Configurator, store any, strategy any) any {
 	return &ClientCredentialsGrantHandler{
 		HandleHelper: &oauth2.HandleHelper{
@@ -130,6 +136,6 @@ func NewClientCredentialsHandlerFactory(config fositex.OAuth2Configurator, store
 		},
 		UserInfoService:    store.(types.UserInfoService),
 		TransactionManager: store.(storage.TransactionManager),
-		Config:             config.(ClientCredentialsConfigurator),
+		Config:             config.(clientCredentialsConfigurator),
 	}
 }
