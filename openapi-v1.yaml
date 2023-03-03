@@ -288,11 +288,6 @@ components:
           type: array
           items:
             type: string
-        scope:
-          description: Scopes that this client can request
-          type: array
-          items:
-            type: string
 
     OAuthClient:
       required:
