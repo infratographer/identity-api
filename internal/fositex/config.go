@@ -75,6 +75,12 @@ type UserInfoStrategy interface {
 	types.UserInfoService
 }
 
+// UserInfoAudienceProvider returns the user info audience to attach to tokens
+type UserInfoAudienceProvider interface {
+	// GetUserInfoAudience returns the audience for the identity-api issuer
+	GetUserInfoAudience() string
+}
+
 // UserInfoStrategyProvider represents the provider of the UserInfoStrategy.
 type UserInfoStrategyProvider interface {
 	GetUserInfoStrategy(ctx context.Context) UserInfoStrategy
@@ -98,6 +104,8 @@ type OAuth2Config struct {
 	IssuerJWKSURIStrategy IssuerJWKSURIStrategy
 	ClaimMappingStrategy  ClaimMappingStrategy
 	UserInfoStrategy      UserInfoStrategy
+
+	userInfoAudience string
 }
 
 // GetIssuerJWKSURIStrategy returns the config's IssuerJWKSURIStrategy.
@@ -123,6 +131,11 @@ func (c *OAuth2Config) GetClaimMappingStrategy(ctx context.Context) ClaimMapping
 // GetUserInfoStrategy returns the config's user info store strategy.
 func (c *OAuth2Config) GetUserInfoStrategy(ctx context.Context) UserInfoStrategy {
 	return c.UserInfoStrategy
+}
+
+// GetUserInfoAudience returns this services userinfo audience.
+func (c *OAuth2Config) GetUserInfoAudience() string {
+	return c.userInfoAudience
 }
 
 // MustViperFlags sets the flags needed for Fosite to work.
