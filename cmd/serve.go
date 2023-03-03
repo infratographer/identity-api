@@ -6,7 +6,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/ory/fosite/compose"
-	fositestorage "github.com/ory/fosite/storage"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.infratographer.com/x/crdbx"
@@ -18,6 +17,7 @@ import (
 	"go.infratographer.com/identity-api/internal/config"
 	"go.infratographer.com/identity-api/internal/fositex"
 	"go.infratographer.com/identity-api/internal/jwks"
+	"go.infratographer.com/identity-api/internal/oauth2"
 	"go.infratographer.com/identity-api/internal/rfc8693"
 	"go.infratographer.com/identity-api/internal/routes"
 	"go.infratographer.com/identity-api/internal/storage"
@@ -83,13 +83,13 @@ func serve(ctx context.Context) {
 
 	hmacStrategy := compose.NewOAuth2HMACStrategy(oauth2Config)
 	jwtStrategy := compose.NewOAuth2JWTStrategy(keyGetter, hmacStrategy, oauth2Config)
-	store := fositestorage.NewExampleStore()
 
 	provider := fositex.NewOAuth2Provider(
 		oauth2Config,
-		store,
+		storageEngine,
 		jwtStrategy,
 		rfc8693.NewTokenExchangeHandler,
+		oauth2.NewClientCredentialsHandlerFactory,
 	)
 
 	apiHandler, err := httpsrv.NewAPIHandler(storageEngine)
