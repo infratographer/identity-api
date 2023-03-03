@@ -1,4 +1,9 @@
 issuers:
+  - tenantID: 00000000-0000-0000-0000-000000000001
+    id: 00000000-0000-0000-0000-000000000001
+    name: "self"
+    uri: "https://dmv.infratographer.com/"
+    jwksURI: "blah"
   - tenantID: 67787b34-866e-4b75-a395-5aba096b2c1b
     id: 54f1973b-f7df-4b80-86ab-2238a934d7bb
     name: "Example"
