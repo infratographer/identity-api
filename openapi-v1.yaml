@@ -176,17 +176,6 @@ paths:
 
 components:
   schemas:
-    Error:
-      type: object
-      required:
-        - errors
-      properties:
-        errors:
-          description: List of error messages
-          type: array
-          items:
-            type: string
-
     DeleteResponse:
       required:
         - success
