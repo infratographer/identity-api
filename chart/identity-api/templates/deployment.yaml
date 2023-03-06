@@ -53,7 +53,7 @@ spec:
         - name: db-migrate
           env:
             - name: PGSSLROOTCERT
-              value: /etc/ssl/certs/crdb/ca.crt
+              value: /etc/ssl/crdb/ca.crt
           envFrom:
             - secretRef:
                 name: "{{ .Values.config.storage.crdb.uriSecretName }}"
@@ -71,7 +71,7 @@ spec:
         - name: {{ include "common.names.name" . }}
           env:
             - name: PGSSLROOTCERT
-              value: /etc/ssl/certs/crdb/ca.crt
+              value: /etc/ssl/crdb/ca.crt
           envFrom:
             - secretRef:
                 name: "{{ .Values.config.oauth.secretName }}"
