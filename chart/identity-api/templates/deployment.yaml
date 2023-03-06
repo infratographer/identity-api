@@ -60,7 +60,12 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy | default "Always" }}
           command:
+            - /app/identity-api
             - migrate
+          {{- with .Values.deployment.resources }}
+          resources:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: app-config
               mountPath: /etc/identity-api/
