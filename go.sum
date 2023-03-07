@@ -398,8 +398,8 @@ github.com/ory/go-acc v0.2.9-0.20230103102148-6b1c9a70dbbe h1:rvu4obdvqR0fkSIJ8I
 github.com/ory/go-acc v0.2.9-0.20230103102148-6b1c9a70dbbe/go.mod h1:z4n3u6as84LbV4YmgjHhnwtccQqzf4cZlSk9f1FhygI=
 github.com/ory/go-convenience v0.1.0 h1:zouLKfF2GoSGnJwGq+PE/nJAE6dj2Zj5QlTgmMTsTS8=
 github.com/ory/go-convenience v0.1.0/go.mod h1:uEY/a60PL5c12nYz4V5cHY03IBmwIAEm8TWB0yn9KNs=
-github.com/ory/x v0.0.542 h1:3moNM1xRT3GYUSoNet4ZF8bFWE5jY/G526mR9lQVmA0=
-github.com/ory/x v0.0.542/go.mod h1:ktXUvx51Ok1gMGr3ysvktanqr+eiB4FXglt4nF4w2Uo=
+github.com/ory/x v0.0.543 h1:I6bl6IV2Ok07io6M2dnaRaJHP5oRU096T9FYoe8m48U=
+github.com/ory/x v0.0.543/go.mod h1:ktXUvx51Ok1gMGr3ysvktanqr+eiB4FXglt4nF4w2Uo=
 github.com/pborman/uuid v1.2.1 h1:+ZZIw58t/ozdjRaXh/3awHfmWRbzYxJoAdNJxe/3pvw=
 github.com/pborman/uuid v1.2.1/go.mod h1:X/NO0urCmaxf9VXbdlT7C2Yzkj2IKimNn4k+gtPdI/k=
 github.com/pelletier/go-toml/v2 v2.0.1/go.mod h1:r9LEWfGN8R5k0VXJ+0BkIe7MYkRdwZOjgMj2KwnJFUo=
