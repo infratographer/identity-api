@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/ory/fosite"
 	"go.infratographer.com/x/crdbx"
 )
 
@@ -12,6 +13,21 @@ type engine struct {
 	*userInfoService
 	*oauthClientManager
 	db *sql.DB
+}
+
+// CreateAccessTokenSession implements oauth2.AccessTokenStorage
+func (*engine) CreateAccessTokenSession(ctx context.Context, signature string, request fosite.Requester) (err error) {
+	return nil
+}
+
+// DeleteAccessTokenSession implements oauth2.AccessTokenStorage
+func (*engine) DeleteAccessTokenSession(ctx context.Context, signature string) (err error) {
+	panic("unimplemented")
+}
+
+// GetAccessTokenSession implements oauth2.AccessTokenStorage
+func (*engine) GetAccessTokenSession(ctx context.Context, signature string, session fosite.Session) (request fosite.Requester, err error) {
+	panic("unimplemented")
 }
 
 func newCRDBEngine(config crdbx.Config, options ...EngineOption) (*engine, error) {

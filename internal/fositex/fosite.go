@@ -9,6 +9,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"time"
 
@@ -147,10 +148,16 @@ func NewOAuth2Config(config Config) (*OAuth2Config, error) {
 		GlobalSecret:        []byte(config.Secret),
 	}
 
+	userInfoAudience, err := url.JoinPath(config.Issuer, "userinfo")
+	if err != nil {
+		return nil, err
+	}
+
 	out := &OAuth2Config{
-		Config:      fositeConfig,
-		SigningKey:  signingKey,
-		SigningJWKS: jwks,
+		Config:           fositeConfig,
+		SigningKey:       signingKey,
+		SigningJWKS:      jwks,
+		userInfoAudience: userInfoAudience,
 	}
 
 	return out, nil

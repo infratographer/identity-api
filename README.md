@@ -2,9 +2,11 @@
 
 identity-api is an OAuth service that supports the following grant types:
 
-* [RFC 8693][rfc8693]: Token Exchange
+* Token Exchange: [RFC 8693][rfc8693]
+* Client Credentials: [RFC 6749][oauth2-client_credentials]
 
 [rfc8693]: https://www.rfc-editor.org/rfc/rfc8693.html
+[oauth2-client_credentials]: https://www.rfc-editor.org/rfc/rfc6749#section-4.4
 
 ## Usage
 
