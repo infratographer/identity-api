@@ -43,18 +43,9 @@ func (c *ClientCredentialsGrantHandler) HandleTokenEndpointRequest(ctx context.C
 		return errorsx.WithStack(fosite.ErrInvalidGrant.WithHint("The OAuth 2.0 Client is marked as public and is not allowed to use authorization grant 'client_credentials'."))
 	}
 
-	for _, scope := range request.GetRequestedScopes() {
-		if !c.Config.GetScopeStrategy(ctx)(client.GetScopes(), scope) {
-			return errorsx.WithStack(fosite.ErrInvalidScope.WithHintf("The OAuth 2.0 Client is not allowed to request scope '%s'.", scope))
-		}
-	}
-
 	if err := c.Config.GetAudienceStrategy(ctx)(client.GetAudience(), request.GetRequestedAudience()); err != nil {
 		return err
 	}
-
-	// First grant the /userinfo audience
-	request.GrantAudience(c.Config.GetUserInfoAudience())
 
 	// grant audiences, we checked if they were permitted above
 	for _, aud := range request.GetRequestedAudience() {
@@ -67,7 +58,7 @@ func (c *ClientCredentialsGrantHandler) HandleTokenEndpointRequest(ctx context.C
 	headers := jwt.Headers{}
 	headers.Add("kid", c.Config.GetSigningKey(ctx).KeyID)
 
-	clientID := request.GetClient().GetID()
+	clientID := client.GetID()
 
 	session.JWTClaims = &jwt.JWTClaims{}
 	session.JWTClaims.Add("client_id", clientID)
@@ -75,7 +66,7 @@ func (c *ClientCredentialsGrantHandler) HandleTokenEndpointRequest(ctx context.C
 	session.JWTHeader = &headers
 	session.SetExpiresAt(fosite.AccessToken, time.Now().UTC().Add(atLifespan))
 
-	session.JWTClaims.Subject = fmt.Sprintf("urn:infratographer:user/%s", clientID)
+	session.JWTClaims.Subject = fmt.Sprintf("urn:infratographer:client/%s", clientID)
 
 	return nil
 }

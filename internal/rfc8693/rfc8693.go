@@ -291,6 +291,10 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 
 // PopulateTokenEndpointResponse populates the response with a token.
 func (s *TokenExchangeHandler) PopulateTokenEndpointResponse(ctx context.Context, requester fosite.AccessRequester, responder fosite.AccessResponder) error {
+	if !s.CanHandleTokenEndpointRequest(ctx, requester) {
+		return errorsx.WithStack(fosite.ErrUnknownRequest)
+	}
+
 	token, _, err := s.accessTokenStrategy.GenerateAccessToken(ctx, requester)
 	if err != nil {
 		return err
