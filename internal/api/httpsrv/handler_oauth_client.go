@@ -16,7 +16,9 @@ const defaultTokenLength = 26
 func (h *apiHandler) CreateOAuthClient(ctx context.Context, request CreateOAuthClientRequestObject) (CreateOAuthClientResponseObject, error) {
 	var newClient types.OAuthClient
 	newClient.TenantID = request.TenantID.String()
+	newClient.Name = request.Body.Name
 
+	newClient.Audience = []string{}
 	if request.Body.Audience != nil {
 		newClient.Audience = *request.Body.Audience
 	}
@@ -59,8 +61,7 @@ func (h *apiHandler) GetOAuthClient(ctx context.Context, request GetOAuthClientR
 	apiType := client.ToV1OAuthClient()
 
 	// Don't return the secret hash
-	var emptySecret string
-	apiType.Secret = &emptySecret
+	apiType.Secret = nil
 
 	return GetOAuthClient200JSONResponse(apiType), nil
 }
