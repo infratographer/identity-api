@@ -43,12 +43,18 @@ func (c *ClientCredentialsGrantHandler) HandleTokenEndpointRequest(ctx context.C
 		return errorsx.WithStack(fosite.ErrInvalidGrant.WithHint("The OAuth 2.0 Client is marked as public and is not allowed to use authorization grant 'client_credentials'."))
 	}
 
-	if err := c.Config.GetAudienceStrategy(ctx)(client.GetAudience(), request.GetRequestedAudience()); err != nil {
+	requestedResources := request.GetRequestForm()["resource"]
+
+	resources := make([]string, 0)
+	for _, r := range requestedResources {
+		resources = append(resources, string(r))
+	}
+
+	if err := c.Config.GetAudienceStrategy(ctx)(client.GetAudience(), fosite.Arguments(resources)); err != nil {
 		return err
 	}
 
-	// grant audiences, we checked if they were permitted above
-	for _, aud := range request.GetRequestedAudience() {
+	for _, aud := range resources {
 		request.GrantAudience(aud)
 	}
 
