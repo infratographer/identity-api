@@ -563,7 +563,7 @@ func TestAPIHandler(t *testing.T) {
 					assert.NoError(t, err)
 					assert.IsType(t, GetOAuthClient200JSONResponse{}, res.Success)
 					item := v1.OAuthClient(res.Success.(GetOAuthClient200JSONResponse))
-					assert.Empty(t, *item.Secret)
+					assert.Nil(t, item.Secret, "the secret field shouldn't be populated on a GET")
 					assert.Equal(t, client.ID, item.ID.String())
 					assert.Equal(t, client.Name, item.Name)
 					assert.Equal(t, client.Audience, item.Audience)

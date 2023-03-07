@@ -60,9 +60,6 @@ func (h *apiHandler) GetOAuthClient(ctx context.Context, request GetOAuthClientR
 
 	apiType := client.ToV1OAuthClient()
 
-	// Don't return the secret hash
-	apiType.Secret = nil
-
 	return GetOAuthClient200JSONResponse(apiType), nil
 }
 

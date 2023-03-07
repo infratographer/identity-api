@@ -61,7 +61,6 @@ func (c OAuthClient) ToV1OAuthClient() v1.OAuthClient {
 
 	client.ID = uuid.MustParse(c.ID)
 	client.Name = c.Name
-	client.Secret = &c.Secret
 	client.Audience = c.Audience
 
 	return client
