@@ -9,7 +9,6 @@ import (
 	"github.com/ory/x/errorsx"
 	"go.infratographer.com/identity-api/internal/fositex"
 	"go.infratographer.com/identity-api/internal/storage"
-	"go.infratographer.com/identity-api/internal/types"
 
 	"github.com/ory/fosite"
 	"github.com/ory/fosite/handler/oauth2"
@@ -30,7 +29,6 @@ type clientCredentialsConfigurator interface {
 // ClientCredentialsGrantHandler handles the RFC6749 client credentials grant type.
 type ClientCredentialsGrantHandler struct {
 	*oauth2.HandleHelper
-	types.UserInfoService
 	storage.TransactionManager
 	Config clientCredentialsConfigurator
 }
@@ -69,32 +67,15 @@ func (c *ClientCredentialsGrantHandler) HandleTokenEndpointRequest(ctx context.C
 	headers := jwt.Headers{}
 	headers.Add("kid", c.Config.GetSigningKey(ctx).KeyID)
 
+	clientID := request.GetClient().GetID()
+
 	session.JWTClaims = &jwt.JWTClaims{}
-	session.JWTClaims.Add("client_id", request.GetClient().GetID())
+	session.JWTClaims.Add("client_id", clientID)
 
 	session.JWTHeader = &headers
 	session.SetExpiresAt(fosite.AccessToken, time.Now().UTC().Add(atLifespan))
 
-	dbCtx, err := c.BeginContext(ctx)
-	if err != nil {
-		return errorsx.WithStack(fosite.ErrServerError.WithHintf("could not start transaction: %v", err))
-	}
-
-	userInfo := types.UserInfo{
-		Issuer:  c.Config.GetAccessTokenIssuer(ctx),
-		Subject: request.GetClient().GetID(),
-	}
-
-	uiWithID, err := c.StoreUserInfo(dbCtx, userInfo)
-	if err != nil {
-		return errorsx.WithStack(fosite.ErrServerError.WithHintf("unable to create user info for client: %v", err))
-	}
-
-	if err := c.CommitContext(dbCtx); err != nil {
-		return errorsx.WithStack(fosite.ErrServerError.WithHintf("unable to store userinfo for client: %v", err))
-	}
-
-	session.JWTClaims.Subject = fmt.Sprintf("urn:infratographer:user/%s", uiWithID.ID)
+	session.JWTClaims.Subject = fmt.Sprintf("urn:infratographer:user/%s", clientID)
 
 	return nil
 }
@@ -134,7 +115,6 @@ func NewClientCredentialsHandlerFactory(config fositex.OAuth2Configurator, store
 			AccessTokenStorage:  store.(oauth2.AccessTokenStorage),
 			Config:              config,
 		},
-		UserInfoService:    store.(types.UserInfoService),
 		TransactionManager: store.(storage.TransactionManager),
 		Config:             config.(clientCredentialsConfigurator),
 	}
