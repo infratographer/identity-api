@@ -83,7 +83,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OAuthClient'
-
     delete:
       tags:
         - OAuthClients
@@ -264,6 +263,11 @@ components:
         name:
           type: string
           description: A human-readable name for the client
+        audience:
+          description: Audiences that this client can request
+          type: array
+          items:
+            type: string
 
     OAuthClient:
       required:

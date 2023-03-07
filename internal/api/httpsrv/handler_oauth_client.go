@@ -2,22 +2,75 @@ package httpsrv
 
 import (
 	"context"
+	"net/http"
 
-	v1 "go.infratographer.com/identity-api/pkg/api/v1"
+	"go.infratographer.com/identity-api/internal/crypto"
+	"go.infratographer.com/identity-api/internal/types"
 )
 
-func (h *apiHandler) DeleteOAuthClient(ctx context.Context, request DeleteOAuthClientRequestObject) (DeleteOAuthClientResponseObject, error) {
-	return DeleteOAuthClient200JSONResponse{Success: true}, nil
+const defaultTokenLength = 26
+
+// CreateOAuthClient creates a client for a tenant with a set name.
+// This endpoint returns the OAuth client ID and secret that the client
+// needs to provide to authenticate when requesting a token.
+func (h *apiHandler) CreateOAuthClient(ctx context.Context, request CreateOAuthClientRequestObject) (CreateOAuthClientResponseObject, error) {
+	var newClient types.OAuthClient
+	newClient.TenantID = request.TenantID.String()
+	newClient.Name = request.Body.Name
+
+	newClient.Audience = []string{}
+	if request.Body.Audience != nil {
+		newClient.Audience = *request.Body.Audience
+	}
+
+	secret, err := crypto.GenerateSecureToken(defaultTokenLength)
+	if err != nil {
+		return nil, err
+	}
+
+	generatedSecret := string(secret)
+	newClient.Secret = generatedSecret
+
+	newClient, err = h.engine.CreateOAuthClient(ctx, newClient)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := newClient.ToV1OAuthClient()
+
+	// the object now contains the hashed secret, but the response should contain the raw secret
+	resp.Secret = &generatedSecret
+
+	return CreateOAuthClient200JSONResponse(resp), nil
 }
 
+// GetOAuthClient returns the OAuth client for that ID
 func (h *apiHandler) GetOAuthClient(ctx context.Context, request GetOAuthClientRequestObject) (GetOAuthClientResponseObject, error) {
-	var out v1.OAuthClient
+	client, err := h.engine.LookupOAuthClientByID(ctx, request.ClientID.String())
+	switch err {
+	case nil:
+	case types.ErrOAuthClientNotFound:
+		return nil, errorWithStatus{
+			status:  http.StatusNotFound,
+			message: err.Error(),
+		}
+	default:
+		return nil, err
+	}
 
-	return GetOAuthClient200JSONResponse(out), nil
+	apiType := client.ToV1OAuthClient()
+
+	return GetOAuthClient200JSONResponse(apiType), nil
 }
 
-func (h *apiHandler) CreateOAuthClient(ctx context.Context, reqeust CreateOAuthClientRequestObject) (CreateOAuthClientResponseObject, error) {
-	var out v1.OAuthClient
+// DeleteOAuthClient removes the OAuth client.
+func (h *apiHandler) DeleteOAuthClient(ctx context.Context, request DeleteOAuthClientRequestObject) (DeleteOAuthClientResponseObject, error) {
+	err := h.engine.DeleteOAuthClient(ctx, request.ClientID.String())
+	switch err {
+	case nil, types.ErrOAuthClientNotFound:
+	default:
+		return nil, err
+	}
 
-	return CreateOAuthClient200JSONResponse(out), nil
+	return DeleteOAuthClient200JSONResponse{Success: true}, nil
 }

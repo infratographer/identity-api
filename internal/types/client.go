@@ -56,13 +56,12 @@ func (OAuthClient) IsPublic() bool {
 }
 
 // ToV1OAuthClient converts to the OAS OAuth Client type.
-func (c OAuthClient) ToV1OAuthClient() (v1.OAuthClient, error) {
+func (c OAuthClient) ToV1OAuthClient() v1.OAuthClient {
 	var client v1.OAuthClient
 
 	client.ID = uuid.MustParse(c.ID)
 	client.Name = c.Name
-	client.Secret = &c.Secret
 	client.Audience = c.Audience
 
-	return client, nil
+	return client
 }
