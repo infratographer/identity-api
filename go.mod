@@ -20,7 +20,7 @@ require (
 	go.infratographer.com/x v0.0.3
 	go.uber.org/zap v1.24.0
 	google.golang.org/genproto v0.0.0-20230301171018-9ab4bdc49ad5
-	google.golang.org/protobuf v1.28.1
+	google.golang.org/protobuf v1.29.0
 	gopkg.in/square/go-jose.v2 v2.6.0
 	gopkg.in/yaml.v3 v3.0.1
 )
