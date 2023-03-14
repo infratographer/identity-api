@@ -344,5 +344,5 @@ func (s *TokenExchangeHandler) populateUserInfo(ctx context.Context, issuer stri
 }
 
 func (s *TokenExchangeHandler) formatSubject(info *types.UserInfo) string {
-	return fmt.Sprintf("%s/%s", SubjectPrefix, info.ID)
+	return fmt.Sprintf("%s:%s", SubjectPrefix, info.ID)
 }
