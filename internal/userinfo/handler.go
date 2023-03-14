@@ -6,7 +6,6 @@ import (
 	"context"
 	"net/http"
 	"net/url"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"go.hollow.sh/toolbox/ginauth"
@@ -14,8 +13,8 @@ import (
 	"gopkg.in/square/go-jose.v2"
 
 	"go.infratographer.com/identity-api/internal/fositex"
-	"go.infratographer.com/identity-api/internal/rfc8693"
 	"go.infratographer.com/identity-api/internal/types"
+	"go.infratographer.com/x/urnx"
 )
 
 // Handler provides the endpoint for /userinfo
@@ -66,21 +65,28 @@ func NewHandler(userInfoSvc types.UserInfoService, cfg fositex.OAuth2Configurato
 	}, nil
 }
 
+func (h *Handler) abortWithError(ctx *gin.Context, status int, err error) {
+	out := map[string]any{
+		"errors": []string{err.Error()},
+	}
+	ctx.AbortWithStatusJSON(status, out)
+}
+
 // Handle expects an authenticated request using a STS token and returns
 // the stored userinfo if it exists.
 func (h *Handler) handle(ctx *gin.Context) {
 	fullSubject := ginjwt.GetSubject(ctx)
 
-	prefix := rfc8693.SubjectPrefix + "/"
-	parts := strings.SplitAfter(fullSubject, prefix)
-
-	info, err := h.store.LookupUserInfoByID(ctx.Request.Context(), parts[1])
+	urn, err := urnx.Parse(fullSubject)
 	if err != nil {
-		out := map[string]any{
-			"errors": []string{err.Error()},
-		}
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, out)
+		h.abortWithError(ctx, http.StatusInternalServerError, err)
+	}
 
+	resourceID := urn.ResourceID.String()
+
+	info, err := h.store.LookupUserInfoByID(ctx.Request.Context(), resourceID)
+	if err != nil {
+		h.abortWithError(ctx, http.StatusBadRequest, err)
 		return
 	}
 
