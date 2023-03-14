@@ -16,6 +16,7 @@ import (
 	"go.infratographer.com/identity-api/internal/fositex"
 	"go.infratographer.com/identity-api/internal/storage"
 	"go.infratographer.com/identity-api/internal/types"
+	"go.infratographer.com/x/urnx"
 )
 
 const (
@@ -33,8 +34,6 @@ const (
 	ParamActorTokenType = "actor_token_type"
 	// ClaimClientID is the claim for the client ID.
 	ClaimClientID = "client_id"
-	// SubjectPrefix is the prefix added to the beginning of a token before the userID.
-	SubjectPrefix = "urn:infratographer:user"
 
 	responseIssuedTokenType = "issued_token_type"
 )
@@ -344,5 +343,11 @@ func (s *TokenExchangeHandler) populateUserInfo(ctx context.Context, issuer stri
 }
 
 func (s *TokenExchangeHandler) formatSubject(info *types.UserInfo) string {
-	return fmt.Sprintf("%s/%s", SubjectPrefix, info.ID)
+	urn, err := urnx.Build(types.URNNamespace, types.URNResourceTypeUser, info.ID)
+	if err != nil {
+		// If for some reason we aren't building valid URNs, panic
+		panic(err)
+	}
+
+	return urn.String()
 }
