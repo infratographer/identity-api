@@ -27,7 +27,7 @@ The token returned is an [RFC 9068][rfc-9068]-compliant access token JWT with th
 | iat                | The time the token was issued                                                                    |
 | jti                | Unique ID for the token issued                                                                   |
 | exp                | Token expiration time                                                                            |
-| sub                | URN of the user in the infratographer namespace, e.g. `urn:infratographer:user/{uuid}`           |
+| sub                | URN of the user in the infratographer namespace, e.g. `urn:infratographer:user:{uuid}`           |
 | aud                | Resources on which the token may operate                                                         |
 | client_id          | ID of the client requesting the token, or `null` if no client was used when requesting the token |
 | infratographer.sub | Private claim which indicates the subject be used in policy enforcement                          |
