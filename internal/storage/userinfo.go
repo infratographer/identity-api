@@ -61,7 +61,7 @@ func WithHTTPClient(client *http.Client) func(svc *userInfoService) {
 // This does not make an HTTP call with the subject token, so for this
 // data to be available, the data must have already be fetched and
 // stored.
-func (s userInfoService) LookupUserInfoByClaims(ctx context.Context, iss, sub string) (*types.UserInfo, error) {
+func (s userInfoService) LookupUserInfoByClaims(ctx context.Context, iss, sub string) (types.UserInfo, error) {
 	selectCols := withQualifier([]string{
 		userInfoCols.Name,
 		userInfoCols.Email,
@@ -93,7 +93,7 @@ func (s userInfoService) LookupUserInfoByClaims(ctx context.Context, iss, sub st
 	case ErrorMissingContextTx:
 		row = s.db.QueryRowContext(ctx, stmt, iss, sub)
 	default:
-		return nil, err
+		return types.UserInfo{}, err
 	}
 
 	var ui types.UserInfo
@@ -101,13 +101,13 @@ func (s userInfoService) LookupUserInfoByClaims(ctx context.Context, iss, sub st
 	err = row.Scan(&ui.Name, &ui.Email, &ui.Subject, &ui.Issuer)
 
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, types.ErrUserInfoNotFound
+		return types.UserInfo{}, types.ErrUserInfoNotFound
 	}
 
-	return &ui, err
+	return ui, err
 }
 
-func (s userInfoService) LookupUserInfoByID(ctx context.Context, id string) (*types.UserInfo, error) {
+func (s userInfoService) LookupUserInfoByID(ctx context.Context, id string) (types.UserInfo, error) {
 	selectCols := withQualifier([]string{
 		userInfoCols.ID,
 		userInfoCols.Name,
@@ -135,7 +135,7 @@ func (s userInfoService) LookupUserInfoByID(ctx context.Context, id string) (*ty
 	case ErrorMissingContextTx:
 		row = s.db.QueryRowContext(ctx, stmt, id)
 	default:
-		return nil, err
+		return types.UserInfo{}, err
 	}
 
 	var ui types.UserInfo
@@ -143,26 +143,26 @@ func (s userInfoService) LookupUserInfoByID(ctx context.Context, id string) (*ty
 	err = row.Scan(&ui.ID, &ui.Name, &ui.Email, &ui.Subject, &ui.Issuer)
 
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, types.ErrUserInfoNotFound
+		return types.UserInfo{}, types.ErrUserInfoNotFound
 	}
 
-	return &ui, err
+	return ui, err
 }
 
 // StoreUserInfo is used to store user information by issuer and
 // subject pairs. UserInfo is unique to issuer/subject pairs.
-func (s userInfoService) StoreUserInfo(ctx context.Context, userInfo types.UserInfo) (*types.UserInfo, error) {
+func (s userInfoService) StoreUserInfo(ctx context.Context, userInfo types.UserInfo) (types.UserInfo, error) {
 	if len(userInfo.Issuer) == 0 {
-		return nil, fmt.Errorf("%w: issuer is empty", types.ErrInvalidUserInfo)
+		return types.UserInfo{}, fmt.Errorf("%w: issuer is empty", types.ErrInvalidUserInfo)
 	}
 
 	if len(userInfo.Subject) == 0 {
-		return nil, fmt.Errorf("%w: subject is empty", types.ErrInvalidUserInfo)
+		return types.UserInfo{}, fmt.Errorf("%w: subject is empty", types.ErrInvalidUserInfo)
 	}
 
 	tx, err := getContextTx(ctx)
 	if err != nil {
-		return nil, err
+		return types.UserInfo{}, err
 	}
 
 	row := tx.QueryRowContext(ctx, `
@@ -175,9 +175,9 @@ func (s userInfoService) StoreUserInfo(ctx context.Context, userInfo types.UserI
 	switch err {
 	case nil:
 	case sql.ErrNoRows:
-		return nil, types.ErrorIssuerNotFound
+		return types.UserInfo{}, types.ErrorIssuerNotFound
 	default:
-		return nil, err
+		return types.UserInfo{}, err
 	}
 
 	insertCols := strings.Join([]string{
@@ -205,36 +205,36 @@ func (s userInfoService) StoreUserInfo(ctx context.Context, userInfo types.UserI
 
 	err = row.Scan(&userID)
 	if err != nil {
-		return nil, err
+		return types.UserInfo{}, err
 	}
 
 	userInfo.ID = uuid.MustParse(userID)
 
-	return &userInfo, err
+	return userInfo, err
 }
 
 // FetchUserInfoFromIssuer uses the subject access token to retrieve
 // information from the OIDC /userinfo endpoint.
-func (s userInfoService) FetchUserInfoFromIssuer(ctx context.Context, iss, rawToken string) (*types.UserInfo, error) {
+func (s userInfoService) FetchUserInfoFromIssuer(ctx context.Context, iss, rawToken string) (types.UserInfo, error) {
 	endpoint, err := url.JoinPath(iss, "userinfo")
 	if err != nil {
-		return nil, err
+		return types.UserInfo{}, err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
-		return nil, err
+		return types.UserInfo{}, err
 	}
 
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", rawToken))
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return types.UserInfo{}, err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf(
+		return types.UserInfo{}, fmt.Errorf(
 			"unexpected response code %d from request: %w",
 			resp.StatusCode,
 			types.ErrFetchUserInfo,
@@ -247,12 +247,12 @@ func (s userInfoService) FetchUserInfoFromIssuer(ctx context.Context, iss, rawTo
 
 	err = json.NewDecoder(resp.Body).Decode(&ui)
 	if err != nil {
-		return nil, err
+		return types.UserInfo{}, err
 	}
 
 	if ui.Issuer == "" {
 		ui.Issuer = iss
 	}
 
-	return &ui, nil
+	return ui, nil
 }
