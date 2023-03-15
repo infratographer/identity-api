@@ -40,14 +40,9 @@ type Config struct {
 	PrivateKeys []PrivateKey
 }
 
-// IssuerJWKSURIStrategy represents a strategy for getting the JWKS URI for a given issuer.
-type IssuerJWKSURIStrategy interface {
+// IssuerJWKSURIProvider represents a provider for the JWKS URI for a given issuer.
+type IssuerJWKSURIProvider interface {
 	GetIssuerJWKSURI(ctx context.Context, iss string) (string, error)
-}
-
-// IssuerJWKSURIStrategyProvider represents a provider for a IssuerJWKSURIStrategy.
-type IssuerJWKSURIStrategyProvider interface {
-	GetIssuerJWKSURIStrategy(ctx context.Context) IssuerJWKSURIStrategy
 }
 
 // SigningKeyProvider represents a provider of a signing key.
@@ -89,28 +84,29 @@ type UserInfoStrategyProvider interface {
 // OAuth2Configurator represents an OAuth2 configuration.
 type OAuth2Configurator interface {
 	fosite.Configurator
-	IssuerJWKSURIStrategyProvider
 	SigningKeyProvider
 	SigningJWKSProvider
 	ClaimMappingStrategyProvider
 	UserInfoStrategyProvider
+	GetIssuerJWKSURIProvider(ctx context.Context) IssuerJWKSURIProvider
 }
 
 // OAuth2Config represents a Fosite OAuth 2.0 provider configuration.
 type OAuth2Config struct {
 	*fosite.Config
-	SigningKey            *jose.JSONWebKey
-	SigningJWKS           *jose.JSONWebKeySet
-	IssuerJWKSURIStrategy IssuerJWKSURIStrategy
-	ClaimMappingStrategy  ClaimMappingStrategy
-	UserInfoStrategy      UserInfoStrategy
+	SigningKey  *jose.JSONWebKey
+	SigningJWKS *jose.JSONWebKeySet
 
-	userInfoAudience string
+	ClaimMappingStrategy ClaimMappingStrategy
+	UserInfoStrategy     UserInfoStrategy
+
+	IssuerJWKSURIProvider IssuerJWKSURIProvider
+	userInfoAudience      string
 }
 
-// GetIssuerJWKSURIStrategy returns the config's IssuerJWKSURIStrategy.
-func (c *OAuth2Config) GetIssuerJWKSURIStrategy(ctx context.Context) IssuerJWKSURIStrategy {
-	return c.IssuerJWKSURIStrategy
+// GetIssuerJWKSURIProvider returns the config's IssuerJWKSURIProvider.
+func (c *OAuth2Config) GetIssuerJWKSURIProvider(ctx context.Context) IssuerJWKSURIProvider {
+	return c.IssuerJWKSURIProvider
 }
 
 // GetSigningKey returns the config's signing key.

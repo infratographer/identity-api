@@ -66,14 +66,14 @@ func serve(ctx context.Context) {
 
 	mappingStrategy := rfc8693.NewClaimMappingStrategy(storageEngine)
 
-	jwksStrategy := jwks.NewIssuerJWKSURIStrategy(storageEngine)
+	issuerJWKSURIProvider := jwks.NewIssuerJWKSURIProvider(storageEngine)
 
 	oauth2Config, err := fositex.NewOAuth2Config(config.Config.OAuth)
 	if err != nil {
 		logger.Fatalf("error loading config: %s", err)
 	}
 
-	oauth2Config.IssuerJWKSURIStrategy = jwksStrategy
+	oauth2Config.IssuerJWKSURIProvider = issuerJWKSURIProvider
 	oauth2Config.ClaimMappingStrategy = mappingStrategy
 	oauth2Config.UserInfoStrategy = storageEngine
 
