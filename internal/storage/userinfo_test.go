@@ -72,7 +72,7 @@ func TestUserInfoStore(t *testing.T) {
 		Subject: "sub0|malikadmin",
 	}
 
-	var userInfoStored *types.UserInfo
+	var userInfoStored types.UserInfo
 
 	// seed the DB
 	{
@@ -118,22 +118,22 @@ func TestUserInfoStore(t *testing.T) {
 			subject string
 		}
 
-		runFn := func(ctx context.Context, input lookupType) testingx.TestResult[*types.UserInfo] {
+		runFn := func(ctx context.Context, input lookupType) testingx.TestResult[types.UserInfo] {
 			out, err := svc.LookupUserInfoByClaims(ctx, input.issuer, input.subject)
-			return testingx.TestResult[*types.UserInfo]{
+			return testingx.TestResult[types.UserInfo]{
 				Success: out,
 				Err:     err,
 			}
 		}
 
-		testCases := []testingx.TestCase[lookupType, *types.UserInfo]{
+		testCases := []testingx.TestCase[lookupType, types.UserInfo]{
 			{
 				Name:    "LoadAfterStore",
 				Input:   lookupType{issuer: user.Issuer, subject: user.Subject},
 				SetupFn: setupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.UserInfo]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
 					assert.NoError(t, res.Err)
-					assert.Equal(t, user, *res.Success)
+					assert.Equal(t, user, res.Success)
 				},
 				CleanupFn: cleanupFn,
 			},
@@ -141,9 +141,8 @@ func TestUserInfoStore(t *testing.T) {
 				Name:    "IncorrectIssuer",
 				Input:   lookupType{issuer: user.Issuer + "foobar", subject: user.Subject},
 				SetupFn: setupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.UserInfo]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
 					assert.ErrorIs(t, res.Err, types.ErrUserInfoNotFound)
-					assert.Nil(t, res.Success)
 				},
 				CleanupFn: cleanupFn,
 			},
@@ -151,9 +150,8 @@ func TestUserInfoStore(t *testing.T) {
 				Name:    "IncorrectSubject",
 				Input:   lookupType{issuer: user.Issuer, subject: ""},
 				SetupFn: setupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.UserInfo]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
 					assert.ErrorIs(t, res.Err, types.ErrUserInfoNotFound)
-					assert.Nil(t, res.Success)
 				},
 				CleanupFn: cleanupFn,
 			},
@@ -165,7 +163,7 @@ func TestUserInfoStore(t *testing.T) {
 	t.Run("LookupUserInfoByID", func(t *testing.T) {
 		t.Parallel()
 
-		runFn := func(ctx context.Context, input string) (res testingx.TestResult[*types.UserInfo]) {
+		runFn := func(ctx context.Context, input string) (res testingx.TestResult[types.UserInfo]) {
 			out, err := svc.LookupUserInfoByID(ctx, input)
 			res.Success = out
 			res.Err = err
@@ -173,12 +171,12 @@ func TestUserInfoStore(t *testing.T) {
 			return res
 		}
 
-		cases := []testingx.TestCase[string, *types.UserInfo]{
+		cases := []testingx.TestCase[string, types.UserInfo]{
 			{
 				Name:    "Success",
 				Input:   userInfoStored.ID.String(),
 				SetupFn: setupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.UserInfo]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
 					assert.NoError(t, res.Err)
 					assert.Equal(t, userInfoStored, res.Success)
 				},
@@ -188,7 +186,7 @@ func TestUserInfoStore(t *testing.T) {
 				Name:    "InvalidID",
 				Input:   uuid.NewString(),
 				SetupFn: setupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.UserInfo]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
 					assert.ErrorIs(t, res.Err, types.ErrUserInfoNotFound)
 				},
 				CleanupFn: cleanupFn,
@@ -209,7 +207,7 @@ func TestUserInfoStore(t *testing.T) {
 
 		type fetchResult struct {
 			tr recordingTransport
-			ui *types.UserInfo
+			ui types.UserInfo
 		}
 
 		exampleResp := `
@@ -264,7 +262,7 @@ func TestUserInfoStore(t *testing.T) {
 						Issuer:  "https://woo.com",
 					}
 
-					assert.Equal(t, expected, *info)
+					assert.Equal(t, expected, info)
 				},
 				CleanupFn: cleanupFn,
 			},
@@ -288,7 +286,7 @@ func TestUserInfoStore(t *testing.T) {
 						Issuer:  "https://woo.com",
 					}
 
-					assert.Equal(t, emptyUserInfo, *userinfo)
+					assert.Equal(t, emptyUserInfo, userinfo)
 				},
 				CleanupFn: cleanupFn,
 			},
@@ -312,7 +310,7 @@ func TestUserInfoStore(t *testing.T) {
 						Issuer:  "https://woo.com",
 					}
 
-					assert.Equal(t, emptyUserInfo, *userinfo)
+					assert.Equal(t, emptyUserInfo, userinfo)
 				},
 				CleanupFn: cleanupFn,
 			},
@@ -356,7 +354,7 @@ func TestUserInfoStore(t *testing.T) {
 			}
 		}
 
-		cases := []testingx.TestCase[types.UserInfo, *types.UserInfo]{
+		cases := []testingx.TestCase[types.UserInfo, types.UserInfo]{
 			{
 				Name: "UnboundIssuer",
 				Input: types.UserInfo{
@@ -366,7 +364,7 @@ func TestUserInfoStore(t *testing.T) {
 					Subject: "user:person001",
 				},
 				SetupFn: caseSetupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.UserInfo]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
 					assert.ErrorIs(t, res.Err, types.ErrorIssuerNotFound)
 				},
 				CleanupFn: caseCleanupFn,
@@ -380,7 +378,7 @@ func TestUserInfoStore(t *testing.T) {
 					Subject: "user:person001",
 				},
 				SetupFn: caseSetupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.UserInfo]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
 					assert.NoError(t, res.Err)
 				},
 				CleanupFn: caseCleanupFn,
@@ -394,7 +392,7 @@ func TestUserInfoStore(t *testing.T) {
 					Subject: "user:person001",
 				},
 				SetupFn: caseSetupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.UserInfo]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
 					assert.ErrorIs(t, res.Err, types.ErrInvalidUserInfo)
 					assert.ErrorContains(t, res.Err, "issuer is empty")
 				},
@@ -404,7 +402,7 @@ func TestUserInfoStore(t *testing.T) {
 				Name:    "DuplicateEntryForSubject",
 				Input:   user,
 				SetupFn: caseSetupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.UserInfo]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
 					assert.NoError(t, res.Err)
 					assert.Equal(t, userInfoStored.ID, res.Success.ID)
 				},
@@ -419,7 +417,7 @@ func TestUserInfoStore(t *testing.T) {
 					Issuer:  "https://example.com",
 				},
 				SetupFn: caseSetupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.UserInfo]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
 					assert.ErrorIs(t, res.Err, types.ErrInvalidUserInfo)
 					assert.ErrorContains(t, res.Err, "subject is empty")
 				},
@@ -427,7 +425,7 @@ func TestUserInfoStore(t *testing.T) {
 			},
 		}
 
-		runFn := func(ctx context.Context, input types.UserInfo) (out testingx.TestResult[*types.UserInfo]) {
+		runFn := func(ctx context.Context, input types.UserInfo) (out testingx.TestResult[types.UserInfo]) {
 			res, err := svc.StoreUserInfo(ctx, input)
 			out.Success = res
 			out.Err = err

@@ -176,17 +176,17 @@ type UserInfo struct {
 // information related to the subject tokens.
 type UserInfoService interface {
 	// LookupUserInfoByClaims returns the User information object for a issuer, subject pair.
-	LookupUserInfoByClaims(ctx context.Context, iss, sub string) (*UserInfo, error)
+	LookupUserInfoByClaims(ctx context.Context, iss, sub string) (UserInfo, error)
 
 	// LookupUserInfoByID returns the user info for a STS user ID
-	LookupUserInfoByID(ctx context.Context, id string) (*UserInfo, error)
+	LookupUserInfoByID(ctx context.Context, id string) (UserInfo, error)
 
 	// StoreUserInfo stores the userInfo into the storage backend.
-	StoreUserInfo(ctx context.Context, userInfo UserInfo) (*UserInfo, error)
+	StoreUserInfo(ctx context.Context, userInfo UserInfo) (UserInfo, error)
 
 	// FetchUserInfoFromIssuer uses the rawToken to make a userinfo endpoint request
 	// and unpacks it into the UserInfo type.
-	FetchUserInfoFromIssuer(ctx context.Context, iss, rawToken string) (*UserInfo, error)
+	FetchUserInfoFromIssuer(ctx context.Context, iss, rawToken string) (UserInfo, error)
 }
 
 // OAuthClientManager defines the storage interface for OAuth clients.

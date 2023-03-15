@@ -230,7 +230,7 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 		return errorsx.WithStack(fosite.ErrInvalidRequest.WithHintf("unable to populate user info: %s", err))
 	}
 
-	userWithID, err := userInfoSvc.StoreUserInfo(dbCtx, *userInfo)
+	userInfo, err = userInfoSvc.StoreUserInfo(dbCtx, userInfo)
 
 	if err != nil {
 		rbErr := txManager.RollbackContext(dbCtx)
@@ -244,7 +244,7 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 	}
 
 	var newClaims jwt.JWTClaims
-	newClaims.Subject = s.formatSubject(userWithID)
+	newClaims.Subject = s.formatSubject(userInfo)
 	newClaims.Issuer = s.config.GetAccessTokenIssuer(ctx)
 
 	for k, v := range mappedClaims.ToMapClaims() {
@@ -317,7 +317,7 @@ func (s *TokenExchangeHandler) CanHandleTokenEndpointRequest(ctx context.Context
 	return requester.GetGrantTypes().ExactOne(GrantTypeTokenExchange)
 }
 
-func (s *TokenExchangeHandler) populateUserInfo(ctx context.Context, issuer string, subject string, token string) (*types.UserInfo, error) {
+func (s *TokenExchangeHandler) populateUserInfo(ctx context.Context, issuer string, subject string, token string) (types.UserInfo, error) {
 	userInfoSvc := s.config.GetUserInfoStrategy(ctx)
 	userInfo, err := userInfoSvc.LookupUserInfoByClaims(ctx, issuer, subject)
 
@@ -327,7 +327,7 @@ func (s *TokenExchangeHandler) populateUserInfo(ctx context.Context, issuer stri
 		// came back bail.
 		if !errors.Is(err, types.ErrUserInfoNotFound) {
 			fmt.Println("couldn't find issuer in lookup")
-			return nil, err
+			return types.UserInfo{}, err
 		}
 	} else {
 		return userInfo, nil
@@ -336,13 +336,13 @@ func (s *TokenExchangeHandler) populateUserInfo(ctx context.Context, issuer stri
 	userInfo, err = userInfoSvc.FetchUserInfoFromIssuer(ctx, issuer, token)
 	if err != nil {
 		fmt.Println("failed to fetch userinfo")
-		return nil, err
+		return types.UserInfo{}, err
 	}
 
 	return userInfo, nil
 }
 
-func (s *TokenExchangeHandler) formatSubject(info *types.UserInfo) string {
+func (s *TokenExchangeHandler) formatSubject(info types.UserInfo) string {
 	urn, err := urnx.Build(types.URNNamespace, types.URNResourceTypeUser, info.ID)
 	if err != nil {
 		// If for some reason we aren't building valid URNs, panic
