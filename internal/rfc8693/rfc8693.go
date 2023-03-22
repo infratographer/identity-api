@@ -39,8 +39,8 @@ const (
 )
 
 var (
-	// ErrJWKSURIStrategyNotDefined is returned when the issuer JWKS URI strategy is not defined.
-	ErrJWKSURIStrategyNotDefined = errors.New("no issuer JWKS URI strategy defined")
+	// ErrJWKSURIProviderNotDefined is returned when the issuer JWKS URI provider is not defined.
+	ErrJWKSURIProviderNotDefined = errors.New("no issuer JWKS URI provider defined")
 )
 
 func findMatchingKey(ctx context.Context, config fositex.OAuth2Configurator, token *jwt.Token) (interface{}, error) {
@@ -55,15 +55,15 @@ func findMatchingKey(ctx context.Context, config fositex.OAuth2Configurator, tok
 		}
 	}
 
-	jwksURIStrategy := config.GetIssuerJWKSURIStrategy(ctx)
-	if jwksURIStrategy == nil {
+	jwksURIProvider := config.GetIssuerJWKSURIProvider(ctx)
+	if jwksURIProvider == nil {
 		return nil, &jwt.ValidationError{
 			Errors: jwt.ValidationErrorUnverifiable,
-			Inner:  ErrJWKSURIStrategyNotDefined,
+			Inner:  ErrJWKSURIProviderNotDefined,
 		}
 	}
 
-	jwksURI, err := jwksURIStrategy.GetIssuerJWKSURI(ctx, issuer)
+	jwksURI, err := jwksURIProvider.GetIssuerJWKSURI(ctx, issuer)
 	if err != nil {
 		return nil, &jwt.ValidationError{
 			Errors: jwt.ValidationErrorIssuer,

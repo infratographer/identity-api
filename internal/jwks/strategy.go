@@ -1,4 +1,4 @@
-// Package jwks provides a fosite.IssuerJWKSURIStrategy implementation.
+// Package jwks provides a fositex.IssuerJWKSURIProvider implementation.
 package jwks
 
 import (
@@ -14,20 +14,20 @@ var (
 	ErrUnknownIssuer = fmt.Errorf("unknown JWT issuer")
 )
 
-type issuerJWKSURIStrategy struct {
+type issuerJWKSURIProvider struct {
 	issuerSvc types.IssuerService
 }
 
-// NewIssuerJWKSURIStrategy creates a new fosite.IssuerJWKSURIStrategy.
-func NewIssuerJWKSURIStrategy(issuerSvc types.IssuerService) fositex.IssuerJWKSURIStrategy {
-	out := issuerJWKSURIStrategy{
+// NewIssuerJWKSURIProvider creates a new fositex.IssuerJWKSURIProvider.
+func NewIssuerJWKSURIProvider(issuerSvc types.IssuerService) fositex.IssuerJWKSURIProvider {
+	out := issuerJWKSURIProvider{
 		issuerSvc: issuerSvc,
 	}
 
 	return out
 }
 
-func (s issuerJWKSURIStrategy) GetIssuerJWKSURI(ctx context.Context, iss string) (string, error) {
+func (s issuerJWKSURIProvider) GetIssuerJWKSURI(ctx context.Context, iss string) (string, error) {
 	issuer, err := s.issuerSvc.GetIssuerByURI(ctx, iss)
 	if err != nil {
 		return "", err
