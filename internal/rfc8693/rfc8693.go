@@ -124,7 +124,7 @@ func NewTokenExchangeHandler(config fositex.OAuth2Configurator, storage any, str
 	}
 }
 
-func (s *TokenExchangeHandler) validateJWT(ctx context.Context, token string, strategy fosite.JWKSFetcherStrategy) (*jwt.Token, error) {
+func (s *TokenExchangeHandler) validateJWT(ctx context.Context, token string) (*jwt.Token, error) {
 	// Side effectful key finding isn't great but neither is parsing the JWT twice
 	keyfunc := func(token *jwt.Token) (interface{}, error) {
 		return findMatchingKey(ctx, s.config, token)
@@ -150,7 +150,7 @@ func (s *TokenExchangeHandler) validateJWT(ctx context.Context, token string, st
 }
 
 func (s *TokenExchangeHandler) getSubjectClaims(ctx context.Context, token string) (*jwt.JWTClaims, error) {
-	validated, err := s.validateJWT(ctx, token, s.config.GetJWKSFetcherStrategy(ctx))
+	validated, err := s.validateJWT(ctx, token)
 
 	if err != nil {
 		return nil, err
@@ -308,12 +308,12 @@ func (s *TokenExchangeHandler) PopulateTokenEndpointResponse(ctx context.Context
 }
 
 // CanSkipClientAuth always returns true, as client auth is not required for token exchange.
-func (s *TokenExchangeHandler) CanSkipClientAuth(ctx context.Context, requester fosite.AccessRequester) bool {
+func (s *TokenExchangeHandler) CanSkipClientAuth(_ context.Context, _ fosite.AccessRequester) bool {
 	return true
 }
 
 // CanHandleTokenEndpointRequest returns true if the grant type is token exchange.
-func (s *TokenExchangeHandler) CanHandleTokenEndpointRequest(ctx context.Context, requester fosite.AccessRequester) bool {
+func (s *TokenExchangeHandler) CanHandleTokenEndpointRequest(_ context.Context, requester fosite.AccessRequester) bool {
 	return requester.GetGrantTypes().ExactOne(GrantTypeTokenExchange)
 }
 

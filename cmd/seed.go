@@ -32,7 +32,7 @@ var seedDatabaseCmd = &cobra.Command{
 	},
 }
 
-func seedDatabase(ctx context.Context) {
+func seedDatabase(_ context.Context) {
 	logger.Info("seeding database")
 
 	path := viper.GetString("data")

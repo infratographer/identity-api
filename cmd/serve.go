@@ -47,7 +47,7 @@ func init() {
 	otelx.MustViperFlags(v, flags)
 }
 
-func serve(ctx context.Context) {
+func serve(_ context.Context) {
 	err := otelx.InitTracer(config.Config.OTel, appName, logger)
 	if err != nil {
 		logger.Fatalf("error initializing tracing: %s", err)
