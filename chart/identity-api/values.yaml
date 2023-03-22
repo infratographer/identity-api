@@ -89,7 +89,7 @@ ingress:
   #       - myidentity-sts.exaple.com
   #     secretName: myidentity-sts-tls
   # ```
-  tls: {}
+  tls: []
     # - hosts:
     #     - myidentity-sts.example.com
     #   secretName: myidentity-sts-tls
