@@ -28,7 +28,7 @@ var migrateCmd = &cobra.Command{
 	},
 }
 
-func migrate(ctx context.Context) {
+func migrate(_ context.Context) {
 	logger.Info("running database migrations")
 
 	err := storage.RunMigrations(config.Config.CRDB)

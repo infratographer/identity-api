@@ -105,27 +105,27 @@ type OAuth2Config struct {
 }
 
 // GetIssuerJWKSURIProvider returns the config's IssuerJWKSURIProvider.
-func (c *OAuth2Config) GetIssuerJWKSURIProvider(ctx context.Context) IssuerJWKSURIProvider {
+func (c *OAuth2Config) GetIssuerJWKSURIProvider(_ context.Context) IssuerJWKSURIProvider {
 	return c.IssuerJWKSURIProvider
 }
 
 // GetSigningKey returns the config's signing key.
-func (c *OAuth2Config) GetSigningKey(ctx context.Context) *jose.JSONWebKey {
+func (c *OAuth2Config) GetSigningKey(_ context.Context) *jose.JSONWebKey {
 	return c.SigningKey
 }
 
 // GetSigningJWKS returns the config's signing JWKS. This includes private keys.
-func (c *OAuth2Config) GetSigningJWKS(ctx context.Context) *jose.JSONWebKeySet {
+func (c *OAuth2Config) GetSigningJWKS(_ context.Context) *jose.JSONWebKeySet {
 	return c.SigningJWKS
 }
 
 // GetClaimMappingStrategy returns the config's claims mapping strategy.
-func (c *OAuth2Config) GetClaimMappingStrategy(ctx context.Context) ClaimMappingStrategy {
+func (c *OAuth2Config) GetClaimMappingStrategy(_ context.Context) ClaimMappingStrategy {
 	return c.ClaimMappingStrategy
 }
 
 // GetUserInfoStrategy returns the config's user info store strategy.
-func (c *OAuth2Config) GetUserInfoStrategy(ctx context.Context) UserInfoStrategy {
+func (c *OAuth2Config) GetUserInfoStrategy(_ context.Context) UserInfoStrategy {
 	return c.UserInfoStrategy
 }
 
@@ -135,7 +135,7 @@ func (c *OAuth2Config) GetUserInfoAudience() string {
 }
 
 // MustViperFlags sets the flags needed for Fosite to work.
-func MustViperFlags(v *viper.Viper, flags *pflag.FlagSet, defaultListen string) {
+func MustViperFlags(v *viper.Viper, flags *pflag.FlagSet) {
 	flags.String("issuer", "", "oauth token issuer")
 	viperx.MustBindFlag(v, "oauth.issuer", flags.Lookup("issuer"))
 	flags.String("private-key", "", "private key file")

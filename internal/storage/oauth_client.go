@@ -41,7 +41,7 @@ type oauthClientManager struct {
 }
 
 // ClientAssertionJWTValid implements fosite.ClientManager
-func (*oauthClientManager) ClientAssertionJWTValid(ctx context.Context, jti string) error {
+func (*oauthClientManager) ClientAssertionJWTValid(_ context.Context, _ string) error {
 	panic("unimplemented")
 }
 
@@ -51,7 +51,7 @@ func (s *oauthClientManager) GetClient(ctx context.Context, id string) (fosite.C
 }
 
 // SetClientAssertionJWT implements fosite.ClientManager
-func (*oauthClientManager) SetClientAssertionJWT(ctx context.Context, jti string, exp time.Time) error {
+func (*oauthClientManager) SetClientAssertionJWT(_ context.Context, _ string, _ time.Time) error {
 	panic("unimplemented")
 }
 

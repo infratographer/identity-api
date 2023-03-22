@@ -90,12 +90,12 @@ func (c *ClientCredentialsGrantHandler) PopulateTokenEndpointResponse(ctx contex
 }
 
 // CanSkipClientAuth determines if the client must be authenticated to use this handler.
-func (c *ClientCredentialsGrantHandler) CanSkipClientAuth(ctx context.Context, requester fosite.AccessRequester) bool {
+func (c *ClientCredentialsGrantHandler) CanSkipClientAuth(_ context.Context, _ fosite.AccessRequester) bool {
 	return false
 }
 
 // CanHandleTokenEndpointRequest checks if this handler can handle the request.
-func (c *ClientCredentialsGrantHandler) CanHandleTokenEndpointRequest(ctx context.Context, requester fosite.AccessRequester) bool {
+func (c *ClientCredentialsGrantHandler) CanHandleTokenEndpointRequest(_ context.Context, requester fosite.AccessRequester) bool {
 	// grant_type REQUIRED.
 	// Value MUST be set to "client_credentials".
 	return requester.GetGrantTypes().ExactOne("client_credentials")
