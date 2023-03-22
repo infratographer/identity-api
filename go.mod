@@ -19,7 +19,7 @@ require (
 	go.hollow.sh/toolbox v0.5.1
 	go.infratographer.com/x v0.0.3
 	go.uber.org/zap v1.24.0
-	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4
+	google.golang.org/genproto v0.0.0-20230322174352-cde4c949918d
 	google.golang.org/protobuf v1.30.0
 	gopkg.in/square/go-jose.v2 v2.6.0
 	gopkg.in/yaml.v3 v3.0.1
