@@ -1,6 +1,6 @@
 module go.infratographer.com/identity-api
 
-go 1.19
+go 1.20
 
 require (
 	github.com/cockroachdb/cockroach-go/v2 v2.3.3
