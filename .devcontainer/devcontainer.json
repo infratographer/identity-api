@@ -27,7 +27,7 @@
 	}
     },
     "features": {
-	    "ghcr.io/devcontainers/features/sshd:1": {}
+        "ghcr.io/devcontainers/features/sshd:1": {}
     },
     "remoteUser": "vscode"
 }
