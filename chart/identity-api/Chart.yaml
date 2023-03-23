@@ -4,6 +4,9 @@ appVersion: v0.0.3
 description: A Helm chart for Identity-API - RFC 8693 token exchange server.
 name: identity-api
 keywords:
+  - identity
+  - oauth2
+  - rfc8693
 version: v0.0.3
 home: http://github.com/infratographer/identity-api
 dependencies:
