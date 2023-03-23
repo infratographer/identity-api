@@ -34,8 +34,6 @@ services:
       - "--insecure"
     networks:
       idapinet:
-    ports:
-      - "9090:8080"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health?ready=1"]
       interval: 10s

@@ -26,19 +26,11 @@ RUN export DEBIAN_FRONTEND=noninteractive \
         uuid-runtime \
         postgresql-client
 
-# Install NATS Tooling
-RUN curl -o /tmp/install.sh  https://raw.githubusercontent.com/nats-io/nsc/main/install.sh \
-    && chmod +x /tmp/install.sh \
-    && su vscode -c "/tmp/install.sh -s /usr/local/bin" \
-    && rm -f /tmp/install.sh
-
 USER vscode
 
 RUN go install -v github.com/cweill/gotests/gotests@v1.6.0 \
     && go install github.com/volatiletech/sqlboiler/v4@latest \
     && go install github.com/volatiletech/sqlboiler/v4/drivers/sqlboiler-psql@latest \
-    && go install github.com/glerchundi/sqlboiler-crdb/v4@latest \
-    && go install github.com/nats-io/natscli/nats@v0.0.35 \
-    && go install github.com/nats-io/nkeys/nk@latest
+    && go install github.com/glerchundi/sqlboiler-crdb/v4@latest
 
 WORKDIR /workspace
