@@ -23,14 +23,10 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get -y install --no-install-recommends \
         bash-completion \
         helm \
-        uuid-runtime \
-        postgresql-client
+        uuid-runtime
 
 USER vscode
 
-RUN go install -v github.com/cweill/gotests/gotests@v1.6.0 \
-    && go install github.com/volatiletech/sqlboiler/v4@latest \
-    && go install github.com/volatiletech/sqlboiler/v4/drivers/sqlboiler-psql@latest \
-    && go install github.com/glerchundi/sqlboiler-crdb/v4@latest
+RUN go install -v github.com/cweill/gotests/gotests@v1.6.0
 
 WORKDIR /workspace

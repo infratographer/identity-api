@@ -3,8 +3,7 @@ PHONY: deps generate test coverage lint golint clean vendor docker-up docker-dow
 GOOS=linux
 APP_NAME?=identity-api
 
-DB=identity_api
-DEV_DB="${DB}_dev"
+DEV_DB="identity_api_dev"
 
 TEST_PRIVKEY_FILE?=tests/data/privkey.pem
 CONFIG_FILE?=identity-api.example.yaml
@@ -56,9 +55,9 @@ up: build $(TEST_PRIVKEY_FILE)
 $(TEST_PRIVKEY_FILE):
 	openssl genpkey -out $(TEST_PRIVKEY_FILE) -algorithm RSA -pkeyopt rsa_keygen_bits:4096
 
-dev-database: | vendor
+dev-database: | build
 	@echo --- Creating dev database...
 	@date --rfc-3339=seconds
 	@cockroach sql -e "drop database if exists ${DEV_DB}"
 	@cockroach sql -e "create database ${DEV_DB}"
-	@go run main.go migrate --config=${CONFIG_FILE} up
+	@bin/${APP_NAME} migrate --config=${CONFIG_FILE} up
