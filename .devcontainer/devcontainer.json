@@ -6,13 +6,28 @@
     "shutdownAction": "stopCompose",
     "customizations": {
 	"vscode": {
-	    "extensions": [
-		"golang.Go"
-	    ]
+        "settings": {
+            "go.toolsManagement.checkForUpdates": "local",
+            "go.useLanguageServer": true,
+            "go.gopath": "/go",
+            "go.buildTags": "testtools"
+        },
+
+        // Add the IDs of extensions you want installed when the container is created.
+        "extensions": [
+            "2gua.rainbow-brackets",
+            "golang.Go",
+            "mutantdino.resourcemonitor",
+            "oderwat.indent-rainbow",
+            "ms-azuretools.vscode-docker",
+            "RemiMarche.cspell-tech",
+            "streetsidesoftware.code-spell-checker",
+            "netcorext.uuid-generator"
+        ]
 	}
     },
     "features": {
-	"ghcr.io/devcontainers/features/sshd:1": {}
+        "ghcr.io/devcontainers/features/sshd:1": {}
     },
     "remoteUser": "vscode"
 }

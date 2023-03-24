@@ -6,6 +6,10 @@ services:
       context: .
       dockerfile: Dockerfile
     command: sleep infinity
+    depends_on:
+      - cockroachdb
+    env_file:
+      - .env
     restart: unless-stopped
     ports:
       - "127.0.0.1:2222:2222"
@@ -30,9 +34,6 @@ services:
       - "--insecure"
     networks:
       idapinet:
-    ports:
-      - "26257:26257"
-      - "9090:8080"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health?ready=1"]
       interval: 10s
