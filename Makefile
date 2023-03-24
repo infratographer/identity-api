@@ -60,4 +60,4 @@ dev-database: | build
 	@date --rfc-3339=seconds
 	@cockroach sql -e "drop database if exists ${DEV_DB}"
 	@cockroach sql -e "create database ${DEV_DB}"
-	@bin/${APP_NAME} migrate --config=${CONFIG_FILE} up
+	@bin/${APP_NAME} migrate --config=${CONFIG_FILE}
