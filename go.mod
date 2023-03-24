@@ -19,7 +19,7 @@ require (
 	go.hollow.sh/toolbox v0.5.1
 	go.infratographer.com/x v0.0.3
 	go.uber.org/zap v1.24.0
-	google.golang.org/genproto v0.0.0-20230322174352-cde4c949918d
+	google.golang.org/genproto v0.0.0-20230323212658-478b75c54725
 	google.golang.org/protobuf v1.30.0
 	gopkg.in/square/go-jose.v2 v2.6.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -56,7 +56,7 @@ require (
 	github.com/gofrs/flock v0.8.1 // indirect
 	github.com/golang/glog v1.0.0 // indirect
 	github.com/golang/mock v1.6.0 // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.14.0 // indirect
@@ -131,6 +131,6 @@ require (
 	golang.org/x/text v0.8.0 // indirect
 	golang.org/x/tools v0.7.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/grpc v1.53.0 // indirect
+	google.golang.org/grpc v1.54.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )
