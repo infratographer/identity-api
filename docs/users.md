@@ -6,7 +6,7 @@ A user as defined in identity-api is any unique subject as identified by an issu
 
 Currently, identity-api does not support any particular mechanism for binding an issuer to a given tenant. This work is being tracked as part of Issue [#23][issue-23].
 
-At minimum, it is expected that identity-api should ultimately support constraining tokens to tenants using the OAuth 2.0 `audience` parameter.
+At minimum, it is expected that identity-api should ultimately support constraining tokens to tenants using the OAuth 2.0 `resource` parameter.
 
 [issue-23]: https://github.com/infratographer/identity-api/issues/23
 
