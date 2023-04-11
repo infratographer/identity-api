@@ -28,16 +28,18 @@ type clientCredentialsConfigurator interface {
 	fositex.SigningKeyProvider
 }
 
-func buildClientURN(c fosite.Client) string {
-	clientUUID := uuid.MustParse(c.GetID())
+func buildClientURN(c fosite.Client) (string, error) {
+	clientUUID, err := uuid.Parse(c.GetID())
+	if err != nil {
+		return "", err
+	}
 
 	urn, err := urnx.Build(types.URNNamespace, types.URNResourceTypeClient, clientUUID)
 	if err != nil {
-		// If for some reason we aren't building valid URNs, panic
-		panic(err)
+		return "", err
 	}
 
-	return urn.String()
+	return urn.String(), nil
 }
 
 // ClientCredentialsGrantHandler handles the RFC6749 client credentials grant type.
@@ -86,7 +88,12 @@ func (c *ClientCredentialsGrantHandler) HandleTokenEndpointRequest(ctx context.C
 	session.JWTHeader = &headers
 	session.SetExpiresAt(fosite.AccessToken, time.Now().UTC().Add(atLifespan))
 
-	session.JWTClaims.Subject = buildClientURN(client)
+	clientURN, err := buildClientURN(client)
+	if err != nil {
+		return err
+	}
+
+	session.JWTClaims.Subject = clientURN
 
 	return nil
 }
