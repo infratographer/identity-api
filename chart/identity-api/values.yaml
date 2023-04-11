@@ -73,15 +73,10 @@ ingress:
   enabled: false
   annotations: {}
 
-  # ```yaml
-  # hosts:
-  #   - host: bar.foo
-  #     paths:
-  #       - /example
-  #```
+  # hosts is the list of hosts and path rules for this Ingress
   hosts: []
 
-  # tls is a list of hosts and secrets for an Ingres
+  # tls is a list of hosts and secrets for this Ingress
   # ```yaml
   # tls:
   #   - hosts:

@@ -22,15 +22,15 @@ spec:
     - host: {{ .host  | quote }}
       http:
         paths:
-          {{- range (.paths | default (list "/")) }}
-          - pathType: {{ $.Values.ingress.pathType | default "Prefix" | quote }}
-            path: {{ . | quote }}
+          {{- range .paths }}
+          - pathType: {{ .pathType | default "Prefix" | quote }}
+            path: {{ .path | quote }}
             backend:
               service:
                 name: {{ $fullName }}
                 port:
                   name: web
-  {{- end }}
+          {{- end }}
   {{- end }}
   {{- with .Values.ingress.tls }}
   tls:
