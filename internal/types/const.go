@@ -6,4 +6,7 @@ const (
 
 	// URNResourceTypeUser represents the user resource type in a URN.
 	URNResourceTypeUser = "user"
+
+	// URNResourceTypeUser represents the client resource type in a URN.
+	URNResourceTypeClient = "client"
 )

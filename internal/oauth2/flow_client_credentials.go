@@ -31,7 +31,7 @@ type clientCredentialsConfigurator interface {
 func buildClientURN(c fosite.Client) string {
 	clientUUID := uuid.MustParse(c.GetID())
 
-	urn, err := urnx.Build(types.URNNamespace, types.URNResourceTypeUser, clientUUID)
+	urn, err := urnx.Build(types.URNNamespace, types.URNResourceTypeClient, clientUUID)
 	if err != nil {
 		// If for some reason we aren't building valid URNs, panic
 		panic(err)
