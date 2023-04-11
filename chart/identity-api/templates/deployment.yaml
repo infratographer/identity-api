@@ -32,6 +32,10 @@ spec:
     spec:
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
+      {{- with .Values.deployment.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       initContainers:
         - name: copy-keys
           image: "{{ .Values.copyKeys.repository }}:{{ .Values.copyKeys.tag }}"
