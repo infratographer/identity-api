@@ -3,16 +3,18 @@ package oauth2
 
 import (
 	"context"
-	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/ory/x/errorsx"
 	"go.infratographer.com/identity-api/internal/fositex"
 	"go.infratographer.com/identity-api/internal/storage"
+	"go.infratographer.com/identity-api/internal/types"
 
 	"github.com/ory/fosite"
 	"github.com/ory/fosite/handler/oauth2"
 	"github.com/ory/fosite/token/jwt"
+	"go.infratographer.com/x/urnx"
 )
 
 var _ fosite.TokenEndpointHandler = &ClientCredentialsGrantHandler{}
@@ -24,6 +26,18 @@ type clientCredentialsConfigurator interface {
 	fosite.AccessTokenIssuerProvider
 	fositex.UserInfoAudienceProvider
 	fositex.SigningKeyProvider
+}
+
+func buildClientURN(c fosite.Client) string {
+	clientUUID := uuid.MustParse(c.GetID())
+
+	urn, err := urnx.Build(types.URNNamespace, types.URNResourceTypeUser, clientUUID)
+	if err != nil {
+		// If for some reason we aren't building valid URNs, panic
+		panic(err)
+	}
+
+	return urn.String()
 }
 
 // ClientCredentialsGrantHandler handles the RFC6749 client credentials grant type.
@@ -72,7 +86,7 @@ func (c *ClientCredentialsGrantHandler) HandleTokenEndpointRequest(ctx context.C
 	session.JWTHeader = &headers
 	session.SetExpiresAt(fosite.AccessToken, time.Now().UTC().Add(atLifespan))
 
-	session.JWTClaims.Subject = fmt.Sprintf("urn:infratographer:client/%s", clientID)
+	session.JWTClaims.Subject = buildClientURN(client)
 
 	return nil
 }
