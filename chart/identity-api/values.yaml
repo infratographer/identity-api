@@ -13,6 +13,7 @@ deployment:
   extraLabels: {}
   annotations: {}
   resources: {}
+  imagePullSecrets: []
 
   containerUserID: 65532
 
