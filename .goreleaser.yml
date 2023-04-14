@@ -1,0 +1,70 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+
+before:
+  hooks:
+    - go mod download
+
+builds:
+  - id: go
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    ldflags:
+      - -s -w
+      - -X go.infratographer.com/x/versionx.appName={{.ProjectName}}
+      - -X go.infratographer.com/x/versionx.version={{.Version}}
+      - -X go.infratographer.com/x/versionx.commit={{.Commit}}
+      - -X go.infratographer.com/x/versionx.date={{.Date}}
+      - -X go.infratographer.com/x/versionx.builtBy=infratographer-release-bot
+
+archives:
+  - format: binary
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ .Tag }}-next"
+
+changelog:
+  skip: false
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+
+  groups:
+    - title: "## 🎄 Features"
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 0
+    - title: '## 🐞 Bug fixes'
+      regexp: '^.*?bug(\([[:word:]]+\))??!?:.+$'
+      order: 1
+    - title: "## 🚀 Others"
+      order: 999
+
+dockers:
+  -
+    image_templates:
+      - ghcr.io/infratographer/{{.ProjectName}}:{{ .Tag }}
+    dockerfile: Dockerfile.release
+    build_flag_templates:
+      - --label=org.opencontainers.image.title={{ .ProjectName }}
+      - --label=org.opencontainers.image.description={{ .ProjectName }}
+      - --label=org.opencontainers.image.url=https://infratographer.com
+      - --label=org.opencontainers.image.source=https://github.com/infratographer/{{.ProjectName}}
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.licenses=Apache-2.0
+
+release:
+  mode: prepend
+  prerelease: auto
+  draft: false
+  name_template: "Release {{.Tag}}"
+  header: |
+    # What's Changed
