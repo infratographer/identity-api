@@ -22,6 +22,9 @@ import (
 	"go.infratographer.com/identity-api/internal/routes"
 	"go.infratographer.com/identity-api/internal/storage"
 	"go.infratographer.com/identity-api/internal/userinfo"
+
+	"github.com/metal-toolbox/auditevent/ginaudit"
+	audithelpers "github.com/metal-toolbox/auditevent/helpers"
 )
 
 var serveCmd = &cobra.Command{
@@ -58,6 +61,21 @@ func serve(_ context.Context) {
 	if config.Config.OTel.Enabled {
 		engineOpts = append(engineOpts, storage.WithTracing(config.Config.CRDB))
 	}
+
+	auditpath := viper.GetString("audit.log.path")
+	if auditpath == "" {
+		logger.Fatal("failed starting server. Audit log file path can't be empty")
+	}
+
+	// WARNING: This will block until the file is available;
+	// make sure an initContainer creates the file
+	auf, auerr := audithelpers.OpenAuditLogFileUntilSuccess(auditpath)
+	if auerr != nil {
+		logger.Fatalf("couldn't open audit file. error: %s", auerr)
+	}
+	defer auf.Close()
+
+	auditMiddleware := ginaudit.NewJSONMiddleware(appName, auf)
 
 	storageEngine, err := storage.NewEngine(config.Config.CRDB, engineOpts...)
 	if err != nil {
@@ -102,7 +120,7 @@ func serve(_ context.Context) {
 		logger.Fatal("error initializing UserInfo handler: %s", err)
 	}
 
-	router := routes.NewRouter(logger, oauth2Config, provider)
+	router := routes.NewRouter(logger, oauth2Config, provider, auditMiddleware)
 
 	emptyLogFn := func(c *gin.Context) []zapcore.Field {
 		return []zapcore.Field{}
@@ -113,7 +131,12 @@ func serve(_ context.Context) {
 	engine.ContextWithFallback = true
 
 	router.Routes(engine.Group("/"))
-	apiHandler.Routes(engine.Group("/"))
+
+	// audit generated api endpoints through the router group
+	apiGroup := engine.Group("/")
+	apiGroup.Use(auditMiddleware.Audit())
+	apiHandler.Routes(apiGroup)
+
 	userInfoHandler.Routes(engine.Group("/"))
 
 	srv := &http.Server{

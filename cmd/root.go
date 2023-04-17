@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.infratographer.com/x/loggingx"
+	"go.infratographer.com/x/viperx"
 	"go.uber.org/zap"
 
 	"go.infratographer.com/identity-api/internal/config"
@@ -28,6 +29,9 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is /etc/identity-api/identity-api.yaml)")
+
+	rootCmd.PersistentFlags().String("audit-log-path", "/app-audit/audit.log", "file path to write audit logs")
+	viperx.MustBindFlag(viper.GetViper(), "audit.log.path", rootCmd.PersistentFlags().Lookup("audit-log-path"))
 }
 
 func initConfig() {

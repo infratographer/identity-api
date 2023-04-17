@@ -199,7 +199,7 @@ func NewOAuth2Provider(configurator *OAuth2Config, store interface{}, strategy i
 	return f
 }
 
-// Factory is a constructor which is used to create an OAuth2 endpoin handler.
+// Factory is a constructor which is used to create an OAuth2 endpoint handler.
 // NewOAuth2Provider handles consuming the new struct and attaching it
 // to the parts of the config that it implements.
 type Factory func(config OAuth2Configurator, store any, strategy any) any

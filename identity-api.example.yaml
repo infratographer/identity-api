@@ -15,3 +15,6 @@ otel:
     prettyPrint: true
 crdb:
   uri: postgresql://root@cockroachdb:26257/identity_api_dev?sslmode=disable
+audit:
+  log:
+    path: audit.log
