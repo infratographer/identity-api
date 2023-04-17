@@ -2,7 +2,7 @@
 package routes
 
 import (
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v4"
 	"github.com/ory/fosite"
 	"go.uber.org/zap"
 
@@ -28,7 +28,7 @@ func NewRouter(logger *zap.SugaredLogger, config fositex.OAuth2Configurator, pro
 }
 
 // Routes registers the routes for the application.
-func (r *Router) Routes(rg *gin.RouterGroup) {
+func (r *Router) Routes(rg *echo.Group) {
 	tok := &tokenHandler{
 		logger:   r.logger,
 		provider: r.provider,

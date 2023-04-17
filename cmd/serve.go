@@ -2,16 +2,15 @@ package cmd
 
 import (
 	"context"
-	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/ory/fosite/compose"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.infratographer.com/x/crdbx"
-	"go.infratographer.com/x/ginx"
+	"go.infratographer.com/x/echox"
 	"go.infratographer.com/x/otelx"
-	"go.uber.org/zap/zapcore"
+	"go.infratographer.com/x/versionx"
+	"go.uber.org/zap"
 
 	"go.infratographer.com/identity-api/internal/api/httpsrv"
 	"go.infratographer.com/identity-api/internal/config"
@@ -43,7 +42,7 @@ func init() {
 	flags := serveCmd.Flags()
 
 	crdbx.MustViperFlags(v, flags)
-	ginx.MustViperFlags(v, flags, defaultListen)
+	echox.MustViperFlags(v, flags, defaultListen)
 	otelx.MustViperFlags(v, flags)
 }
 
@@ -104,22 +103,20 @@ func serve(_ context.Context) {
 
 	router := routes.NewRouter(logger, oauth2Config, provider, config.Config.OAuth.Issuer)
 
-	emptyLogFn := func(c *gin.Context) []zapcore.Field {
-		return []zapcore.Field{}
+	srv := echox.NewServer(
+		logger.Desugar(),
+		echox.Config{
+			Listen:              viper.GetString("server.listen"),
+			ShutdownGracePeriod: viper.GetDuration("server.shutdown-grace-period"),
+		},
+		versionx.BuildDetails(),
+	)
+
+	srv.AddHandler(router)
+	srv.AddHandler(apiHandler)
+	srv.AddHandler(userInfoHandler)
+
+	if err := srv.Run(); err != nil {
+		logger.Fatal("failed to run server", zap.Error(err))
 	}
-
-	// ginx doesn't allow configuration of ContextWithFallback but we need it here.
-	engine := ginx.DefaultEngine(logger.Desugar(), emptyLogFn)
-	engine.ContextWithFallback = true
-
-	router.Routes(engine.Group("/"))
-	apiHandler.Routes(engine.Group("/"))
-	userInfoHandler.Routes(engine.Group("/"))
-
-	srv := &http.Server{
-		Addr:    config.Config.Server.Listen,
-		Handler: engine,
-	}
-
-	logger.Fatal(srv.ListenAndServe())
 }

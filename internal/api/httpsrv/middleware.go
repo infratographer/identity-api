@@ -1,13 +1,13 @@
 package httpsrv
 
 import (
-	middleware "github.com/deepmap/oapi-codegen/pkg/gin-middleware"
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v4"
 
+	"github.com/deepmap/oapi-codegen/pkg/middleware"
 	v1 "go.infratographer.com/identity-api/pkg/api/v1"
 )
 
-func oapiValidationMiddleware() (gin.HandlerFunc, error) {
+func oapiValidationMiddleware() (echo.MiddlewareFunc, error) {
 	swagger, err := v1.GetSwagger()
 	if err != nil {
 		return nil, err
