@@ -14,14 +14,16 @@ type Router struct {
 	logger   *zap.SugaredLogger
 	provider fosite.OAuth2Provider
 	config   fositex.OAuth2Configurator
+	issuer   string
 }
 
 // NewRouter creates a new Router.
-func NewRouter(logger *zap.SugaredLogger, config fositex.OAuth2Configurator, provider fosite.OAuth2Provider) *Router {
+func NewRouter(logger *zap.SugaredLogger, config fositex.OAuth2Configurator, provider fosite.OAuth2Provider, issuer string) *Router {
 	return &Router{
 		logger:   logger,
 		provider: provider,
 		config:   config,
+		issuer:   issuer,
 	}
 }
 
@@ -35,7 +37,12 @@ func (r *Router) Routes(rg *gin.RouterGroup) {
 		logger: r.logger,
 		config: r.config,
 	}
+	oidc := &oidcHandler{
+		logger: r.logger,
+		issuer: r.issuer,
+	}
 
 	rg.POST("/token", tok.Handle)
 	rg.GET("/jwks.json", jwks.Handle)
+	rg.GET("/.well-known/openid-configuration", oidc.Handle)
 }

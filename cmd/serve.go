@@ -102,7 +102,7 @@ func serve(_ context.Context) {
 		logger.Fatal("error initializing UserInfo handler: %s", err)
 	}
 
-	router := routes.NewRouter(logger, oauth2Config, provider)
+	router := routes.NewRouter(logger, oauth2Config, provider, config.Config.OAuth.Issuer)
 
 	emptyLogFn := func(c *gin.Context) []zapcore.Field {
 		return []zapcore.Field{}
