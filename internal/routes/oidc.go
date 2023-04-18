@@ -37,41 +37,43 @@ func (h *oidcHandler) Handle(ctx *gin.Context) {
 //
 //nolint:cyclop // necessary complexity.
 func buildURL(c *gin.Context, path string) *url.URL {
-	outURL := new(url.URL)
+	if c == nil || c.Request == nil || c.Request.URL == nil {
+		return nil
+	}
 
-	if c != nil && c.Request != nil && c.Request.URL != nil {
-		outURL.Path = c.Request.URL.JoinPath(path).Path
+	outURL := &url.URL{
+		Path: c.Request.URL.JoinPath(path).Path,
+	}
 
-		// gin doesn't expose an easy way to check if the request came from a trusted proxy.
-		// However the ClientIP will return the source ip instead of the remote ip if coming from a trusted proxy.
-		// So we can compare the two, if they're the same, then we're either not behind a proxy or not behind a trusted proxy.
-		if c.ClientIP() != c.RemoteIP() {
-			if scheme := c.Request.Header.Get("X-Forwarded-Proto"); scheme != "" {
-				outURL.Scheme = scheme
-			}
-
-			if host := c.Request.Header.Get("X-Forwarded-Host"); host != "" {
-				outURL.Host = host
-			}
+	// gin doesn't expose an easy way to check if the request came from a trusted proxy.
+	// However the ClientIP will return the source ip instead of the remote ip if coming from a trusted proxy.
+	// So we can compare the two, if they're the same, then we're either not behind a proxy or not behind a trusted proxy.
+	if c.ClientIP() != c.RemoteIP() {
+		if scheme := c.Request.Header.Get("X-Forwarded-Proto"); scheme != "" {
+			outURL.Scheme = scheme
 		}
 
-		if outURL.Scheme == "" {
-			// Request.URL.Scheme is usually empty, however if it isn't we'll use that scheme.
-			// If empty, we'll check if TLS was used, and if so, set the scheme as https.
-			switch {
-			case c.Request.URL.Scheme != "":
-				outURL.Scheme = c.Request.URL.Scheme
-			case c.Request.TLS != nil:
-				outURL.Scheme = "https"
-			default:
-				outURL.Scheme = "http"
-			}
+		if host := c.Request.Header.Get("X-Forwarded-Host"); host != "" {
+			outURL.Host = host
 		}
+	}
 
-		if outURL.Host == "" {
-			if host := c.Request.Host; host != "" {
-				outURL.Host = host
-			}
+	if outURL.Scheme == "" {
+		// Request.URL.Scheme is usually empty, however if it isn't we'll use that scheme.
+		// If empty, we'll check if TLS was used, and if so, set the scheme as https.
+		switch {
+		case c.Request.URL.Scheme != "":
+			outURL.Scheme = c.Request.URL.Scheme
+		case c.Request.TLS != nil:
+			outURL.Scheme = "https"
+		default:
+			outURL.Scheme = "http"
+		}
+	}
+
+	if outURL.Host == "" {
+		if host := c.Request.Host; host != "" {
+			outURL.Host = host
 		}
 	}
 
