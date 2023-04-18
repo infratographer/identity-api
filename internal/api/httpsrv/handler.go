@@ -3,108 +3,39 @@ package httpsrv
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v4"
 
 	"go.infratographer.com/identity-api/internal/storage"
-	v1 "go.infratographer.com/identity-api/pkg/api/v1"
 )
 
-func validationErrorHandler(ctx *gin.Context, err error, status int) {
-	messages := []string{
-		err.Error(),
-	}
+func storageMiddleware(engine storage.Engine) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(eCtx echo.Context) error {
+			reqCtx := eCtx.Request().Context()
 
-	resp := v1.ErrorResponse{
-		Errors: messages,
-	}
-
-	ctx.JSON(status, resp)
-}
-
-func buildSingleErrorResponse(ctx *gin.Context) {
-	err := ctx.Errors[0]
-
-	switch e := err.Err.(type) {
-	case errorWithStatus:
-		resp := v1.ErrorResponse{
-			Errors: []string{
-				e.message,
-			},
-		}
-
-		ctx.JSON(e.status, resp)
-	default:
-		buildMultiErrorResponse(ctx)
-	}
-}
-
-func buildMultiErrorResponse(ctx *gin.Context) {
-	messages := make([]string, len(ctx.Errors))
-	for i, err := range ctx.Errors {
-		messages[i] = err.Error()
-	}
-
-	resp := v1.ErrorResponse{
-		Errors: messages,
-	}
-
-	ctx.JSON(http.StatusInternalServerError, resp)
-}
-
-func errorHandlerMiddleware(ctx *gin.Context) {
-	ctx.Next()
-
-	switch len(ctx.Errors) {
-	case 0:
-		return
-	case 1:
-		buildSingleErrorResponse(ctx)
-	default:
-		buildMultiErrorResponse(ctx)
-	}
-}
-
-func storageMiddleware(engine storage.Engine) gin.HandlerFunc {
-	return func(gCtx *gin.Context) {
-		reqCtx := gCtx.Request.Context()
-
-		newCtx, err := engine.BeginContext(reqCtx)
-		if err != nil {
-			resp := v1.ErrorResponse{
-				Errors: []string{
-					err.Error(),
-				},
-			}
-
-			gCtx.AbortWithStatusJSON(http.StatusBadGateway, resp)
-
-			return
-		}
-
-		gCtx.Request = gCtx.Request.WithContext(newCtx)
-
-		gCtx.Next()
-
-		if len(gCtx.Errors) == 0 {
-			err = engine.CommitContext(newCtx)
+			newCtx, err := engine.BeginContext(reqCtx)
 			if err != nil {
-				err = errorWithStatus{
-					status:  http.StatusBadGateway,
-					message: err.Error(),
+				return echo.NewHTTPError(http.StatusBadGateway, err)
+			}
+
+			eCtx.SetRequest(eCtx.Request().WithContext(newCtx))
+
+			if err := next(eCtx); err != nil {
+				eCtx.Error(err)
+
+				rbErr := engine.RollbackContext(newCtx)
+				if rbErr != nil {
+					return echo.NewHTTPError(http.StatusBadGateway, rbErr, err)
 				}
-				gCtx.Error(err) //nolint:errcheck
+
+				return err
 			}
 
-			return
-		}
-
-		err = engine.RollbackContext(newCtx)
-		if err != nil {
-			err = errorWithStatus{
-				status:  http.StatusBadGateway,
-				message: err.Error(),
+			if err = engine.CommitContext(newCtx); err != nil {
+				return echo.NewHTTPError(http.StatusBadGateway, err)
 			}
-			gCtx.Error(err) //nolint:errcheck
+
+			return nil
 		}
 	}
 }
@@ -117,7 +48,7 @@ type apiHandler struct {
 // APIHandler represents an identity-api management API handler.
 type APIHandler struct {
 	handler              *apiHandler
-	validationMiddleware gin.HandlerFunc
+	validationMiddleware echo.MiddlewareFunc
 }
 
 // NewAPIHandler creates an API handler with the given storage engine.
@@ -140,18 +71,13 @@ func NewAPIHandler(engine storage.Engine) (*APIHandler, error) {
 }
 
 // Routes registers the API's routes against the provided router group.
-func (h *APIHandler) Routes(rg *gin.RouterGroup) {
+func (h *APIHandler) Routes(rg *echo.Group) {
 	rg.Use(
 		h.validationMiddleware,
-		errorHandlerMiddleware,
 		storageMiddleware(h.handler.engine),
 	)
 
-	options := GinServerOptions{
-		ErrorHandler: validationErrorHandler,
-	}
-
 	strictHandler := NewStrictHandler(h.handler, nil)
 
-	RegisterHandlersWithOptions(rg, strictHandler, options)
+	RegisterHandlers(rg, strictHandler)
 }

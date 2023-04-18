@@ -11,7 +11,7 @@ import (
 
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v4"
 	. "go.infratographer.com/identity-api/pkg/api/v1"
 )
 
@@ -19,238 +19,180 @@ import (
 type ServerInterface interface {
 	// Deletes an OAuth Client
 	// (DELETE /api/v1/clients/{clientID})
-	DeleteOAuthClient(c *gin.Context, clientID openapi_types.UUID)
+	DeleteOAuthClient(ctx echo.Context, clientID openapi_types.UUID) error
 	// Gets information about an OAuth 2.0 Client.
 	// (GET /api/v1/clients/{clientID})
-	GetOAuthClient(c *gin.Context, clientID openapi_types.UUID)
+	GetOAuthClient(ctx echo.Context, clientID openapi_types.UUID) error
 	// Deletes an issuer with the given ID.
 	// (DELETE /api/v1/issuers/{id})
-	DeleteIssuer(c *gin.Context, id openapi_types.UUID)
+	DeleteIssuer(ctx echo.Context, id openapi_types.UUID) error
 	// Gets an issuer by ID.
 	// (GET /api/v1/issuers/{id})
-	GetIssuerByID(c *gin.Context, id openapi_types.UUID)
+	GetIssuerByID(ctx echo.Context, id openapi_types.UUID) error
 	// Updates an issuer.
 	// (PATCH /api/v1/issuers/{id})
-	UpdateIssuer(c *gin.Context, id openapi_types.UUID)
+	UpdateIssuer(ctx echo.Context, id openapi_types.UUID) error
 	// Creates an OAuth client.
 	// (POST /api/v1/tenants/{tenantID}/clients)
-	CreateOAuthClient(c *gin.Context, tenantID openapi_types.UUID)
+	CreateOAuthClient(ctx echo.Context, tenantID openapi_types.UUID) error
 	// Creates an issuer.
 	// (POST /api/v1/tenants/{tenantID}/issuers)
-	CreateIssuer(c *gin.Context, tenantID openapi_types.UUID)
+	CreateIssuer(ctx echo.Context, tenantID openapi_types.UUID) error
 }
 
-// ServerInterfaceWrapper converts contexts to parameters.
+// ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
-	Handler            ServerInterface
-	HandlerMiddlewares []MiddlewareFunc
-	ErrorHandler       func(*gin.Context, error, int)
+	Handler ServerInterface
 }
 
-type MiddlewareFunc func(c *gin.Context)
-
-// DeleteOAuthClient operation middleware
-func (siw *ServerInterfaceWrapper) DeleteOAuthClient(c *gin.Context) {
-
+// DeleteOAuthClient converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteOAuthClient(ctx echo.Context) error {
 	var err error
-
 	// ------------- Path parameter "clientID" -------------
 	var clientID openapi_types.UUID
 
-	err = runtime.BindStyledParameter("simple", false, "clientID", c.Param("clientID"), &clientID)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "clientID", runtime.ParamLocationPath, ctx.Param("clientID"), &clientID)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter clientID: %s", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clientID: %s", err))
 	}
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.DeleteOAuthClient(c, clientID)
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.DeleteOAuthClient(ctx, clientID)
+	return err
 }
 
-// GetOAuthClient operation middleware
-func (siw *ServerInterfaceWrapper) GetOAuthClient(c *gin.Context) {
-
+// GetOAuthClient converts echo context to params.
+func (w *ServerInterfaceWrapper) GetOAuthClient(ctx echo.Context) error {
 	var err error
-
 	// ------------- Path parameter "clientID" -------------
 	var clientID openapi_types.UUID
 
-	err = runtime.BindStyledParameter("simple", false, "clientID", c.Param("clientID"), &clientID)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "clientID", runtime.ParamLocationPath, ctx.Param("clientID"), &clientID)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter clientID: %s", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter clientID: %s", err))
 	}
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.GetOAuthClient(c, clientID)
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetOAuthClient(ctx, clientID)
+	return err
 }
 
-// DeleteIssuer operation middleware
-func (siw *ServerInterfaceWrapper) DeleteIssuer(c *gin.Context) {
-
+// DeleteIssuer converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteIssuer(ctx echo.Context) error {
 	var err error
-
 	// ------------- Path parameter "id" -------------
 	var id openapi_types.UUID
 
-	err = runtime.BindStyledParameter("simple", false, "id", c.Param("id"), &id)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %s", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.DeleteIssuer(c, id)
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.DeleteIssuer(ctx, id)
+	return err
 }
 
-// GetIssuerByID operation middleware
-func (siw *ServerInterfaceWrapper) GetIssuerByID(c *gin.Context) {
-
+// GetIssuerByID converts echo context to params.
+func (w *ServerInterfaceWrapper) GetIssuerByID(ctx echo.Context) error {
 	var err error
-
 	// ------------- Path parameter "id" -------------
 	var id openapi_types.UUID
 
-	err = runtime.BindStyledParameter("simple", false, "id", c.Param("id"), &id)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %s", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.GetIssuerByID(c, id)
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetIssuerByID(ctx, id)
+	return err
 }
 
-// UpdateIssuer operation middleware
-func (siw *ServerInterfaceWrapper) UpdateIssuer(c *gin.Context) {
-
+// UpdateIssuer converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdateIssuer(ctx echo.Context) error {
 	var err error
-
 	// ------------- Path parameter "id" -------------
 	var id openapi_types.UUID
 
-	err = runtime.BindStyledParameter("simple", false, "id", c.Param("id"), &id)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %s", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
 	}
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.UpdateIssuer(c, id)
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.UpdateIssuer(ctx, id)
+	return err
 }
 
-// CreateOAuthClient operation middleware
-func (siw *ServerInterfaceWrapper) CreateOAuthClient(c *gin.Context) {
-
+// CreateOAuthClient converts echo context to params.
+func (w *ServerInterfaceWrapper) CreateOAuthClient(ctx echo.Context) error {
 	var err error
-
 	// ------------- Path parameter "tenantID" -------------
 	var tenantID openapi_types.UUID
 
-	err = runtime.BindStyledParameter("simple", false, "tenantID", c.Param("tenantID"), &tenantID)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "tenantID", runtime.ParamLocationPath, ctx.Param("tenantID"), &tenantID)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter tenantID: %s", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tenantID: %s", err))
 	}
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.CreateOAuthClient(c, tenantID)
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.CreateOAuthClient(ctx, tenantID)
+	return err
 }
 
-// CreateIssuer operation middleware
-func (siw *ServerInterfaceWrapper) CreateIssuer(c *gin.Context) {
-
+// CreateIssuer converts echo context to params.
+func (w *ServerInterfaceWrapper) CreateIssuer(ctx echo.Context) error {
 	var err error
-
 	// ------------- Path parameter "tenantID" -------------
 	var tenantID openapi_types.UUID
 
-	err = runtime.BindStyledParameter("simple", false, "tenantID", c.Param("tenantID"), &tenantID)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "tenantID", runtime.ParamLocationPath, ctx.Param("tenantID"), &tenantID)
 	if err != nil {
-		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter tenantID: %s", err), http.StatusBadRequest)
-		return
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tenantID: %s", err))
 	}
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.CreateIssuer(c, tenantID)
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.CreateIssuer(ctx, tenantID)
+	return err
 }
 
-// GinServerOptions provides options for the Gin server.
-type GinServerOptions struct {
-	BaseURL      string
-	Middlewares  []MiddlewareFunc
-	ErrorHandler func(*gin.Context, error, int)
+// This is a simple interface which specifies echo.Route addition functions which
+// are present on both echo.Echo and echo.Group, since we want to allow using
+// either of them for path registration
+type EchoRouter interface {
+	CONNECT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	DELETE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	GET(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	HEAD(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	OPTIONS(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	PATCH(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	POST(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	PUT(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
+	TRACE(path string, h echo.HandlerFunc, m ...echo.MiddlewareFunc) *echo.Route
 }
 
-// RegisterHandlers creates http.Handler with routing matching OpenAPI spec.
-func RegisterHandlers(router gin.IRouter, si ServerInterface) {
-	RegisterHandlersWithOptions(router, si, GinServerOptions{})
+// RegisterHandlers adds each server route to the EchoRouter.
+func RegisterHandlers(router EchoRouter, si ServerInterface) {
+	RegisterHandlersWithBaseURL(router, si, "")
 }
 
-// RegisterHandlersWithOptions creates http.Handler with additional options
-func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options GinServerOptions) {
-	errorHandler := options.ErrorHandler
-	if errorHandler == nil {
-		errorHandler = func(c *gin.Context, err error, statusCode int) {
-			c.JSON(statusCode, gin.H{"msg": err.Error()})
-		}
-	}
+// Registers handlers, and prepends BaseURL to the paths, so that the paths
+// can be served under a prefix.
+func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL string) {
 
 	wrapper := ServerInterfaceWrapper{
-		Handler:            si,
-		HandlerMiddlewares: options.Middlewares,
-		ErrorHandler:       errorHandler,
+		Handler: si,
 	}
 
-	router.DELETE(options.BaseURL+"/api/v1/clients/:clientID", wrapper.DeleteOAuthClient)
-	router.GET(options.BaseURL+"/api/v1/clients/:clientID", wrapper.GetOAuthClient)
-	router.DELETE(options.BaseURL+"/api/v1/issuers/:id", wrapper.DeleteIssuer)
-	router.GET(options.BaseURL+"/api/v1/issuers/:id", wrapper.GetIssuerByID)
-	router.PATCH(options.BaseURL+"/api/v1/issuers/:id", wrapper.UpdateIssuer)
-	router.POST(options.BaseURL+"/api/v1/tenants/:tenantID/clients", wrapper.CreateOAuthClient)
-	router.POST(options.BaseURL+"/api/v1/tenants/:tenantID/issuers", wrapper.CreateIssuer)
+	router.DELETE(baseURL+"/api/v1/clients/:clientID", wrapper.DeleteOAuthClient)
+	router.GET(baseURL+"/api/v1/clients/:clientID", wrapper.GetOAuthClient)
+	router.DELETE(baseURL+"/api/v1/issuers/:id", wrapper.DeleteIssuer)
+	router.GET(baseURL+"/api/v1/issuers/:id", wrapper.GetIssuerByID)
+	router.PATCH(baseURL+"/api/v1/issuers/:id", wrapper.UpdateIssuer)
+	router.POST(baseURL+"/api/v1/tenants/:tenantID/clients", wrapper.CreateOAuthClient)
+	router.POST(baseURL+"/api/v1/tenants/:tenantID/issuers", wrapper.CreateIssuer)
+
 }
 
 type DeleteOAuthClientRequestObject struct {
@@ -400,7 +342,7 @@ type StrictServerInterface interface {
 	CreateIssuer(ctx context.Context, request CreateIssuerRequestObject) (CreateIssuerResponseObject, error)
 }
 
-type StrictHandlerFunc func(ctx *gin.Context, args interface{}) (interface{}, error)
+type StrictHandlerFunc func(ctx echo.Context, args interface{}) (interface{}, error)
 
 type StrictMiddlewareFunc func(f StrictHandlerFunc, operationID string) StrictHandlerFunc
 
@@ -414,13 +356,13 @@ type strictHandler struct {
 }
 
 // DeleteOAuthClient operation middleware
-func (sh *strictHandler) DeleteOAuthClient(ctx *gin.Context, clientID openapi_types.UUID) {
+func (sh *strictHandler) DeleteOAuthClient(ctx echo.Context, clientID openapi_types.UUID) error {
 	var request DeleteOAuthClientRequestObject
 
 	request.ClientID = clientID
 
-	handler := func(ctx *gin.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.DeleteOAuthClient(ctx, request.(DeleteOAuthClientRequestObject))
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteOAuthClient(ctx.Request().Context(), request.(DeleteOAuthClientRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
 		handler = middleware(handler, "DeleteOAuthClient")
@@ -429,24 +371,23 @@ func (sh *strictHandler) DeleteOAuthClient(ctx *gin.Context, clientID openapi_ty
 	response, err := handler(ctx, request)
 
 	if err != nil {
-		ctx.Error(err)
+		return err
 	} else if validResponse, ok := response.(DeleteOAuthClientResponseObject); ok {
-		if err := validResponse.VisitDeleteOAuthClientResponse(ctx.Writer); err != nil {
-			ctx.Error(err)
-		}
+		return validResponse.VisitDeleteOAuthClientResponse(ctx.Response())
 	} else if response != nil {
-		ctx.Error(fmt.Errorf("Unexpected response type: %T", response))
+		return fmt.Errorf("Unexpected response type: %T", response)
 	}
+	return nil
 }
 
 // GetOAuthClient operation middleware
-func (sh *strictHandler) GetOAuthClient(ctx *gin.Context, clientID openapi_types.UUID) {
+func (sh *strictHandler) GetOAuthClient(ctx echo.Context, clientID openapi_types.UUID) error {
 	var request GetOAuthClientRequestObject
 
 	request.ClientID = clientID
 
-	handler := func(ctx *gin.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.GetOAuthClient(ctx, request.(GetOAuthClientRequestObject))
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetOAuthClient(ctx.Request().Context(), request.(GetOAuthClientRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
 		handler = middleware(handler, "GetOAuthClient")
@@ -455,24 +396,23 @@ func (sh *strictHandler) GetOAuthClient(ctx *gin.Context, clientID openapi_types
 	response, err := handler(ctx, request)
 
 	if err != nil {
-		ctx.Error(err)
+		return err
 	} else if validResponse, ok := response.(GetOAuthClientResponseObject); ok {
-		if err := validResponse.VisitGetOAuthClientResponse(ctx.Writer); err != nil {
-			ctx.Error(err)
-		}
+		return validResponse.VisitGetOAuthClientResponse(ctx.Response())
 	} else if response != nil {
-		ctx.Error(fmt.Errorf("Unexpected response type: %T", response))
+		return fmt.Errorf("Unexpected response type: %T", response)
 	}
+	return nil
 }
 
 // DeleteIssuer operation middleware
-func (sh *strictHandler) DeleteIssuer(ctx *gin.Context, id openapi_types.UUID) {
+func (sh *strictHandler) DeleteIssuer(ctx echo.Context, id openapi_types.UUID) error {
 	var request DeleteIssuerRequestObject
 
 	request.Id = id
 
-	handler := func(ctx *gin.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.DeleteIssuer(ctx, request.(DeleteIssuerRequestObject))
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteIssuer(ctx.Request().Context(), request.(DeleteIssuerRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
 		handler = middleware(handler, "DeleteIssuer")
@@ -481,24 +421,23 @@ func (sh *strictHandler) DeleteIssuer(ctx *gin.Context, id openapi_types.UUID) {
 	response, err := handler(ctx, request)
 
 	if err != nil {
-		ctx.Error(err)
+		return err
 	} else if validResponse, ok := response.(DeleteIssuerResponseObject); ok {
-		if err := validResponse.VisitDeleteIssuerResponse(ctx.Writer); err != nil {
-			ctx.Error(err)
-		}
+		return validResponse.VisitDeleteIssuerResponse(ctx.Response())
 	} else if response != nil {
-		ctx.Error(fmt.Errorf("Unexpected response type: %T", response))
+		return fmt.Errorf("Unexpected response type: %T", response)
 	}
+	return nil
 }
 
 // GetIssuerByID operation middleware
-func (sh *strictHandler) GetIssuerByID(ctx *gin.Context, id openapi_types.UUID) {
+func (sh *strictHandler) GetIssuerByID(ctx echo.Context, id openapi_types.UUID) error {
 	var request GetIssuerByIDRequestObject
 
 	request.Id = id
 
-	handler := func(ctx *gin.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.GetIssuerByID(ctx, request.(GetIssuerByIDRequestObject))
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetIssuerByID(ctx.Request().Context(), request.(GetIssuerByIDRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
 		handler = middleware(handler, "GetIssuerByID")
@@ -507,32 +446,29 @@ func (sh *strictHandler) GetIssuerByID(ctx *gin.Context, id openapi_types.UUID) 
 	response, err := handler(ctx, request)
 
 	if err != nil {
-		ctx.Error(err)
+		return err
 	} else if validResponse, ok := response.(GetIssuerByIDResponseObject); ok {
-		if err := validResponse.VisitGetIssuerByIDResponse(ctx.Writer); err != nil {
-			ctx.Error(err)
-		}
+		return validResponse.VisitGetIssuerByIDResponse(ctx.Response())
 	} else if response != nil {
-		ctx.Error(fmt.Errorf("Unexpected response type: %T", response))
+		return fmt.Errorf("Unexpected response type: %T", response)
 	}
+	return nil
 }
 
 // UpdateIssuer operation middleware
-func (sh *strictHandler) UpdateIssuer(ctx *gin.Context, id openapi_types.UUID) {
+func (sh *strictHandler) UpdateIssuer(ctx echo.Context, id openapi_types.UUID) error {
 	var request UpdateIssuerRequestObject
 
 	request.Id = id
 
 	var body UpdateIssuerJSONRequestBody
-	if err := ctx.ShouldBind(&body); err != nil {
-		ctx.Status(http.StatusBadRequest)
-		ctx.Error(err)
-		return
+	if err := ctx.Bind(&body); err != nil {
+		return err
 	}
 	request.Body = &body
 
-	handler := func(ctx *gin.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.UpdateIssuer(ctx, request.(UpdateIssuerRequestObject))
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateIssuer(ctx.Request().Context(), request.(UpdateIssuerRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
 		handler = middleware(handler, "UpdateIssuer")
@@ -541,32 +477,29 @@ func (sh *strictHandler) UpdateIssuer(ctx *gin.Context, id openapi_types.UUID) {
 	response, err := handler(ctx, request)
 
 	if err != nil {
-		ctx.Error(err)
+		return err
 	} else if validResponse, ok := response.(UpdateIssuerResponseObject); ok {
-		if err := validResponse.VisitUpdateIssuerResponse(ctx.Writer); err != nil {
-			ctx.Error(err)
-		}
+		return validResponse.VisitUpdateIssuerResponse(ctx.Response())
 	} else if response != nil {
-		ctx.Error(fmt.Errorf("Unexpected response type: %T", response))
+		return fmt.Errorf("Unexpected response type: %T", response)
 	}
+	return nil
 }
 
 // CreateOAuthClient operation middleware
-func (sh *strictHandler) CreateOAuthClient(ctx *gin.Context, tenantID openapi_types.UUID) {
+func (sh *strictHandler) CreateOAuthClient(ctx echo.Context, tenantID openapi_types.UUID) error {
 	var request CreateOAuthClientRequestObject
 
 	request.TenantID = tenantID
 
 	var body CreateOAuthClientJSONRequestBody
-	if err := ctx.ShouldBind(&body); err != nil {
-		ctx.Status(http.StatusBadRequest)
-		ctx.Error(err)
-		return
+	if err := ctx.Bind(&body); err != nil {
+		return err
 	}
 	request.Body = &body
 
-	handler := func(ctx *gin.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.CreateOAuthClient(ctx, request.(CreateOAuthClientRequestObject))
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateOAuthClient(ctx.Request().Context(), request.(CreateOAuthClientRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
 		handler = middleware(handler, "CreateOAuthClient")
@@ -575,32 +508,29 @@ func (sh *strictHandler) CreateOAuthClient(ctx *gin.Context, tenantID openapi_ty
 	response, err := handler(ctx, request)
 
 	if err != nil {
-		ctx.Error(err)
+		return err
 	} else if validResponse, ok := response.(CreateOAuthClientResponseObject); ok {
-		if err := validResponse.VisitCreateOAuthClientResponse(ctx.Writer); err != nil {
-			ctx.Error(err)
-		}
+		return validResponse.VisitCreateOAuthClientResponse(ctx.Response())
 	} else if response != nil {
-		ctx.Error(fmt.Errorf("Unexpected response type: %T", response))
+		return fmt.Errorf("Unexpected response type: %T", response)
 	}
+	return nil
 }
 
 // CreateIssuer operation middleware
-func (sh *strictHandler) CreateIssuer(ctx *gin.Context, tenantID openapi_types.UUID) {
+func (sh *strictHandler) CreateIssuer(ctx echo.Context, tenantID openapi_types.UUID) error {
 	var request CreateIssuerRequestObject
 
 	request.TenantID = tenantID
 
 	var body CreateIssuerJSONRequestBody
-	if err := ctx.ShouldBind(&body); err != nil {
-		ctx.Status(http.StatusBadRequest)
-		ctx.Error(err)
-		return
+	if err := ctx.Bind(&body); err != nil {
+		return err
 	}
 	request.Body = &body
 
-	handler := func(ctx *gin.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.CreateIssuer(ctx, request.(CreateIssuerRequestObject))
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateIssuer(ctx.Request().Context(), request.(CreateIssuerRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
 		handler = middleware(handler, "CreateIssuer")
@@ -609,12 +539,11 @@ func (sh *strictHandler) CreateIssuer(ctx *gin.Context, tenantID openapi_types.U
 	response, err := handler(ctx, request)
 
 	if err != nil {
-		ctx.Error(err)
+		return err
 	} else if validResponse, ok := response.(CreateIssuerResponseObject); ok {
-		if err := validResponse.VisitCreateIssuerResponse(ctx.Writer); err != nil {
-			ctx.Error(err)
-		}
+		return validResponse.VisitCreateIssuerResponse(ctx.Response())
 	} else if response != nil {
-		ctx.Error(fmt.Errorf("Unexpected response type: %T", response))
+		return fmt.Errorf("Unexpected response type: %T", response)
 	}
+	return nil
 }

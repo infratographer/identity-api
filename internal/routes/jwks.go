@@ -3,7 +3,7 @@ package routes
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"gopkg.in/square/go-jose.v2"
 
@@ -16,8 +16,8 @@ type jwksHandler struct {
 }
 
 // Handle processes the request for the JWKS handler.
-func (h *jwksHandler) Handle(ctx *gin.Context) {
-	jwks := h.config.GetSigningJWKS(ctx)
+func (h *jwksHandler) Handle(ctx echo.Context) error {
+	jwks := h.config.GetSigningJWKS(ctx.Request().Context())
 
 	out := jose.JSONWebKeySet{
 		Keys: []jose.JSONWebKey{},
@@ -29,5 +29,5 @@ func (h *jwksHandler) Handle(ctx *gin.Context) {
 		}
 	}
 
-	ctx.JSON(http.StatusOK, out)
+	return ctx.JSON(http.StatusOK, out)
 }

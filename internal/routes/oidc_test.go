@@ -1,12 +1,13 @@
 package routes
 
 import (
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -105,27 +106,37 @@ func TestBuildURL(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			ginCtx, ginEngine := gin.CreateTestContext(httptest.NewRecorder())
+			e := echo.New()
+			e.IPExtractor = echo.ExtractIPFromXFFHeader(
+				echo.TrustIPRange(
+					&net.IPNet{
+						IP:   net.ParseIP("10.11.12.13"),
+						Mask: net.CIDRMask(32, 4),
+					},
+				),
+			)
 
-			require.NoError(t, ginEngine.SetTrustedProxies([]string{"10.11.12.13"}))
+			var request *http.Request
 
 			if tc.request != "" {
-				ginCtx.Request = httptest.NewRequest("GET", tc.request, nil)
+				request = httptest.NewRequest("GET", tc.request, nil)
 
 				// Normal http requests don't have the scheme included
 				// https://stackoverflow.com/questions/40826664/get-scheme-of-the-current-request-url
-				ginCtx.Request.URL.Scheme = ""
+				request.URL.Scheme = ""
 
-				ginCtx.Request.Header = tc.headers
+				request.Header = tc.headers
 
-				ginCtx.Request.RemoteAddr = "1.2.3.4:1234"
+				request.RemoteAddr = "1.2.3.4:1234"
 
 				if strings.HasSuffix(tc.name, "trusted proxy") && !strings.HasSuffix(tc.name, "untrusted proxy") {
-					ginCtx.Request.RemoteAddr = "10.11.12.13:4567"
+					request.RemoteAddr = "10.11.12.13:4567"
 				}
 			}
 
-			result := buildURL(ginCtx, tc.path)
+			eCtx := e.NewContext(request, httptest.NewRecorder())
+
+			result := buildURL(eCtx, tc.path)
 
 			if tc.expect == "" {
 				require.Nil(t, result, "expected result to be nil")
