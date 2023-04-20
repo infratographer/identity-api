@@ -1,10 +1,10 @@
 package routes
 
 import (
-	"net"
+	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/labstack/echo/v4"
@@ -12,92 +12,53 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestBuildURL(t *testing.T) {
+func TestHandle(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		name    string
-		headers http.Header
-		request string
-		path    string
-		expect  string
+		name   string
+		issuer string
+		expect providerJSON
 	}{
 		{
-			"missing request",
-			nil,
-			"",
-			"",
-			"",
-		},
-		{
-			"no path",
-			nil,
-			"http://test.local/path",
-			"",
-			"http://test.local/path",
-		},
-		{
-			"with path",
-			nil,
-			"http://test.local/path",
-			"to/test",
-			"http://test.local/path/to/test",
-		},
-		{
-			"with updir path",
-			nil,
-			"http://test.local/path",
-			"../to/test",
-			"http://test.local/to/test",
-		},
-		{
-			"with port",
-			nil,
-			"http://test.local:9191/path/to/random/endpoint",
-			"to/test",
-			"http://test.local:9191/path/to/random/endpoint/to/test",
-		},
-		{
-			"with path, alt hostname, trusted proxy",
-			http.Header{
-				"X-Forwarded-For":   []string{"1.2.3.4"},
-				"X-Forwarded-Host":  []string{"test2.local"},
-				"X-Forwarded-Proto": []string{"schemetest"},
+			"root with slash",
+			"https://test.local/",
+			providerJSON{
+				Issuer:      "https://test.local/",
+				TokenURL:    "https://test.local/token",
+				JWKSURL:     "https://test.local/jwks.json",
+				UserInfoURL: "https://test.local/userinfo",
 			},
-			"http://test.local/path",
-			"to/test",
-			"schemetest://test2.local/path/to/test",
 		},
 		{
-			"with port, trusted proxy",
-			http.Header{
-				"X-Forwarded-For":   []string{"1.2.3.4"},
-				"X-Forwarded-Proto": []string{"schemetest"},
+			"root without slash",
+			"https://test.local",
+			providerJSON{
+				Issuer:      "https://test.local",
+				TokenURL:    "https://test.local/token",
+				JWKSURL:     "https://test.local/jwks.json",
+				UserInfoURL: "https://test.local/userinfo",
 			},
-			"http://test.local:9191/path/to/random/endpoint",
-			"",
-			"schemetest://test.local:9191/path/to/random/endpoint",
 		},
 		{
-			"with path, alt hostname, untrusted proxy",
-			http.Header{
-				"X-Forwarded-For":   []string{"1.2.3.4"},
-				"X-Forwarded-Host":  []string{"test2.local"},
-				"X-Forwarded-Proto": []string{"schemetest"},
+			"subpath with slash",
+			"https://test.local/some/path/",
+			providerJSON{
+				Issuer:      "https://test.local/some/path/",
+				TokenURL:    "https://test.local/some/path/token",
+				JWKSURL:     "https://test.local/some/path/jwks.json",
+				UserInfoURL: "https://test.local/some/path/userinfo",
 			},
-			"http://test.local/path",
-			"to/test",
-			"http://test.local/path/to/test",
 		},
 		{
-			"with port, untrusted proxy",
-			http.Header{
-				"X-Forwarded-For":   []string{"1.2.3.4"},
-				"X-Forwarded-Proto": []string{"schemetest"},
+			"subpath without slash",
+			"https://test.local/some/path",
+			providerJSON{
+				Issuer:      "https://test.local/some/path",
+				TokenURL:    "https://test.local/some/path/token",
+				JWKSURL:     "https://test.local/some/path/jwks.json",
+				UserInfoURL: "https://test.local/some/path/userinfo",
 			},
-			"http://test.local:9191/path/to/random/endpoint",
-			"",
-			"http://test.local:9191/path/to/random/endpoint",
 		},
 	}
 
@@ -106,43 +67,27 @@ func TestBuildURL(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
+			handler := oidcHandler{
+				issuer: tc.issuer,
+			}
+
 			e := echo.New()
-			e.IPExtractor = echo.ExtractIPFromXFFHeader(
-				echo.TrustIPRange(
-					&net.IPNet{
-						IP:   net.ParseIP("10.11.12.13"),
-						Mask: net.CIDRMask(32, 4),
-					},
-				),
-			)
+			e.GET("/oidc", handler.Handle)
 
-			var request *http.Request
+			w := httptest.NewRecorder()
+			req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, "/oidc", nil)
 
-			if tc.request != "" {
-				request = httptest.NewRequest("GET", tc.request, nil)
+			require.NoError(t, err, "unexpected error for new request")
 
-				// Normal http requests don't have the scheme included
-				// https://stackoverflow.com/questions/40826664/get-scheme-of-the-current-request-url
-				request.URL.Scheme = ""
+			e.ServeHTTP(w, req)
 
-				request.Header = tc.headers
+			var got providerJSON
 
-				request.RemoteAddr = "1.2.3.4:1234"
+			err = json.NewDecoder(w.Body).Decode(&got)
 
-				if strings.HasSuffix(tc.name, "trusted proxy") && !strings.HasSuffix(tc.name, "untrusted proxy") {
-					request.RemoteAddr = "10.11.12.13:4567"
-				}
-			}
+			require.NoError(t, err, "unexpected error decoding response")
 
-			eCtx := e.NewContext(request, httptest.NewRecorder())
-
-			result := buildURL(eCtx, tc.path)
-
-			if tc.expect == "" {
-				require.Nil(t, result, "expected result to be nil")
-			} else {
-				assert.Equal(t, tc.expect, result.String(), "unexpected returned url")
-			}
+			assert.Equal(t, tc.expect, got, "unexpected response from request")
 		})
 	}
 }
