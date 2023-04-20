@@ -3,10 +3,14 @@
 package userinfo
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/url"
 
+	"github.com/MicahParks/keyfunc"
+	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
 
 	"go.infratographer.com/identity-api/internal/fositex"
@@ -32,9 +36,15 @@ func NewHandler(userInfoSvc types.UserInfoService, cfg fositex.OAuth2Configurato
 		return nil, err
 	}
 
+	jwtConfig, err := getJWTConfig(ctx, cfg)
+	if err != nil {
+		return nil, err
+	}
+
 	userInfoAuthCfg := echojwtx.AuthConfig{
-		Audience: audience,
-		Issuer:   issuer,
+		Audience:  audience,
+		Issuer:    issuer,
+		JWTConfig: jwtConfig,
 	}
 
 	auth, err := echojwtx.NewAuth(ctx, userInfoAuthCfg)
@@ -66,6 +76,24 @@ func (h *Handler) handle(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusOK, info)
+}
+
+func getJWTConfig(ctx context.Context, config fositex.OAuth2Configurator) (echojwt.Config, error) {
+	var buff bytes.Buffer
+
+	err := json.NewEncoder(&buff).Encode(config.GetSigningJWKS(ctx))
+	if err != nil {
+		return echojwt.Config{}, err
+	}
+
+	jwks, err := keyfunc.NewJSON(json.RawMessage(buff.Bytes()))
+	if err != nil {
+		return echojwt.Config{}, err
+	}
+
+	return echojwt.Config{
+		KeyFunc: jwks.Keyfunc,
+	}, nil
 }
 
 // Routes registers the userinfo handler in a echo.Group

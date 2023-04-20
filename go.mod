@@ -3,11 +3,13 @@ module go.infratographer.com/identity-api
 go 1.20
 
 require (
+	github.com/MicahParks/keyfunc v1.9.0
 	github.com/cockroachdb/cockroach-go/v2 v2.3.3
 	github.com/deepmap/oapi-codegen v1.12.4
 	github.com/getkin/kin-openapi v0.116.0
 	github.com/google/cel-go v0.14.0
 	github.com/google/uuid v1.3.0
+	github.com/labstack/echo-jwt/v4 v4.1.0
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/ory/fosite v0.44.0
 	github.com/ory/x v0.0.547
@@ -16,7 +18,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.15.0
 	github.com/stretchr/testify v1.8.2
-	go.infratographer.com/x v0.0.4
+	go.infratographer.com/x v0.0.6
 	go.uber.org/zap v1.24.0
 	google.golang.org/genproto v0.0.0-20230323212658-478b75c54725
 	google.golang.org/protobuf v1.30.0
@@ -25,14 +27,13 @@ require (
 )
 
 require (
-	github.com/MicahParks/keyfunc v1.9.0 // indirect
-	github.com/XSAM/otelsql v0.17.1 // indirect
+	github.com/XSAM/otelsql v0.21.0 // indirect
 	github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230305170008-8188dc5388df // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/brpaz/echozap v1.1.3 // indirect
-	github.com/cenkalti/backoff/v4 v4.2.0 // indirect
+	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cristalhq/jwt/v4 v4.0.2 // indirect
 	github.com/dave/jennifer v1.4.0 // indirect
@@ -70,9 +71,8 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/labstack/echo-contrib v0.14.1 // indirect
-	github.com/labstack/echo-jwt/v4 v4.1.0 // indirect
 	github.com/labstack/gommon v0.4.0 // indirect
-	github.com/lib/pq v1.10.7 // indirect
+	github.com/lib/pq v1.10.8 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
@@ -99,19 +99,18 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/stoewer/go-strcase v1.2.0 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
-	github.com/ugorji/go/codec v1.2.9 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho v0.40.0 // indirect
 	go.opentelemetry.io/otel v1.14.0 // indirect
-	go.opentelemetry.io/otel/exporters/jaeger v1.11.2 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.11.2 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.11.2 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.11.2 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.11.2 // indirect
-	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.11.2 // indirect
-	go.opentelemetry.io/otel/metric v0.34.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.11.2 // indirect
+	go.opentelemetry.io/otel/exporters/jaeger v1.14.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.14.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.14.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.14.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.14.0 // indirect
+	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.14.0 // indirect
+	go.opentelemetry.io/otel/metric v0.37.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.14.0 // indirect
 	go.opentelemetry.io/otel/trace v1.14.0 // indirect
 	go.opentelemetry.io/proto/otlp v0.19.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
@@ -119,10 +118,10 @@ require (
 	golang.org/x/crypto v0.7.0 // indirect
 	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
 	golang.org/x/mod v0.9.0 // indirect
-	golang.org/x/net v0.8.0 // indirect
-	golang.org/x/oauth2 v0.4.0 // indirect
-	golang.org/x/sys v0.6.0 // indirect
-	golang.org/x/text v0.8.0 // indirect
+	golang.org/x/net v0.9.0 // indirect
+	golang.org/x/oauth2 v0.7.0 // indirect
+	golang.org/x/sys v0.7.0 // indirect
+	golang.org/x/text v0.9.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.7.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
