@@ -103,14 +103,14 @@ func serve(_ context.Context) {
 
 	router := routes.NewRouter(logger, oauth2Config, provider, config.Config.OAuth.Issuer)
 
-	srv := echox.NewServer(
+	srv, err := echox.NewServer(
 		logger.Desugar(),
-		echox.Config{
-			Listen:              viper.GetString("server.listen"),
-			ShutdownGracePeriod: viper.GetDuration("server.shutdown-grace-period"),
-		},
+		echox.ConfigFromViper(viper.GetViper()),
 		versionx.BuildDetails(),
 	)
+	if err != nil {
+		logger.Fatal("failed to initialize new server", zap.Error(err))
+	}
 
 	srv.AddHandler(router)
 	srv.AddHandler(apiHandler)

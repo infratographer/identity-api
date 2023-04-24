@@ -25,6 +25,11 @@ config:
   server:
     ip: "0.0.0.0"
     port: 8080
+    shutdownGracePeriod: 5s
+    trustedProxies: []
+    # - "1.2.3.4"
+    # - "1.2.3.4/32"
+    # - "1.2.3.0/24"
 
   otel:
     enabled: false

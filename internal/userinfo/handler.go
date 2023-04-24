@@ -16,6 +16,7 @@ import (
 	"go.infratographer.com/identity-api/internal/fositex"
 	"go.infratographer.com/identity-api/internal/types"
 	"go.infratographer.com/x/echojwtx"
+	"go.infratographer.com/x/echox"
 	"go.infratographer.com/x/urnx"
 )
 
@@ -92,6 +93,8 @@ func getJWTConfig(ctx context.Context, config fositex.OAuth2Configurator) (echoj
 	}
 
 	return echojwt.Config{
+		// Ensure auth is skipped for default endpoints.
+		Skipper: echox.SkipDefaultEndpoints,
 		KeyFunc: jwks.Keyfunc,
 	}, nil
 }
