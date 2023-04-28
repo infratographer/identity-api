@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"net/url"
 
 	"github.com/MicahParks/keyfunc"
 	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/ory/fosite/compose"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -87,14 +87,6 @@ func serve(ctx context.Context) {
 		return oauth2Config.GetSigningKey(ctx), nil
 	}
 
-	var middleware []echo.MiddlewareFunc
-
-	if authMdw, err := getAuthMiddleware(ctx, oauth2Config); err != nil {
-		logger.Fatal("failed to initialize jwt authentication", zap.Error(err))
-	} else if authMdw != nil {
-		middleware = append(middleware, authMdw)
-	}
-
 	hmacStrategy := compose.NewOAuth2HMACStrategy(oauth2Config)
 	jwtStrategy := compose.NewOAuth2JWTStrategy(keyGetter, hmacStrategy, oauth2Config)
 
@@ -118,6 +110,19 @@ func serve(ctx context.Context) {
 
 	router := routes.NewRouter(logger, oauth2Config, provider, config.Config.OAuth.Issuer)
 
+	authMdwSkippers := []middleware.Skipper{
+		echox.SkipDefaultEndpoints,
+		routes.SkipNoAuthRoutes,
+	}
+
+	var middleware []echo.MiddlewareFunc
+
+	if authMdw, err := getAuthMiddleware(ctx, oauth2Config, authMdwSkippers...); err != nil {
+		logger.Fatal("failed to initialize jwt authentication", zap.Error(err))
+	} else if authMdw != nil {
+		middleware = append(middleware, authMdw)
+	}
+
 	srv, err := echox.NewServer(
 		logger.Desugar(),
 		echox.ConfigFromViper(viper.GetViper()).WithMiddleware(middleware...),
@@ -136,17 +141,12 @@ func serve(ctx context.Context) {
 	}
 }
 
-func getAuthMiddleware(ctx context.Context, config fositex.OAuth2Configurator) (echo.MiddlewareFunc, error) {
+func getAuthMiddleware(ctx context.Context, config fositex.OAuth2Configurator, skippers ...middleware.Skipper) (echo.MiddlewareFunc, error) {
 	issuer := config.GetAccessTokenIssuer(ctx)
-
-	audience, err := url.JoinPath(issuer, "userinfo")
-	if err != nil {
-		return nil, err
-	}
 
 	var buff bytes.Buffer
 
-	err = json.NewEncoder(&buff).Encode(config.GetSigningJWKS(ctx))
+	err := json.NewEncoder(&buff).Encode(config.GetSigningJWKS(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -157,10 +157,9 @@ func getAuthMiddleware(ctx context.Context, config fositex.OAuth2Configurator) (
 	}
 
 	authConfig := echojwtx.AuthConfig{
-		Audience: audience,
-		Issuer:   issuer,
+		Issuer: issuer,
 		JWTConfig: echojwt.Config{
-			Skipper: noAuthEndpointSkipper,
+			Skipper: multiSkipper(skippers...),
 			KeyFunc: jwks.Keyfunc,
 		},
 	}
@@ -173,15 +172,14 @@ func getAuthMiddleware(ctx context.Context, config fositex.OAuth2Configurator) (
 	return auth.Middleware(), nil
 }
 
-func noAuthEndpointSkipper(c echo.Context) bool {
-	if echox.SkipDefaultEndpoints(c) {
-		return true
-	}
+func multiSkipper(skippers ...middleware.Skipper) func(c echo.Context) bool {
+	return func(c echo.Context) bool {
+		for _, skipper := range skippers {
+			if skipper(c) {
+				return true
+			}
+		}
 
-	switch c.Request().URL.Path {
-	case "/token", "/jwks.json", "/.well-known/openid-configuration":
-		return true
-	default:
 		return false
 	}
 }
