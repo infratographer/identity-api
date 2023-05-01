@@ -119,7 +119,7 @@ func serve(ctx context.Context) {
 
 	if authMdw, err := getAuthMiddleware(ctx, oauth2Config, authMdwSkippers...); err != nil {
 		logger.Fatal("failed to initialize jwt authentication", zap.Error(err))
-	} else if authMdw != nil {
+	} else {
 		middleware = append(middleware, authMdw)
 	}
 
