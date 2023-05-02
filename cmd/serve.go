@@ -1,12 +1,19 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 
+	"github.com/MicahParks/keyfunc"
+	echojwt "github.com/labstack/echo-jwt/v4"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/ory/fosite/compose"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.infratographer.com/x/crdbx"
+	"go.infratographer.com/x/echojwtx"
 	"go.infratographer.com/x/echox"
 	"go.infratographer.com/x/otelx"
 	"go.infratographer.com/x/versionx"
@@ -46,7 +53,7 @@ func init() {
 	otelx.MustViperFlags(v, flags)
 }
 
-func serve(_ context.Context) {
+func serve(ctx context.Context) {
 	err := otelx.InitTracer(config.Config.OTel, appName, logger)
 	if err != nil {
 		logger.Fatalf("error initializing tracing: %s", err)
@@ -96,16 +103,29 @@ func serve(_ context.Context) {
 		logger.Fatal("error initializing API server: %s", err)
 	}
 
-	userInfoHandler, err := userinfo.NewHandler(storageEngine, oauth2Config)
+	userInfoHandler, err := userinfo.NewHandler(storageEngine)
 	if err != nil {
 		logger.Fatal("error initializing UserInfo handler: %s", err)
 	}
 
 	router := routes.NewRouter(logger, oauth2Config, provider, config.Config.OAuth.Issuer)
 
+	authMdwSkippers := []middleware.Skipper{
+		echox.SkipDefaultEndpoints,
+		routes.SkipNoAuthRoutes,
+	}
+
+	var middleware []echo.MiddlewareFunc
+
+	if authMdw, err := getAuthMiddleware(ctx, oauth2Config, authMdwSkippers...); err != nil {
+		logger.Fatal("failed to initialize jwt authentication", zap.Error(err))
+	} else {
+		middleware = append(middleware, authMdw)
+	}
+
 	srv, err := echox.NewServer(
 		logger.Desugar(),
-		echox.ConfigFromViper(viper.GetViper()),
+		echox.ConfigFromViper(viper.GetViper()).WithMiddleware(middleware...),
 		versionx.BuildDetails(),
 	)
 	if err != nil {
@@ -118,5 +138,48 @@ func serve(_ context.Context) {
 
 	if err := srv.Run(); err != nil {
 		logger.Fatal("failed to run server", zap.Error(err))
+	}
+}
+
+func getAuthMiddleware(ctx context.Context, config fositex.OAuth2Configurator, skippers ...middleware.Skipper) (echo.MiddlewareFunc, error) {
+	issuer := config.GetAccessTokenIssuer(ctx)
+
+	var buff bytes.Buffer
+
+	err := json.NewEncoder(&buff).Encode(config.GetSigningJWKS(ctx))
+	if err != nil {
+		return nil, err
+	}
+
+	jwks, err := keyfunc.NewJSON(json.RawMessage(buff.Bytes()))
+	if err != nil {
+		return nil, err
+	}
+
+	authConfig := echojwtx.AuthConfig{
+		Issuer: issuer,
+		JWTConfig: echojwt.Config{
+			Skipper: multiSkipper(skippers...),
+			KeyFunc: jwks.Keyfunc,
+		},
+	}
+
+	auth, err := echojwtx.NewAuth(ctx, authConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return auth.Middleware(), nil
+}
+
+func multiSkipper(skippers ...middleware.Skipper) func(c echo.Context) bool {
+	return func(c echo.Context) bool {
+		for _, skipper := range skippers {
+			if skipper(c) {
+				return true
+			}
+		}
+
+		return false
 	}
 }

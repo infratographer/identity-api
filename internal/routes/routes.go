@@ -46,3 +46,13 @@ func (r *Router) Routes(rg *echo.Group) {
 	rg.GET("/jwks.json", jwks.Handle)
 	rg.GET("/.well-known/openid-configuration", oidc.Handle)
 }
+
+// SkipNoAuthRoutes returns true if the requesting path should not have auth validated for it.
+func SkipNoAuthRoutes(c echo.Context) bool {
+	switch c.Request().URL.Path {
+	case "/token", "/jwks.json", "/.well-known/openid-configuration":
+		return true
+	default:
+		return false
+	}
+}
