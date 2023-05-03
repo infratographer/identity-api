@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"github.com/metal-toolbox/auditevent/middleware/echoaudit"
 
 	"go.infratographer.com/identity-api/internal/storage"
 )
@@ -49,10 +50,11 @@ type apiHandler struct {
 type APIHandler struct {
 	handler              *apiHandler
 	validationMiddleware echo.MiddlewareFunc
+	auditMiddleware      *echoaudit.Middleware
 }
 
 // NewAPIHandler creates an API handler with the given storage engine.
-func NewAPIHandler(engine storage.Engine) (*APIHandler, error) {
+func NewAPIHandler(engine storage.Engine, amw *echoaudit.Middleware) (*APIHandler, error) {
 	validationMiddleware, err := oapiValidationMiddleware()
 	if err != nil {
 		return nil, err
@@ -65,6 +67,7 @@ func NewAPIHandler(engine storage.Engine) (*APIHandler, error) {
 	out := &APIHandler{
 		handler:              &handler,
 		validationMiddleware: validationMiddleware,
+		auditMiddleware:      amw,
 	}
 
 	return out, nil
@@ -72,10 +75,16 @@ func NewAPIHandler(engine storage.Engine) (*APIHandler, error) {
 
 // Routes registers the API's routes against the provided router group.
 func (h *APIHandler) Routes(rg *echo.Group) {
-	rg.Use(
+	middleware := []echo.MiddlewareFunc{
 		h.validationMiddleware,
 		storageMiddleware(h.handler.engine),
-	)
+	}
+
+	if h.auditMiddleware != nil {
+		middleware = append(middleware, h.auditMiddleware.Audit())
+	}
+
+	rg.Use(middleware...)
 
 	strictHandler := NewStrictHandler(h.handler, nil)
 

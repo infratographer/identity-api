@@ -16,7 +16,7 @@ The `up` Makefile target will auto-generate a private key and mount it in the co
 
 ### Exchanging tokens
 
-To perform a token exchange, grab a JWT from somewhere and add its issuer and JWKS URI to the `oauth.subjectTokenIssuers` section of your config file. Then, try running the following:
+To perform a token exchange, seed your database with a trusted issuer. Then, try running the following:
 
 ```
 $ read -s -p 'Enter your token: ' AUTH_TOKEN && echo
@@ -85,6 +85,14 @@ To get started, you can use either [VS Code][vs-code] or the official [CLI][cli]
 [gopls]: https://pkg.go.dev/golang.org/x/tools/gopls
 [vs-code]: https://code.visualstudio.com/docs/devcontainers/containers
 [cli]: https://github.com/devcontainers/cli
+
+### Seeding the database with a trusted issuer
+
+In order to complete a token exchange, you will need to have an issuer configured in your database. An example seed exists in this repository and a tool exists for loading that data into the local database.
+
+```sh
+go run main.go seed-database --config identity-api.example.yaml --data data.example.yaml
+```
 
 ### Manually setting up SSH agent forwarding
 

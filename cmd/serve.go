@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/MicahParks/keyfunc"
 	echojwt "github.com/labstack/echo-jwt/v4"
@@ -28,6 +29,9 @@ import (
 	"go.infratographer.com/identity-api/internal/routes"
 	"go.infratographer.com/identity-api/internal/storage"
 	"go.infratographer.com/identity-api/internal/userinfo"
+
+	audithelpers "github.com/metal-toolbox/auditevent/helpers"
+	"github.com/metal-toolbox/auditevent/middleware/echoaudit"
 )
 
 var serveCmd = &cobra.Command{
@@ -65,6 +69,15 @@ func serve(ctx context.Context) {
 		engineOpts = append(engineOpts, storage.WithTracing(config.Config.CRDB))
 	}
 
+	auditMiddleware, auditCloseFn, err := newAuditMiddleware(ctx)
+	if err != nil {
+		logger.Fatal("Failed to initialize audit middleware", zap.Error(err))
+	}
+
+	if auditMiddleware != nil {
+		defer auditCloseFn() //nolint:errcheck // Not needed to check returned error.
+	}
+
 	storageEngine, err := storage.NewEngine(config.Config.CRDB, engineOpts...)
 	if err != nil {
 		logger.Fatalf("error initializing storage: %s", err)
@@ -98,7 +111,7 @@ func serve(ctx context.Context) {
 		oauth2.NewClientCredentialsHandlerFactory,
 	)
 
-	apiHandler, err := httpsrv.NewAPIHandler(storageEngine)
+	apiHandler, err := httpsrv.NewAPIHandler(storageEngine, auditMiddleware)
 	if err != nil {
 		logger.Fatal("error initializing API server: %s", err)
 	}
@@ -108,7 +121,13 @@ func serve(ctx context.Context) {
 		logger.Fatal("error initializing UserInfo handler: %s", err)
 	}
 
-	router := routes.NewRouter(logger, oauth2Config, provider, config.Config.OAuth.Issuer)
+	router := routes.NewRouter(
+		routes.WithLogger(logger),
+		routes.WithOauthConfig(oauth2Config),
+		routes.WithProvider(provider),
+		routes.WithIssuer(config.Config.OAuth.Issuer),
+		routes.WithAuditMiddleware(auditMiddleware),
+	)
 
 	authMdwSkippers := []middleware.Skipper{
 		echox.SkipDefaultEndpoints,
@@ -182,4 +201,21 @@ func multiSkipper(skippers ...middleware.Skipper) func(c echo.Context) bool {
 
 		return false
 	}
+}
+
+func newAuditMiddleware(ctx context.Context) (*echoaudit.Middleware, func() error, error) {
+	auditFile := viper.GetString("audit.log.path")
+	if auditFile == "" {
+		logger.Warn("audit log path not provied, logging disabled.")
+		return nil, nil, nil
+	}
+
+	auditLogPath := viper.GetViper().GetString("audit.log.path")
+
+	fd, err := audithelpers.OpenAuditLogFileUntilSuccessWithContext(ctx, auditLogPath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to open audit log file: %w", err)
+	}
+
+	return echoaudit.NewJSONMiddleware(appName, fd), fd.Close, nil
 }
