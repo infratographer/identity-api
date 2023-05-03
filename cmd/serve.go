@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/MicahParks/keyfunc"
 	echojwt "github.com/labstack/echo-jwt/v4"
@@ -68,20 +69,14 @@ func serve(ctx context.Context) {
 		engineOpts = append(engineOpts, storage.WithTracing(config.Config.CRDB))
 	}
 
-	auditpath := viper.GetString("audit.log.path")
-	if auditpath == "" {
-		logger.Fatal("failed starting server. Audit log file path can't be empty")
+	auditMiddleware, auditCloseFn, err := newAuditMiddleware(ctx)
+	if err != nil {
+		logger.Fatal("Failed to initialize audit middleware", zap.Error(err))
 	}
 
-	// WARNING: This will block until the file is available;
-	// make sure an initContainer creates the file
-	auf, auerr := audithelpers.OpenAuditLogFileUntilSuccess(auditpath)
-	if auerr != nil {
-		logger.Fatalf("couldn't open audit file. error: %s", auerr)
+	if auditMiddleware != nil {
+		defer auditCloseFn() //nolint:errcheck // Not needed to check returned error.
 	}
-	defer auf.Close()
-
-	auditMiddleware := echoaudit.NewJSONMiddleware(appName, auf)
 
 	storageEngine, err := storage.NewEngine(config.Config.CRDB, engineOpts...)
 	if err != nil {
@@ -206,4 +201,21 @@ func multiSkipper(skippers ...middleware.Skipper) func(c echo.Context) bool {
 
 		return false
 	}
+}
+
+func newAuditMiddleware(ctx context.Context) (*echoaudit.Middleware, func() error, error) {
+	auditFile := viper.GetString("audit.log.path")
+	if auditFile == "" {
+		logger.Warn("audit log path not provied, logging disabled.")
+		return nil, nil, nil
+	}
+
+	auditLogPath := viper.GetViper().GetString("audit.log.path")
+
+	fd, err := audithelpers.OpenAuditLogFileUntilSuccessWithContext(ctx, auditLogPath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to open audit log file: %w", err)
+	}
+
+	return echoaudit.NewJSONMiddleware(appName, fd), fd.Close, nil
 }

@@ -75,11 +75,16 @@ func NewAPIHandler(engine storage.Engine, amw *echoaudit.Middleware) (*APIHandle
 
 // Routes registers the API's routes against the provided router group.
 func (h *APIHandler) Routes(rg *echo.Group) {
-	rg.Use(
+	middleware := []echo.MiddlewareFunc{
 		h.validationMiddleware,
 		storageMiddleware(h.handler.engine),
-		h.auditMiddleware.Audit(),
-	)
+	}
+
+	if h.auditMiddleware != nil {
+		middleware = append(middleware, h.auditMiddleware.Audit())
+	}
+
+	rg.Use(middleware...)
 
 	strictHandler := NewStrictHandler(h.handler, nil)
 

@@ -90,7 +90,7 @@ To get started, you can use either [VS Code][vs-code] or the official [CLI][cli]
 
 In order to complete a token exchange, you will need to have an issuer configured in your database. An example seed exists in this repository and a tool exists for loading that data into the local database.
 
-```
+```sh
 go run main.go seed-database --config identity-api.example.yaml --data data.example.yaml
 ```
 
