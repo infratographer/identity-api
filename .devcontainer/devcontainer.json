@@ -22,12 +22,16 @@
             "ms-azuretools.vscode-docker",
             "RemiMarche.cspell-tech",
             "streetsidesoftware.code-spell-checker",
-            "netcorext.uuid-generator"
+            "netcorext.uuid-generator",
+            "ms-vscode.makefile-tools"
         ]
 	}
     },
     "features": {
         "ghcr.io/devcontainers/features/sshd:1": {}
     },
-    "remoteUser": "vscode"
+    "postCreateCommand": [
+        "touch audit.log"
+    ],
+    "remoteUser": "vscode",
 }

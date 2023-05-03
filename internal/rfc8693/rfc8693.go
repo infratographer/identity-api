@@ -270,12 +270,24 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 	headers := jwt.Headers{}
 	headers.Add("kid", kid)
 
-	session := oauth2.JWTSession{
-		JWTHeader: &headers,
-		JWTClaims: &newClaims,
-		ExpiresAt: expiryMap,
-		Subject:   claims.Subject,
+	var session *oauth2.JWTSession
+
+	reqSess := requester.GetSession()
+	if reqSess == nil {
+		session = &oauth2.JWTSession{}
+	} else {
+		s, ok := reqSess.(*oauth2.JWTSession)
+		if !ok {
+			return errorsx.WithStack(fosite.ErrServerError.WithHint("requester session is not a jwt session"))
+		}
+
+		session = s
 	}
+
+	session.JWTHeader = &headers
+	session.JWTClaims = &newClaims
+	session.ExpiresAt = expiryMap
+	session.Subject = claims.Subject
 
 	userInfoAud, err := url.JoinPath(newClaims.Issuer, "userinfo")
 	if err != nil {
@@ -283,7 +295,7 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 	}
 
 	requester.GrantAudience(userInfoAud)
-	requester.SetSession(&session)
+	requester.SetSession(session)
 
 	return nil
 }

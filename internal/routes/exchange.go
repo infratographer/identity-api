@@ -26,6 +26,10 @@ func (h *tokenHandler) Handle(c echo.Context) error {
 		return nil
 	}
 
+	// set auditing fields from the session
+	c.Set("jwt.subject", session.GetSubject())
+	c.Set("jwt.user", session.GetUsername())
+
 	response, err := h.provider.NewAccessResponse(ctx, accessRequest)
 	if err != nil {
 		h.logger.Errorf("Error occurred in NewAccessResponse: %+v", err)
