@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"go.infratographer.com/identity-api/internal/types"
+	"go.infratographer.com/x/gidx"
 )
 
 var issuerCols = struct {
@@ -93,7 +94,7 @@ func (s *issuerService) CreateIssuer(ctx context.Context, iss types.Issuer) (*ty
 
 // GetIssuerByID gets an issuer by ID. This function will use a transaction in the context if one
 // exists.
-func (s *issuerService) GetIssuerByID(ctx context.Context, id string) (*types.Issuer, error) {
+func (s *issuerService) GetIssuerByID(ctx context.Context, id gidx.PrefixedID) (*types.Issuer, error) {
 	query := fmt.Sprintf("SELECT %s FROM issuers WHERE id = $1", issuerColumnsStr)
 
 	var row *sql.Row
@@ -134,7 +135,7 @@ func (s *issuerService) GetIssuerByURI(ctx context.Context, uri string) (*types.
 }
 
 // UpdateIssuer updates an issuer with the given values.
-func (s *issuerService) UpdateIssuer(ctx context.Context, id string, update types.IssuerUpdate) (*types.Issuer, error) {
+func (s *issuerService) UpdateIssuer(ctx context.Context, id gidx.PrefixedID, update types.IssuerUpdate) (*types.Issuer, error) {
 	tx, err := getContextTx(ctx)
 	if err != nil {
 		return nil, err
@@ -157,7 +158,7 @@ func (s *issuerService) UpdateIssuer(ctx context.Context, id string, update type
 }
 
 // DeleteIssuer deletes an issuer with the given ID.
-func (s *issuerService) DeleteIssuer(ctx context.Context, id string) error {
+func (s *issuerService) DeleteIssuer(ctx context.Context, id gidx.PrefixedID) error {
 	tx, err := getContextTx(ctx)
 	if err != nil {
 		return err

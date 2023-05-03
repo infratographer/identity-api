@@ -9,6 +9,7 @@ import (
 
 	"github.com/ory/fosite"
 	"go.infratographer.com/identity-api/internal/types"
+	"go.infratographer.com/x/gidx"
 )
 
 var oauthClientCols = struct {
@@ -27,6 +28,7 @@ var oauthClientCols = struct {
 
 var (
 	oauthClientColumns = []string{
+		oauthClientCols.ID,
 		oauthClientCols.TenantID,
 		oauthClientCols.Name,
 		oauthClientCols.Secret,
@@ -47,7 +49,12 @@ func (*oauthClientManager) ClientAssertionJWTValid(_ context.Context, _ string) 
 
 // GetClient implements fosite.ClientManager
 func (s *oauthClientManager) GetClient(ctx context.Context, id string) (fosite.Client, error) {
-	return s.LookupOAuthClientByID(ctx, id)
+	clientID, err := gidx.Parse(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.LookupOAuthClientByID(ctx, clientID)
 }
 
 // SetClientAssertionJWT implements fosite.ClientManager
@@ -79,11 +86,16 @@ func (s *oauthClientManager) CreateOAuthClient(ctx context.Context, client types
         INSERT INTO oauth_clients (
            %s
         ) VALUES
-        ($1, $2, $3, $4) RETURNING id;
+        ($1, $2, $3, $4, $5) RETURNING id;
        `
 	q = fmt.Sprintf(q, oauthClientColumnsStr)
 
 	hashedSecret, err := s.hasher.Hash(ctx, []byte(client.Secret))
+	if err != nil {
+		return emptyModel, err
+	}
+
+	clientID, err := gidx.NewID(types.IdentityClientIDPrefix)
 	if err != nil {
 		return emptyModel, err
 	}
@@ -93,6 +105,7 @@ func (s *oauthClientManager) CreateOAuthClient(ctx context.Context, client types
 	row := tx.QueryRowContext(
 		ctx,
 		q,
+		clientID,
 		client.TenantID,
 		client.Name,
 		client.Secret,
@@ -108,7 +121,7 @@ func (s *oauthClientManager) CreateOAuthClient(ctx context.Context, client types
 }
 
 // DeleteOAuthClient removes the OAuth client from the store.
-func (*oauthClientManager) DeleteOAuthClient(ctx context.Context, clientID string) error {
+func (*oauthClientManager) DeleteOAuthClient(ctx context.Context, clientID gidx.PrefixedID) error {
 	tx, err := getContextTx(ctx)
 	if err != nil {
 		return err
@@ -120,7 +133,11 @@ func (*oauthClientManager) DeleteOAuthClient(ctx context.Context, clientID strin
 }
 
 // LookupOAuthClientByID fetches an OAuth client from the store.
-func (s *oauthClientManager) LookupOAuthClientByID(ctx context.Context, clientID string) (types.OAuthClient, error) {
+func (s *oauthClientManager) LookupOAuthClientByID(ctx context.Context, clientID gidx.PrefixedID) (types.OAuthClient, error) {
+	if clientID == "" {
+		return types.OAuthClient{}, types.ErrOAuthClientNotFound
+	}
+
 	q := fmt.Sprintf(`SELECT %s FROM oauth_clients WHERE id = $1`, oauthClientColumnsStr)
 
 	var row *sql.Row
@@ -141,6 +158,7 @@ func (s *oauthClientManager) LookupOAuthClientByID(ctx context.Context, clientID
 	var aud string
 
 	err = row.Scan(
+		&model.ID,
 		&model.TenantID,
 		&model.Name,
 		&model.Secret,
@@ -155,7 +173,6 @@ func (s *oauthClientManager) LookupOAuthClientByID(ctx context.Context, clientID
 		return types.OAuthClient{}, err
 	}
 
-	model.ID = clientID
 	model.Audience = strings.Fields(aud)
 
 	return model, nil

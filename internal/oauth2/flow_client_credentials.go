@@ -5,16 +5,14 @@ import (
 	"context"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/ory/x/errorsx"
 	"go.infratographer.com/identity-api/internal/fositex"
 	"go.infratographer.com/identity-api/internal/storage"
-	"go.infratographer.com/identity-api/internal/types"
 
 	"github.com/ory/fosite"
 	"github.com/ory/fosite/handler/oauth2"
 	"github.com/ory/fosite/token/jwt"
-	"go.infratographer.com/x/urnx"
+	"go.infratographer.com/x/gidx"
 )
 
 var _ fosite.TokenEndpointHandler = &ClientCredentialsGrantHandler{}
@@ -26,20 +24,6 @@ type clientCredentialsConfigurator interface {
 	fosite.AccessTokenIssuerProvider
 	fositex.UserInfoAudienceProvider
 	fositex.SigningKeyProvider
-}
-
-func buildClientURN(c fosite.Client) (string, error) {
-	clientUUID, err := uuid.Parse(c.GetID())
-	if err != nil {
-		return "", err
-	}
-
-	urn, err := urnx.Build(types.URNNamespace, types.URNResourceTypeClient, clientUUID)
-	if err != nil {
-		return "", err
-	}
-
-	return urn.String(), nil
 }
 
 // ClientCredentialsGrantHandler handles the RFC6749 client credentials grant type.
@@ -80,20 +64,18 @@ func (c *ClientCredentialsGrantHandler) HandleTokenEndpointRequest(ctx context.C
 	headers := jwt.Headers{}
 	headers.Add("kid", c.Config.GetSigningKey(ctx).KeyID)
 
-	clientID := client.GetID()
-
-	session.JWTClaims = &jwt.JWTClaims{}
-	session.JWTClaims.Add("client_id", clientID)
-
-	session.JWTHeader = &headers
-	session.SetExpiresAt(fosite.AccessToken, time.Now().UTC().Add(atLifespan))
-
-	clientURN, err := buildClientURN(client)
+	clientID, err := gidx.Parse(client.GetID())
 	if err != nil {
 		return err
 	}
 
-	session.JWTClaims.Subject = clientURN
+	session.JWTClaims = &jwt.JWTClaims{}
+	session.JWTClaims.Add("client_id", clientID.String())
+
+	session.JWTHeader = &headers
+	session.SetExpiresAt(fosite.AccessToken, time.Now().UTC().Add(atLifespan))
+
+	session.JWTClaims.Subject = clientID.String()
 
 	return nil
 }

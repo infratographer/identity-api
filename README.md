@@ -16,7 +16,7 @@ The `up` Makefile target will auto-generate a private key and mount it in the co
 
 ### Exchanging tokens
 
-To perform a token exchange, seed your database with a trusted issuer. Then, try running the following:
+To perform a token exchange, [seed your database](#seeding-the-database-with-a-trusted-issuer) with a trusted issuer. Then, try running the following:
 
 ```
 $ read -s -p 'Enter your token: ' AUTH_TOKEN && echo

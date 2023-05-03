@@ -1,12 +1,24 @@
 package types
 
 const (
-	// URNNamespace represents the namespace for all URNs handled by identity-api.
-	URNNamespace = "infratographer"
+	// IdentityService represents the service portion of the prefix.
+	IdentityService = "idnt"
 
-	// URNResourceTypeUser represents the user resource type in a URN.
-	URNResourceTypeUser = "user"
+	// IdentityUserResource represents the resource portion of the prefix.
+	IdentityUserResource = "usr"
 
-	// URNResourceTypeClient represents the client resource type in a URN.
-	URNResourceTypeClient = "client"
+	// IdentityUserIDPrefix represents the full identity id prefix for a user resource.
+	IdentityUserIDPrefix = IdentityService + IdentityUserResource
+
+	// IdentityClientResource represents the client resource type in a ID.
+	IdentityClientResource = "cli"
+
+	// IdentityClientIDPrefix represents the full identity id prefix for a client resource.
+	IdentityClientIDPrefix = IdentityService + IdentityClientResource
+
+	// IdentityIssuerResource represents the issuer resource type in an ID.
+	IdentityIssuerResource = "iss"
+
+	// IdentityIssuerIDPrefix represents the full identity id prefix for an issuer resource.
+	IdentityIssuerIDPrefix = IdentityService + IdentityIssuerResource
 )

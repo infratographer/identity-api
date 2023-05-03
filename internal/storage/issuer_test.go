@@ -9,6 +9,7 @@ import (
 
 	"go.infratographer.com/identity-api/internal/testingx"
 	"go.infratographer.com/identity-api/internal/types"
+	"go.infratographer.com/x/gidx"
 )
 
 func compareIssuers(t *testing.T, exp types.Issuer, obs types.Issuer) {
@@ -54,10 +55,10 @@ func TestIssuerService(t *testing.T) {
 		panic(err)
 	}
 
-	tenantID := "56a95c1b-33f8-4def-8b6d-ca9fe6976170"
+	tenantID := gidx.MustNewID("testten")
 	issuer := types.Issuer{
 		TenantID:      tenantID,
-		ID:            "e495a393-ae79-4a02-a78d-9798c7d9d252",
+		ID:            gidx.PrefixedID("testiss-abc"),
 		Name:          "Example",
 		URI:           "https://example.com/",
 		JWKSURI:       "https://example.com/.well-known/jwks.json",
@@ -86,7 +87,7 @@ func TestIssuerService(t *testing.T) {
 
 		issuer := types.Issuer{
 			TenantID:      tenantID,
-			ID:            "6b0117f8-29e4-49fa-841e-63c52aa27d96",
+			ID:            gidx.MustNewID("testiss"),
 			Name:          "Good issuer",
 			URI:           "https://issuer-a27d96.info/",
 			JWKSURI:       "https://issuer.info/jwks.json",
@@ -191,10 +192,10 @@ func TestIssuerService(t *testing.T) {
 	t.Run("GetIssuerByID", func(t *testing.T) {
 		t.Parallel()
 
-		testCases := []testingx.TestCase[string, *types.Issuer]{
+		testCases := []testingx.TestCase[gidx.PrefixedID, *types.Issuer]{
 			{
 				Name:  "NotFound",
-				Input: "00000000-0000-0000-0000-000000000000",
+				Input: gidx.MustNewID("ntfound"),
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
 					assert.ErrorIs(t, types.ErrorIssuerNotFound, res.Err)
 				},
@@ -232,7 +233,7 @@ func TestIssuerService(t *testing.T) {
 			},
 		}
 
-		runFn := func(ctx context.Context, input string) testingx.TestResult[*types.Issuer] {
+		runFn := func(ctx context.Context, input gidx.PrefixedID) testingx.TestResult[*types.Issuer] {
 			iss, err := issSvc.GetIssuerByID(ctx, input)
 
 			result := testingx.TestResult[*types.Issuer]{
@@ -251,7 +252,7 @@ func TestIssuerService(t *testing.T) {
 
 		issuer := types.Issuer{
 			TenantID:      tenantID,
-			ID:            "b9ae2e16-11c0-49e4-8d9b-1d6698bba1a3",
+			ID:            gidx.MustNewID("testiss"),
 			Name:          "Good issuer",
 			URI:           "https://issuer-bba1a3.info/",
 			JWKSURI:       "https://issuer.info/jwks.json",
@@ -328,7 +329,7 @@ func TestIssuerService(t *testing.T) {
 
 		issuer := types.Issuer{
 			TenantID:      tenantID,
-			ID:            "ace77968-03b0-4f1b-b3f0-b214daf4ac18",
+			ID:            gidx.MustNewID("testiss"),
 			Name:          "Good issuer",
 			URI:           "https://issuer-f4ac18.info/",
 			JWKSURI:       "https://issuer.info/jwks.json",
@@ -354,7 +355,7 @@ func TestIssuerService(t *testing.T) {
 			assert.NoError(t, err)
 		}
 
-		testCases := []testingx.TestCase[string, any]{
+		testCases := []testingx.TestCase[gidx.PrefixedID, any]{
 			{
 				Name:    "Success",
 				Input:   issuer.ID,
@@ -369,7 +370,7 @@ func TestIssuerService(t *testing.T) {
 			},
 			{
 				Name:    "NotFound",
-				Input:   "00000000-0000-0000-0000-000000000000",
+				Input:   gidx.MustNewID("ntfound"),
 				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[any]) {
 					assert.ErrorIs(t, types.ErrorIssuerNotFound, res.Err)
@@ -378,7 +379,7 @@ func TestIssuerService(t *testing.T) {
 			},
 		}
 
-		runFn := func(ctx context.Context, input string) testingx.TestResult[any] {
+		runFn := func(ctx context.Context, input gidx.PrefixedID) testingx.TestResult[any] {
 			err = issSvc.DeleteIssuer(ctx, input)
 
 			result := testingx.TestResult[any]{

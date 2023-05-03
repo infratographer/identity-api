@@ -5,13 +5,13 @@ import (
 	"testing"
 
 	"github.com/cockroachdb/cockroach-go/v2/testserver"
-	"github.com/google/uuid"
 	"github.com/ory/fosite"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"go.infratographer.com/identity-api/internal/testingx"
 	"go.infratographer.com/identity-api/internal/types"
+	"go.infratographer.com/x/gidx"
 )
 
 var _ types.OAuthClientManager = &oauthClientManager{}
@@ -32,10 +32,10 @@ func TestOAuthClientManager(t *testing.T) {
 		shutdown()
 	})
 
-	tenantID := "56a95c1b-33f8-4def-8b6d-ca9fe6976170"
+	tenantID := gidx.MustNewID("testten")
 	issuer := types.Issuer{
 		TenantID: tenantID,
-		ID:       "e495a393-ae79-4a02-a78d-9798c7d9d252",
+		ID:       gidx.MustNewID("testiss"),
 		Name:     "Example",
 		URI:      "https://example.com/",
 		JWKSURI:  "https://example.com/.well-known/jwks.json",
@@ -92,7 +92,7 @@ func TestOAuthClientManager(t *testing.T) {
 	t.Run("LookupClientByID", func(t *testing.T) {
 		t.Parallel()
 
-		runFn := func(ctx context.Context, input string) testingx.TestResult[types.OAuthClient] {
+		runFn := func(ctx context.Context, input gidx.PrefixedID) testingx.TestResult[types.OAuthClient] {
 			res, err := oauthClientStore.LookupOAuthClientByID(ctx, input)
 			return testingx.TestResult[types.OAuthClient]{
 				Success: res,
@@ -100,17 +100,17 @@ func TestOAuthClientManager(t *testing.T) {
 			}
 		}
 
-		testCases := []testingx.TestCase[string, types.OAuthClient]{
+		testCases := []testingx.TestCase[gidx.PrefixedID, types.OAuthClient]{
 			{
 				Name:  "NotFoundWithoutTx",
-				Input: uuid.NewString(),
+				Input: gidx.MustNewID("ntfound"),
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.OAuthClient]) {
 					assert.ErrorIs(t, res.Err, types.ErrOAuthClientNotFound)
 				},
 			},
 			{
 				Name:    "NotFoundWithTx",
-				Input:   uuid.NewString(),
+				Input:   gidx.MustNewID("ntfound"),
 				SetupFn: setupWithTx,
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.OAuthClient]) {
 					assert.ErrorIs(t, res.Err, types.ErrOAuthClientNotFound)
@@ -173,14 +173,14 @@ func TestOAuthClientManager(t *testing.T) {
 	t.Run("DeleteOAuthClient", func(t *testing.T) {
 		t.Parallel()
 
-		runFn := func(ctx context.Context, input string) testingx.TestResult[any] {
+		runFn := func(ctx context.Context, input gidx.PrefixedID) testingx.TestResult[any] {
 			err := oauthClientStore.DeleteOAuthClient(ctx, input)
 			return testingx.TestResult[any]{
 				Err: err,
 			}
 		}
 
-		testCases := []testingx.TestCase[string, any]{
+		testCases := []testingx.TestCase[gidx.PrefixedID, any]{
 			{
 				Name:      "ValidClientWithTx",
 				Input:     defaultClient.ID,
@@ -205,7 +205,7 @@ func TestOAuthClientManager(t *testing.T) {
 
 			{
 				Name:      "NotFound",
-				Input:     uuid.NewString(),
+				Input:     gidx.MustNewID("ntfound"),
 				SetupFn:   setupWithTx,
 				CleanupFn: cleanupWithTx,
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[any]) {

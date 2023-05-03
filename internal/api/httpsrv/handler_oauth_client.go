@@ -15,7 +15,7 @@ const defaultTokenLength = 26
 // needs to provide to authenticate when requesting a token.
 func (h *apiHandler) CreateOAuthClient(ctx context.Context, request CreateOAuthClientRequestObject) (CreateOAuthClientResponseObject, error) {
 	var newClient types.OAuthClient
-	newClient.TenantID = request.TenantID.String()
+	newClient.TenantID = request.TenantID
 	newClient.Name = request.Body.Name
 
 	newClient.Audience = []string{}
@@ -46,7 +46,7 @@ func (h *apiHandler) CreateOAuthClient(ctx context.Context, request CreateOAuthC
 
 // GetOAuthClient returns the OAuth client for that ID
 func (h *apiHandler) GetOAuthClient(ctx context.Context, request GetOAuthClientRequestObject) (GetOAuthClientResponseObject, error) {
-	client, err := h.engine.LookupOAuthClientByID(ctx, request.ClientID.String())
+	client, err := h.engine.LookupOAuthClientByID(ctx, request.ClientID)
 	switch err {
 	case nil:
 	case types.ErrOAuthClientNotFound:
@@ -65,7 +65,7 @@ func (h *apiHandler) GetOAuthClient(ctx context.Context, request GetOAuthClientR
 
 // DeleteOAuthClient removes the OAuth client.
 func (h *apiHandler) DeleteOAuthClient(ctx context.Context, request DeleteOAuthClientRequestObject) (DeleteOAuthClientResponseObject, error) {
-	err := h.engine.DeleteOAuthClient(ctx, request.ClientID.String())
+	err := h.engine.DeleteOAuthClient(ctx, request.ClientID)
 	switch err {
 	case nil, types.ErrOAuthClientNotFound:
 	default:

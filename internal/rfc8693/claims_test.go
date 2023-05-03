@@ -11,6 +11,7 @@ import (
 	"go.infratographer.com/identity-api/internal/storage"
 	"go.infratographer.com/identity-api/internal/testingx"
 	"go.infratographer.com/x/crdbx"
+	"go.infratographer.com/x/gidx"
 )
 
 // TestClaimMappingEval checks that claim mapping expressions evaluate correctly.
@@ -43,8 +44,8 @@ func TestClaimMappingEval(t *testing.T) {
 	seedData := storage.SeedData{
 		Issuers: []storage.SeedIssuer{
 			{
-				TenantID:      "b8bfd705-b768-47a4-85a0-fe006f5bcfca",
-				ID:            "e495a393-ae79-4a02-a78d-9798c7d9d252",
+				TenantID:      gidx.MustNewID("testten"),
+				ID:            gidx.MustNewID("testiss"),
 				Name:          "Example",
 				URI:           "https://example.com/",
 				JWKSURI:       "https://example.com/.well-known/jwks.json",

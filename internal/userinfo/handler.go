@@ -9,7 +9,7 @@ import (
 
 	"go.infratographer.com/identity-api/internal/types"
 	"go.infratographer.com/x/echojwtx"
-	"go.infratographer.com/x/urnx"
+	"go.infratographer.com/x/gidx"
 )
 
 // Handler provides the endpoint for /userinfo
@@ -29,12 +29,10 @@ func NewHandler(userInfoSvc types.UserInfoService) (*Handler, error) {
 func (h *Handler) handle(ctx echo.Context) error {
 	fullSubject := echojwtx.Actor(ctx)
 
-	urn, err := urnx.Parse(fullSubject)
+	resourceID, err := gidx.Parse(fullSubject)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "invalid subject").SetInternal(err)
 	}
-
-	resourceID := urn.ResourceID.String()
 
 	info, err := h.store.LookupUserInfoByID(ctx.Request().Context(), resourceID)
 	if err != nil {
