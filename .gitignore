@@ -3,4 +3,4 @@ coverage.out
 *~
 *.pem
 audit.log
-dist/
+.tools/
