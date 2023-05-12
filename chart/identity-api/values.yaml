@@ -93,3 +93,6 @@ ingress:
     # - hosts:
     #     - myidentity-sts.example.com
     #   secretName: myidentity-sts-tls
+
+serviceMonitor:
+  enabled: false
