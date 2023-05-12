@@ -1,3 +1,4 @@
+![logo](https://github.com/infratographer/website/blob/main/source/theme/assets/pictures/logo.jpg?raw=true)
 # identity-api
 
 identity-api is an OAuth service that supports the following grant types:
