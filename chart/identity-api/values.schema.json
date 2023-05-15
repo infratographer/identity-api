@@ -187,6 +187,14 @@
                     "type": "array"
                 }
             }
+        },
+        "serviceMonitor": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                }
+            }
         }
     }
 }
