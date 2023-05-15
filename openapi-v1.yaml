@@ -19,7 +19,7 @@ paths:
           description: ID of tenant to create issuer in
           schema:
             type: string
-            format: uuid
+            x-go-type: gidx.PrefixedID
       requestBody:
         required: true
         content:
@@ -47,7 +47,7 @@ paths:
           description: Tenant to provision the OAuth client under
           schema:
             type: string
-            format: uuid
+            x-go-type: gidx.PrefixedID
       requestBody:
         required: true
         content:
@@ -75,7 +75,7 @@ paths:
           description: OAuth client ID
           schema:
             type: string
-            format: uuid
+            x-go-type: gidx.PrefixedID
       responses:
         '200':
           description: Successful Response
@@ -95,7 +95,7 @@ paths:
           description: OAuth client ID
           schema:
             type: string
-            format: uuid
+            x-go-type: gidx.PrefixedID
       responses:
         '200':
           description: Successful Response
@@ -117,7 +117,7 @@ paths:
           description: ID of issuer to get
           schema:
             type: string
-            format: uuid
+            x-go-type: gidx.PrefixedID
       responses:
         '200':
           description: Successful response
@@ -138,7 +138,7 @@ paths:
           description: ID of issuer to update
           schema:
             type: string
-            format: uuid
+            x-go-type: gidx.PrefixedID
       requestBody:
         required: true
         content:
@@ -165,7 +165,7 @@ paths:
           description: ID of issuer to delete
           schema:
             type: string
-            format: uuid
+            x-go-type: gidx.PrefixedID
       responses:
         '200':
           description: Successful response
@@ -237,7 +237,7 @@ components:
         id:
           x-go-name: ID
           type: string
-          format: uuid
+          x-go-type: gidx.PrefixedID
           description: ID of the issuer
         name:
           type: string
@@ -278,7 +278,7 @@ components:
         id:
           x-go-name: ID
           type: string
-          format: uuid
+          x-go-type: gidx.PrefixedID
           description: OAuth 2.0 Client ID
         name:
           type: string

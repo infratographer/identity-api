@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
 	"go.infratographer.com/identity-api/internal/storage"
@@ -13,6 +12,7 @@ import (
 	"go.infratographer.com/identity-api/internal/types"
 	v1 "go.infratographer.com/identity-api/pkg/api/v1"
 	"go.infratographer.com/x/crdbx"
+	"go.infratographer.com/x/gidx"
 )
 
 func TestAPIHandler(t *testing.T) {
@@ -41,10 +41,8 @@ func TestAPIHandler(t *testing.T) {
 		panic(err)
 	}
 
-	tenantID := "56a95c1b-33f8-4def-8b6d-ca9fe6976170"
-	tenantUUID := uuid.MustParse(tenantID)
-	issuerID := "e495a393-ae79-4a02-a78d-9798c7d9d252"
-	issuerUUID := uuid.MustParse(issuerID)
+	tenantID := gidx.MustNewID("testten")
+	issuerID := gidx.MustNewID("testiss")
 	issuer := types.Issuer{
 		TenantID:      tenantID,
 		ID:            issuerID,
@@ -61,8 +59,8 @@ func TestAPIHandler(t *testing.T) {
 	seedData := storage.SeedData{
 		Issuers: []storage.SeedIssuer{
 			{
-				TenantID:      "b8bfd705-b768-47a4-85a0-fe006f5bcfca",
-				ID:            "e495a393-ae79-4a02-a78d-9798c7d9d252",
+				TenantID:      gidx.MustNewID("testten"),
+				ID:            issuerID,
 				Name:          "Example",
 				URI:           "https://example.com/",
 				JWKSURI:       "https://example.com/.well-known/jwks.json",
@@ -107,7 +105,7 @@ func TestAPIHandler(t *testing.T) {
 			{
 				Name: "Success",
 				Input: CreateIssuerRequestObject{
-					TenantID: tenantUUID,
+					TenantID: tenantID,
 					Body:     createOp,
 				},
 				SetupFn: setupFn,
@@ -139,7 +137,7 @@ func TestAPIHandler(t *testing.T) {
 			{
 				Name: "CELError",
 				Input: CreateIssuerRequestObject{
-					TenantID: tenantUUID,
+					TenantID: tenantID,
 					Body: &v1.CreateIssuer{
 						ClaimMappings: &map[string]string{
 							"bad": "'123",
@@ -187,7 +185,7 @@ func TestAPIHandler(t *testing.T) {
 			{
 				Name: "Success",
 				Input: GetIssuerByIDRequestObject{
-					Id: issuerUUID,
+					Id: issuerID,
 				},
 				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[GetIssuerByIDResponseObject]) {
 					if !assert.NoError(t, result.Err) {
@@ -195,7 +193,7 @@ func TestAPIHandler(t *testing.T) {
 					}
 
 					expIssuer := v1.Issuer{
-						ID:            issuerUUID,
+						ID:            issuerID,
 						ClaimMappings: mappingStrs,
 						JWKSURI:       issuer.JWKSURI,
 						Name:          issuer.Name,
@@ -215,7 +213,7 @@ func TestAPIHandler(t *testing.T) {
 			{
 				Name: "NotFound",
 				Input: GetIssuerByIDRequestObject{
-					Id: uuid.MustParse("00000000-0000-0000-0000-000000000000"),
+					Id: gidx.MustNewID("ntfound"),
 				},
 				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[GetIssuerByIDResponseObject]) {
 					assert.ErrorIs(t, errorNotFound, result.Err)
@@ -244,8 +242,7 @@ func TestAPIHandler(t *testing.T) {
 			engine: store,
 		}
 
-		issuerID := "53dcdc2a-94e7-44d1-97f5-ce7ad136b698"
-		issuerUUID := uuid.MustParse(issuerID)
+		issuerID := gidx.MustNewID("testiss")
 
 		issuer := types.Issuer{
 			TenantID:      tenantID,
@@ -281,7 +278,7 @@ func TestAPIHandler(t *testing.T) {
 			{
 				Name: "Success",
 				Input: UpdateIssuerRequestObject{
-					Id: issuerUUID,
+					Id: issuerID,
 					Body: &v1.IssuerUpdate{
 						Name: &newName,
 					},
@@ -293,7 +290,7 @@ func TestAPIHandler(t *testing.T) {
 					}
 
 					expIssuer := v1.Issuer{
-						ID:            issuerUUID,
+						ID:            issuerID,
 						ClaimMappings: mappingStrs,
 						JWKSURI:       issuer.JWKSURI,
 						Name:          newName,
@@ -314,7 +311,7 @@ func TestAPIHandler(t *testing.T) {
 			{
 				Name: "NotFound",
 				Input: UpdateIssuerRequestObject{
-					Id: uuid.MustParse("00000000-0000-0000-0000-000000000000"),
+					Id: gidx.MustNewID("ntfound"),
 					Body: &v1.IssuerUpdate{
 						Name: &newName,
 					},
@@ -348,8 +345,7 @@ func TestAPIHandler(t *testing.T) {
 			engine: store,
 		}
 
-		issuerID := "c8d6458e-2524-4cf9-9e8d-a3f94b114b74"
-		issuerUUID := uuid.MustParse(issuerID)
+		issuerID := gidx.MustNewID("testiss")
 
 		issuer := types.Issuer{
 			TenantID:      tenantID,
@@ -384,7 +380,7 @@ func TestAPIHandler(t *testing.T) {
 			{
 				Name: "Success",
 				Input: DeleteIssuerRequestObject{
-					Id: issuerUUID,
+					Id: issuerID,
 				},
 				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[DeleteIssuerResponseObject]) {
@@ -413,7 +409,7 @@ func TestAPIHandler(t *testing.T) {
 			{
 				Name: "NotFound",
 				Input: DeleteIssuerRequestObject{
-					Id: uuid.MustParse("00000000-0000-0000-0000-000000000000"),
+					Id: gidx.MustNewID("ntfound"),
 				},
 				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[DeleteIssuerResponseObject]) {
@@ -488,7 +484,7 @@ func TestAPIHandler(t *testing.T) {
 			{
 				Name: "Success",
 				Input: CreateOAuthClientRequestObject{
-					TenantID: uuid.New(),
+					TenantID: gidx.MustNewID("testten"),
 					Body: &v1.CreateOAuthClientJSONRequestBody{
 						Name:     "test-client",
 						Audience: &[]string{"aud1", "aud2"},
@@ -543,7 +539,7 @@ func TestAPIHandler(t *testing.T) {
 			{
 				Name: "NotFound",
 				Input: GetOAuthClientRequestObject{
-					ClientID: uuid.Nil,
+					ClientID: "",
 				},
 				SetupFn:   setupFn,
 				CleanupFn: cleanupFn,
@@ -555,7 +551,7 @@ func TestAPIHandler(t *testing.T) {
 			{
 				Name: "Success",
 				Input: GetOAuthClientRequestObject{
-					ClientID: uuid.MustParse(client.ID),
+					ClientID: client.ID,
 				},
 				SetupFn:   setupFn,
 				CleanupFn: cleanupFn,
@@ -564,7 +560,7 @@ func TestAPIHandler(t *testing.T) {
 					assert.IsType(t, GetOAuthClient200JSONResponse{}, res.Success)
 					item := v1.OAuthClient(res.Success.(GetOAuthClient200JSONResponse))
 					assert.Nil(t, item.Secret, "the secret field shouldn't be populated on a GET")
-					assert.Equal(t, client.ID, item.ID.String())
+					assert.Equal(t, client.ID, item.ID)
 					assert.Equal(t, client.Name, item.Name)
 					assert.Equal(t, client.Audience, item.Audience)
 				},
@@ -619,7 +615,7 @@ func TestAPIHandler(t *testing.T) {
 			{
 				Name: "Success",
 				Input: DeleteOAuthClientRequestObject{
-					ClientID: uuid.MustParse(client.ID),
+					ClientID: client.ID,
 				},
 				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[DeleteOAuthClientResponseObject]) {
@@ -648,7 +644,7 @@ func TestAPIHandler(t *testing.T) {
 			{
 				Name: "NotFound",
 				Input: DeleteOAuthClientRequestObject{
-					ClientID: uuid.MustParse("00000000-0000-0000-0000-000000000000"),
+					ClientID: gidx.MustNewID("ntfound"),
 				},
 				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[DeleteOAuthClientResponseObject]) {

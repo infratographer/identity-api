@@ -1,6 +1,6 @@
 issuers:
-  - tenantID: 67787b34-866e-4b75-a395-5aba096b2c1b
-    id: 54f1973b-f7df-4b80-86ab-2238a934d7bb
+  - tenantID: tnntten-abc123
+    id: idntiss-abc123
     name: "Example"
     uri: "https://auth.equinix.com/"
     jwksURI: "https://auth.equinix.com/.well-known/jwks.json"

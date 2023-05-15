@@ -9,11 +9,11 @@ import (
 	"testing"
 
 	"github.com/cockroachdb/cockroach-go/v2/testserver"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
 	"go.infratographer.com/identity-api/internal/testingx"
 	"go.infratographer.com/identity-api/internal/types"
+	"go.infratographer.com/x/gidx"
 )
 
 func TestUserInfoStore(t *testing.T) {
@@ -34,10 +34,10 @@ func TestUserInfoStore(t *testing.T) {
 		Transport: tr,
 	}
 
-	tenantID := "56a95c1b-33f8-4def-8b6d-ca9fe6976170"
+	tenantID := gidx.MustNewID("testten")
 	issuer := types.Issuer{
 		TenantID:      tenantID,
-		ID:            "e495a393-ae79-4a02-a78d-9798c7d9d252",
+		ID:            gidx.MustNewID("testiss"),
 		Name:          "Example",
 		URI:           "https://example.com/",
 		JWKSURI:       "https://example.com/.well-known/jwks.json",
@@ -163,7 +163,7 @@ func TestUserInfoStore(t *testing.T) {
 	t.Run("LookupUserInfoByID", func(t *testing.T) {
 		t.Parallel()
 
-		runFn := func(ctx context.Context, input string) (res testingx.TestResult[types.UserInfo]) {
+		runFn := func(ctx context.Context, input gidx.PrefixedID) (res testingx.TestResult[types.UserInfo]) {
 			out, err := svc.LookupUserInfoByID(ctx, input)
 			res.Success = out
 			res.Err = err
@@ -171,10 +171,10 @@ func TestUserInfoStore(t *testing.T) {
 			return res
 		}
 
-		cases := []testingx.TestCase[string, types.UserInfo]{
+		cases := []testingx.TestCase[gidx.PrefixedID, types.UserInfo]{
 			{
 				Name:    "Success",
-				Input:   userInfoStored.ID.String(),
+				Input:   userInfoStored.ID,
 				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
 					assert.NoError(t, res.Err)
@@ -184,7 +184,7 @@ func TestUserInfoStore(t *testing.T) {
 			},
 			{
 				Name:    "InvalidID",
-				Input:   uuid.NewString(),
+				Input:   gidx.MustNewID("invldid"),
 				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
 					assert.ErrorIs(t, res.Err, types.ErrUserInfoNotFound)
@@ -279,7 +279,7 @@ func TestUserInfoStore(t *testing.T) {
 					assert.NoError(t, err)
 					userinfo := res.Success.ui
 					emptyUserInfo := types.UserInfo{
-						ID:      uuid.Nil,
+						ID:      "",
 						Name:    "",
 						Email:   "",
 						Subject: "",
@@ -303,7 +303,7 @@ func TestUserInfoStore(t *testing.T) {
 					assert.NoError(t, err)
 					userinfo := res.Success.ui
 					emptyUserInfo := types.UserInfo{
-						ID:      uuid.Nil,
+						ID:      "",
 						Name:    "",
 						Email:   "",
 						Subject: "",

@@ -10,34 +10,34 @@ import (
 	"net/http"
 
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
-	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 	"github.com/labstack/echo/v4"
 	. "go.infratographer.com/identity-api/pkg/api/v1"
+	"go.infratographer.com/x/gidx"
 )
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Deletes an OAuth Client
 	// (DELETE /api/v1/clients/{clientID})
-	DeleteOAuthClient(ctx echo.Context, clientID openapi_types.UUID) error
+	DeleteOAuthClient(ctx echo.Context, clientID gidx.PrefixedID) error
 	// Gets information about an OAuth 2.0 Client.
 	// (GET /api/v1/clients/{clientID})
-	GetOAuthClient(ctx echo.Context, clientID openapi_types.UUID) error
+	GetOAuthClient(ctx echo.Context, clientID gidx.PrefixedID) error
 	// Deletes an issuer with the given ID.
 	// (DELETE /api/v1/issuers/{id})
-	DeleteIssuer(ctx echo.Context, id openapi_types.UUID) error
+	DeleteIssuer(ctx echo.Context, id gidx.PrefixedID) error
 	// Gets an issuer by ID.
 	// (GET /api/v1/issuers/{id})
-	GetIssuerByID(ctx echo.Context, id openapi_types.UUID) error
+	GetIssuerByID(ctx echo.Context, id gidx.PrefixedID) error
 	// Updates an issuer.
 	// (PATCH /api/v1/issuers/{id})
-	UpdateIssuer(ctx echo.Context, id openapi_types.UUID) error
+	UpdateIssuer(ctx echo.Context, id gidx.PrefixedID) error
 	// Creates an OAuth client.
 	// (POST /api/v1/tenants/{tenantID}/clients)
-	CreateOAuthClient(ctx echo.Context, tenantID openapi_types.UUID) error
+	CreateOAuthClient(ctx echo.Context, tenantID gidx.PrefixedID) error
 	// Creates an issuer.
 	// (POST /api/v1/tenants/{tenantID}/issuers)
-	CreateIssuer(ctx echo.Context, tenantID openapi_types.UUID) error
+	CreateIssuer(ctx echo.Context, tenantID gidx.PrefixedID) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -49,7 +49,7 @@ type ServerInterfaceWrapper struct {
 func (w *ServerInterfaceWrapper) DeleteOAuthClient(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "clientID" -------------
-	var clientID openapi_types.UUID
+	var clientID gidx.PrefixedID
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "clientID", runtime.ParamLocationPath, ctx.Param("clientID"), &clientID)
 	if err != nil {
@@ -65,7 +65,7 @@ func (w *ServerInterfaceWrapper) DeleteOAuthClient(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetOAuthClient(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "clientID" -------------
-	var clientID openapi_types.UUID
+	var clientID gidx.PrefixedID
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "clientID", runtime.ParamLocationPath, ctx.Param("clientID"), &clientID)
 	if err != nil {
@@ -81,7 +81,7 @@ func (w *ServerInterfaceWrapper) GetOAuthClient(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) DeleteIssuer(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id gidx.PrefixedID
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
 	if err != nil {
@@ -97,7 +97,7 @@ func (w *ServerInterfaceWrapper) DeleteIssuer(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetIssuerByID(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id gidx.PrefixedID
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
 	if err != nil {
@@ -113,7 +113,7 @@ func (w *ServerInterfaceWrapper) GetIssuerByID(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) UpdateIssuer(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id gidx.PrefixedID
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
 	if err != nil {
@@ -129,7 +129,7 @@ func (w *ServerInterfaceWrapper) UpdateIssuer(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) CreateOAuthClient(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "tenantID" -------------
-	var tenantID openapi_types.UUID
+	var tenantID gidx.PrefixedID
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "tenantID", runtime.ParamLocationPath, ctx.Param("tenantID"), &tenantID)
 	if err != nil {
@@ -145,7 +145,7 @@ func (w *ServerInterfaceWrapper) CreateOAuthClient(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) CreateIssuer(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "tenantID" -------------
-	var tenantID openapi_types.UUID
+	var tenantID gidx.PrefixedID
 
 	err = runtime.BindStyledParameterWithLocation("simple", false, "tenantID", runtime.ParamLocationPath, ctx.Param("tenantID"), &tenantID)
 	if err != nil {
@@ -196,7 +196,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 }
 
 type DeleteOAuthClientRequestObject struct {
-	ClientID openapi_types.UUID `json:"clientID"`
+	ClientID gidx.PrefixedID `json:"clientID"`
 }
 
 type DeleteOAuthClientResponseObject interface {
@@ -213,7 +213,7 @@ func (response DeleteOAuthClient200JSONResponse) VisitDeleteOAuthClientResponse(
 }
 
 type GetOAuthClientRequestObject struct {
-	ClientID openapi_types.UUID `json:"clientID"`
+	ClientID gidx.PrefixedID `json:"clientID"`
 }
 
 type GetOAuthClientResponseObject interface {
@@ -230,7 +230,7 @@ func (response GetOAuthClient200JSONResponse) VisitGetOAuthClientResponse(w http
 }
 
 type DeleteIssuerRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id gidx.PrefixedID `json:"id"`
 }
 
 type DeleteIssuerResponseObject interface {
@@ -247,7 +247,7 @@ func (response DeleteIssuer200JSONResponse) VisitDeleteIssuerResponse(w http.Res
 }
 
 type GetIssuerByIDRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id gidx.PrefixedID `json:"id"`
 }
 
 type GetIssuerByIDResponseObject interface {
@@ -264,7 +264,7 @@ func (response GetIssuerByID200JSONResponse) VisitGetIssuerByIDResponse(w http.R
 }
 
 type UpdateIssuerRequestObject struct {
-	Id   openapi_types.UUID `json:"id"`
+	Id   gidx.PrefixedID `json:"id"`
 	Body *UpdateIssuerJSONRequestBody
 }
 
@@ -282,7 +282,7 @@ func (response UpdateIssuer200JSONResponse) VisitUpdateIssuerResponse(w http.Res
 }
 
 type CreateOAuthClientRequestObject struct {
-	TenantID openapi_types.UUID `json:"tenantID"`
+	TenantID gidx.PrefixedID `json:"tenantID"`
 	Body     *CreateOAuthClientJSONRequestBody
 }
 
@@ -300,7 +300,7 @@ func (response CreateOAuthClient200JSONResponse) VisitCreateOAuthClientResponse(
 }
 
 type CreateIssuerRequestObject struct {
-	TenantID openapi_types.UUID `json:"tenantID"`
+	TenantID gidx.PrefixedID `json:"tenantID"`
 	Body     *CreateIssuerJSONRequestBody
 }
 
@@ -356,7 +356,7 @@ type strictHandler struct {
 }
 
 // DeleteOAuthClient operation middleware
-func (sh *strictHandler) DeleteOAuthClient(ctx echo.Context, clientID openapi_types.UUID) error {
+func (sh *strictHandler) DeleteOAuthClient(ctx echo.Context, clientID gidx.PrefixedID) error {
 	var request DeleteOAuthClientRequestObject
 
 	request.ClientID = clientID
@@ -381,7 +381,7 @@ func (sh *strictHandler) DeleteOAuthClient(ctx echo.Context, clientID openapi_ty
 }
 
 // GetOAuthClient operation middleware
-func (sh *strictHandler) GetOAuthClient(ctx echo.Context, clientID openapi_types.UUID) error {
+func (sh *strictHandler) GetOAuthClient(ctx echo.Context, clientID gidx.PrefixedID) error {
 	var request GetOAuthClientRequestObject
 
 	request.ClientID = clientID
@@ -406,7 +406,7 @@ func (sh *strictHandler) GetOAuthClient(ctx echo.Context, clientID openapi_types
 }
 
 // DeleteIssuer operation middleware
-func (sh *strictHandler) DeleteIssuer(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) DeleteIssuer(ctx echo.Context, id gidx.PrefixedID) error {
 	var request DeleteIssuerRequestObject
 
 	request.Id = id
@@ -431,7 +431,7 @@ func (sh *strictHandler) DeleteIssuer(ctx echo.Context, id openapi_types.UUID) e
 }
 
 // GetIssuerByID operation middleware
-func (sh *strictHandler) GetIssuerByID(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) GetIssuerByID(ctx echo.Context, id gidx.PrefixedID) error {
 	var request GetIssuerByIDRequestObject
 
 	request.Id = id
@@ -456,7 +456,7 @@ func (sh *strictHandler) GetIssuerByID(ctx echo.Context, id openapi_types.UUID) 
 }
 
 // UpdateIssuer operation middleware
-func (sh *strictHandler) UpdateIssuer(ctx echo.Context, id openapi_types.UUID) error {
+func (sh *strictHandler) UpdateIssuer(ctx echo.Context, id gidx.PrefixedID) error {
 	var request UpdateIssuerRequestObject
 
 	request.Id = id
@@ -487,7 +487,7 @@ func (sh *strictHandler) UpdateIssuer(ctx echo.Context, id openapi_types.UUID) e
 }
 
 // CreateOAuthClient operation middleware
-func (sh *strictHandler) CreateOAuthClient(ctx echo.Context, tenantID openapi_types.UUID) error {
+func (sh *strictHandler) CreateOAuthClient(ctx echo.Context, tenantID gidx.PrefixedID) error {
 	var request CreateOAuthClientRequestObject
 
 	request.TenantID = tenantID
@@ -518,7 +518,7 @@ func (sh *strictHandler) CreateOAuthClient(ctx echo.Context, tenantID openapi_ty
 }
 
 // CreateIssuer operation middleware
-func (sh *strictHandler) CreateIssuer(ctx echo.Context, tenantID openapi_types.UUID) error {
+func (sh *strictHandler) CreateIssuer(ctx echo.Context, tenantID gidx.PrefixedID) error {
 	var request CreateIssuerRequestObject
 
 	request.TenantID = tenantID

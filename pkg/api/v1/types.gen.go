@@ -12,8 +12,8 @@ import (
 	"path"
 	"strings"
 
-	openapi_types "github.com/deepmap/oapi-codegen/pkg/types"
 	"github.com/getkin/kin-openapi/openapi3"
+	"go.infratographer.com/x/gidx"
 )
 
 // CreateIssuer defines model for CreateIssuer.
@@ -52,7 +52,7 @@ type Issuer struct {
 	ClaimMappings map[string]string `json:"claim_mappings"`
 
 	// Id ID of the issuer
-	ID openapi_types.UUID `json:"id"`
+	ID gidx.PrefixedID `json:"id"`
 
 	// JwksUri JWKS URI
 	JWKSURI string `json:"jwks_uri"`
@@ -85,7 +85,7 @@ type OAuthClient struct {
 	Audience []string `json:"audience"`
 
 	// Id OAuth 2.0 Client ID
-	ID openapi_types.UUID `json:"id"`
+	ID gidx.PrefixedID `json:"id"`
 
 	// Name Description of Client
 	Name string `json:"name"`
@@ -106,24 +106,24 @@ type CreateIssuerJSONRequestBody = CreateIssuer
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+xYXW/bNhf+KwTf92IDFNtt73yXxkOgbsWKOEEv0qCgqWObqURq5KFTw9B/Hw4px7Kl",
-	"2LP3gXrrnUxR5+N5nvORrLg0RWk0aHR8uOJOzqEQ4fHKgkBInfNg6XdpTQkWFYS3Mheq+FyIslR6Fk5E",
-	"lilURov8w9ZNXJbAh9yhVXrGq4Rn4KRVJd3lQ3710y8MvpYWnFNGO1abZGi+gGbBjWNomME52Po3T9ZW",
-	"zeQRJJLVx6cv7rO3ilxue3j38ecxu7tJN1/VsST868XMXGhRQH2NblUJjye7di7Z3BdCX1gQmZjkwOga",
-	"mxrLcA5MRaCSdr6dQd3dpDuf9th775AVAuU8HH/iyrlPPObMFiL3wJRmSktTEELvPt66AzmFfKqEW/jN",
-	"KwsZH97H5GJUDdQeqqRm/NdLj/OrXIHGNu3CZwq07EKnfuMYzgUynCvHZLDCpNCMIgCHPOEKoegWRn0g",
-	"rBXLU2mILts0dIFAOY8gB4QbcKXRDtoJOy8lONcRRv4klo6h9dDbuJsYk4PQLX9rM+TybEpKZe200xEz",
-	"023BT40tBPIh915lBwSZjr7X6hG1GvDsLthkVy8bad2VmUD43rPPWQdVwk9sxNdWaAy5ru+4o7puV9WH",
-	"UNjr3oDFeFg6Oqnwu0kabX5Rc7l6oYUn3IG0gC+E14huHO8dGgLN6nrG8yFgr/TUtP2MQXqrcMlug9DH",
-	"YBdKAvthfDv+kb0XWsygIP+XH1KmHBM6PJFkCnpJAhjfjpk0eqpm3goy68L0UJjDyw62TfOEL8C6GNKg",
-	"N+i9ImxMCVqUig/5m96g94YnvBQ4D5T3Ran6i1f9OBtdfxUf0lEVU6QJSE+krxBTmgVW6LwpQjJpRQEI",
-	"1vHhfbdIZEMgio4pjDXOQ752zZtU0BBN6t2TAtkvrKp6oI/jxA4Jvh4MQn8zGutiEWWZKxmS6T86Cm/V",
-	"sP9/C1M+5P/rb5bffr359ncWgqCGHRXEWT71OWtcS7jzRSHs8hm6IIAIykbSghrvfbO2Y+eeRV1vU3AN",
-	"+J/Dv5nwSeBfAzpG9Us5UEsRE+Nxw8WmT/ReJqRKnqsmdnrXX6nsD9RLuh4pe6mKW1S0TIOyttnJWGDg",
-	"X1Ar9mCt1Hg8KYzDdKYWoFk6avIU8d1fM/HO22VQ+VE8zMLUOC8SasWdBH6olQ3yk+UetEtactp4x2Xz",
-	"NNn7uKj+bYiHPznfmmz5F4NdL9jV9kJBIVbfKNEx4gbX3Sw32h6CFmFZiA/pqFrvD2EZNa6j9tr/QDgg",
-	"iNtgm6RQWrNQtNOEyt8aZV5nQVodIlnH9i1KpQ3GP6yXPz1JYwaNNUYeMTY79FNP0kP6OaaX4LOAZPh2",
-	"3VyUPlfBNKv8PHpLQyZ7e0tV/R4AAP//z6Tyrm4WAAA=",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

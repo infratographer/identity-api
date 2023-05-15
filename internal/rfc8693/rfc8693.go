@@ -16,7 +16,6 @@ import (
 	"go.infratographer.com/identity-api/internal/fositex"
 	"go.infratographer.com/identity-api/internal/storage"
 	"go.infratographer.com/identity-api/internal/types"
-	"go.infratographer.com/x/urnx"
 )
 
 const (
@@ -244,7 +243,7 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 	}
 
 	var newClaims jwt.JWTClaims
-	newClaims.Subject = s.formatSubject(userInfo)
+	newClaims.Subject = userInfo.ID.String()
 	newClaims.Issuer = s.config.GetAccessTokenIssuer(ctx)
 
 	for k, v := range mappedClaims.ToMapClaims() {
@@ -352,14 +351,4 @@ func (s *TokenExchangeHandler) populateUserInfo(ctx context.Context, issuer stri
 	}
 
 	return userInfo, nil
-}
-
-func (s *TokenExchangeHandler) formatSubject(info types.UserInfo) string {
-	urn, err := urnx.Build(types.URNNamespace, types.URNResourceTypeUser, info.ID)
-	if err != nil {
-		// If for some reason we aren't building valid URNs, panic
-		panic(err)
-	}
-
-	return urn.String()
 }

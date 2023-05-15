@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/google/uuid"
 	"go.infratographer.com/identity-api/internal/types"
 	v1 "go.infratographer.com/identity-api/pkg/api/v1"
+	"go.infratographer.com/x/gidx"
 )
 
 func (h *apiHandler) CreateIssuer(ctx context.Context, req CreateIssuerRequestObject) (CreateIssuerResponseObject, error) {
@@ -30,9 +30,19 @@ func (h *apiHandler) CreateIssuer(ctx context.Context, req CreateIssuerRequestOb
 		}
 	}
 
+	id, err := gidx.NewID(types.IdentityIssuerIDPrefix)
+	if err != nil {
+		err = errorWithStatus{
+			status:  http.StatusInternalServerError,
+			message: "failed to generate new id",
+		}
+
+		return nil, err
+	}
+
 	issuerToCreate := types.Issuer{
-		TenantID:      tenantID.String(),
-		ID:            uuid.New().String(),
+		TenantID:      tenantID,
+		ID:            id,
 		Name:          createOp.Name,
 		URI:           createOp.URI,
 		JWKSURI:       createOp.JWKSURI,
@@ -53,9 +63,7 @@ func (h *apiHandler) CreateIssuer(ctx context.Context, req CreateIssuerRequestOb
 }
 
 func (h *apiHandler) GetIssuerByID(ctx context.Context, req GetIssuerByIDRequestObject) (GetIssuerByIDResponseObject, error) {
-	id := req.Id.String()
-
-	iss, err := h.engine.GetIssuerByID(ctx, id)
+	iss, err := h.engine.GetIssuerByID(ctx, req.Id)
 	switch err {
 	case nil:
 	case types.ErrorIssuerNotFound:
@@ -73,7 +81,6 @@ func (h *apiHandler) GetIssuerByID(ctx context.Context, req GetIssuerByIDRequest
 }
 
 func (h *apiHandler) UpdateIssuer(ctx context.Context, req UpdateIssuerRequestObject) (UpdateIssuerResponseObject, error) {
-	id := req.Id.String()
 	updateOp := req.Body
 
 	var (
@@ -100,7 +107,7 @@ func (h *apiHandler) UpdateIssuer(ctx context.Context, req UpdateIssuerRequestOb
 		ClaimMappings: claimsMapping,
 	}
 
-	issuer, err := h.engine.UpdateIssuer(ctx, id, update)
+	issuer, err := h.engine.UpdateIssuer(ctx, req.Id, update)
 	switch err {
 	case nil:
 	case types.ErrorIssuerNotFound:
@@ -118,9 +125,7 @@ func (h *apiHandler) UpdateIssuer(ctx context.Context, req UpdateIssuerRequestOb
 }
 
 func (h *apiHandler) DeleteIssuer(ctx context.Context, req DeleteIssuerRequestObject) (DeleteIssuerResponseObject, error) {
-	id := req.Id.String()
-
-	err := h.engine.DeleteIssuer(ctx, id)
+	err := h.engine.DeleteIssuer(ctx, req.Id)
 	switch err {
 	case nil, types.ErrorIssuerNotFound:
 	default:

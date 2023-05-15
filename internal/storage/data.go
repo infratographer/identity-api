@@ -5,13 +5,14 @@ import (
 	"os"
 
 	"go.infratographer.com/x/crdbx"
+	"go.infratographer.com/x/gidx"
 	"gopkg.in/yaml.v3"
 )
 
 // SeedIssuer represents the seed data for a single issuer.
 type SeedIssuer struct {
-	TenantID      string            `yaml:"tenantID"`
-	ID            string            `yaml:"id"`
+	TenantID      gidx.PrefixedID   `yaml:"tenantID"`
+	ID            gidx.PrefixedID   `yaml:"id"`
 	Name          string            `yaml:"name"`
 	URI           string            `yaml:"uri"`
 	JWKSURI       string            `yaml:"jwksURI"`

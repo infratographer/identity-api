@@ -1,15 +1,15 @@
 package types
 
 import (
-	"github.com/google/uuid"
 	"github.com/ory/fosite"
 	v1 "go.infratographer.com/identity-api/pkg/api/v1"
+	"go.infratographer.com/x/gidx"
 )
 
 // OAuthClient is an OAuth 2.0 Client
 type OAuthClient struct {
-	ID       string
-	TenantID string
+	ID       gidx.PrefixedID
+	TenantID gidx.PrefixedID
 	Name     string
 	Secret   string
 	Audience []string
@@ -32,7 +32,7 @@ func (c OAuthClient) GetHashedSecret() []byte {
 
 // GetID implements fosite.Client
 func (c OAuthClient) GetID() string {
-	return c.ID
+	return c.ID.String()
 }
 
 // GetRedirectURIs implements fosite.Client
@@ -59,7 +59,7 @@ func (OAuthClient) IsPublic() bool {
 func (c OAuthClient) ToV1OAuthClient() v1.OAuthClient {
 	var client v1.OAuthClient
 
-	client.ID = uuid.MustParse(c.ID)
+	client.ID = c.ID
 	client.Name = c.Name
 	client.Audience = c.Audience
 

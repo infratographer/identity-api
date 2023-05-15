@@ -10,9 +10,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/google/uuid"
-
 	"go.infratographer.com/identity-api/internal/types"
+	"go.infratographer.com/x/gidx"
 )
 
 var userInfoCols = struct {
@@ -107,7 +106,7 @@ func (s userInfoService) LookupUserInfoByClaims(ctx context.Context, iss, sub st
 	return ui, err
 }
 
-func (s userInfoService) LookupUserInfoByID(ctx context.Context, id string) (types.UserInfo, error) {
+func (s userInfoService) LookupUserInfoByID(ctx context.Context, id gidx.PrefixedID) (types.UserInfo, error) {
 	selectCols := withQualifier([]string{
 		userInfoCols.ID,
 		userInfoCols.Name,
@@ -169,7 +168,7 @@ func (s userInfoService) StoreUserInfo(ctx context.Context, userInfo types.UserI
         SELECT id FROM issuers WHERE uri = $1
         `, userInfo.Issuer)
 
-	var issuerID string
+	var issuerID gidx.PrefixedID
 
 	err = row.Scan(&issuerID)
 	switch err {
@@ -181,14 +180,20 @@ func (s userInfoService) StoreUserInfo(ctx context.Context, userInfo types.UserI
 	}
 
 	insertCols := strings.Join([]string{
+		userInfoCols.ID,
 		userInfoCols.Name,
 		userInfoCols.Email,
 		userInfoCols.Subject,
 		userInfoCols.IssuerID,
 	}, ",")
 
+	newID, err := gidx.NewID(types.IdentityUserIDPrefix)
+	if err != nil {
+		return types.UserInfo{}, err
+	}
+
 	q := fmt.Sprintf(`INSERT INTO user_info (%[1]s) VALUES (
-            $1, $2, $3, $4
+            $1, $2, $3, $4, $5
 	) ON CONFLICT (%[2]s, %[3]s)
         DO UPDATE SET %[2]s = excluded.%[2]s, %[3]s = excluded.%[3]s
         RETURNING id`,
@@ -198,17 +203,17 @@ func (s userInfoService) StoreUserInfo(ctx context.Context, userInfo types.UserI
 	)
 
 	row = tx.QueryRowContext(ctx, q,
-		userInfo.Name, userInfo.Email, userInfo.Subject, issuerID,
+		newID, userInfo.Name, userInfo.Email, userInfo.Subject, issuerID,
 	)
 
-	var userID string
+	var userID gidx.PrefixedID
 
 	err = row.Scan(&userID)
 	if err != nil {
 		return types.UserInfo{}, err
 	}
 
-	userInfo.ID = uuid.MustParse(userID)
+	userInfo.ID = userID
 
 	return userInfo, err
 }

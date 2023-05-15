@@ -6,20 +6,20 @@ import (
 	"encoding/json"
 
 	"github.com/google/cel-go/cel"
-	"github.com/google/uuid"
 	exprpb "google.golang.org/genproto/googleapis/api/expr/v1alpha1"
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.infratographer.com/identity-api/internal/celutils"
 	v1 "go.infratographer.com/identity-api/pkg/api/v1"
+	"go.infratographer.com/x/gidx"
 )
 
 // Issuer represents a token issuer.
 type Issuer struct {
 	// TenantID represents the ID of the tenant the issuer belongs to.
-	TenantID string
+	TenantID gidx.PrefixedID
 	// ID represents the ID of the issuer in identity-api.
-	ID string
+	ID gidx.PrefixedID
 	// Name represents the human-readable name of the issuer.
 	Name string
 	// URI represents the issuer URI as found in the "iss" claim of a JWT.
@@ -38,7 +38,7 @@ func (i Issuer) ToV1Issuer() (v1.Issuer, error) {
 	}
 
 	out := v1.Issuer{
-		ID:            uuid.MustParse(i.ID),
+		ID:            i.ID,
 		Name:          i.Name,
 		URI:           i.URI,
 		JWKSURI:       i.JWKSURI,
@@ -59,10 +59,10 @@ type IssuerUpdate struct {
 // IssuerService represents a service for managing issuers.
 type IssuerService interface {
 	CreateIssuer(ctx context.Context, iss Issuer) (*Issuer, error)
-	GetIssuerByID(ctx context.Context, id string) (*Issuer, error)
+	GetIssuerByID(ctx context.Context, id gidx.PrefixedID) (*Issuer, error)
 	GetIssuerByURI(ctx context.Context, uri string) (*Issuer, error)
-	UpdateIssuer(ctx context.Context, id string, update IssuerUpdate) (*Issuer, error)
-	DeleteIssuer(ctx context.Context, id string) error
+	UpdateIssuer(ctx context.Context, id gidx.PrefixedID, update IssuerUpdate) (*Issuer, error)
+	DeleteIssuer(ctx context.Context, id gidx.PrefixedID) error
 }
 
 // ClaimsMapping represents a map of claims to a CEL expression that will be evaluated
@@ -165,11 +165,11 @@ func BuildClaimsMappingFromMap(in map[string]*exprpb.CheckedExpr) ClaimsMapping 
 // UserInfo contains information about the user from the source OIDC provider.
 // As defined in https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
 type UserInfo struct {
-	ID      uuid.UUID `json:"-"`
-	Name    string    `json:"name,omitempty"`
-	Email   string    `json:"email,omitempty"`
-	Issuer  string    `json:"iss"`
-	Subject string    `json:"sub"`
+	ID      gidx.PrefixedID `json:"-"`
+	Name    string          `json:"name,omitempty"`
+	Email   string          `json:"email,omitempty"`
+	Issuer  string          `json:"iss"`
+	Subject string          `json:"sub"`
 }
 
 // UserInfoService defines the storage class for storing User
@@ -179,7 +179,7 @@ type UserInfoService interface {
 	LookupUserInfoByClaims(ctx context.Context, iss, sub string) (UserInfo, error)
 
 	// LookupUserInfoByID returns the user info for a STS user ID
-	LookupUserInfoByID(ctx context.Context, id string) (UserInfo, error)
+	LookupUserInfoByID(ctx context.Context, id gidx.PrefixedID) (UserInfo, error)
 
 	// StoreUserInfo stores the userInfo into the storage backend.
 	StoreUserInfo(ctx context.Context, userInfo UserInfo) (UserInfo, error)
@@ -192,6 +192,6 @@ type UserInfoService interface {
 // OAuthClientManager defines the storage interface for OAuth clients.
 type OAuthClientManager interface {
 	CreateOAuthClient(ctx context.Context, client OAuthClient) (OAuthClient, error)
-	LookupOAuthClientByID(ctx context.Context, clientID string) (OAuthClient, error)
-	DeleteOAuthClient(ctx context.Context, clientID string) error
+	LookupOAuthClientByID(ctx context.Context, clientID gidx.PrefixedID) (OAuthClient, error)
+	DeleteOAuthClient(ctx context.Context, clientID gidx.PrefixedID) error
 }

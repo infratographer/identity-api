@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE TABLE oauth_clients (
-    id        UUID PRIMARY KEY NOT NULL DEFAULT gen_random_uuid(),
-    tenant_id UUID NOT NULL,
+    id        VARCHAR(29) PRIMARY KEY NOT NULL,
+    tenant_id VARCHAR(29) NOT NULL,
     name      STRING NOT NULL,
     secret    STRING NOT NULL,
     audience  STRING NOT NULL
