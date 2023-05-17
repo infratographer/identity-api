@@ -50,6 +50,8 @@ DEV_URI="postgresql://root@cockroachdb:26257/${DEV_DB}?sslmode=disable"
 TEST_PRIVKEY_FILE?=tests/data/privkey.pem
 CONFIG_FILE?=identity-api.example.yaml
 
+DOCKER_BUILD_TAG?=latest
+
 # targets
 
 .PHONY: help all generate dev-database test unit-test coverage lint golint build clean vendor up
@@ -90,9 +92,14 @@ golint: | vendor $(TOOLS_DIR)/golangci-lint  ## Runs go lint checks.
 	@$(TOOLS_DIR)/golangci-lint run --build-tags "-tags testtools"
 
 build: vendor generate  ## Builds a binary stored at bin/${APP_NAME}
+	@echo Building image...
 	@CGO_ENABLED=0 go build -buildvcs=false -mod=readonly -v -o bin/${APP_NAME}
 
-clean: docker-clean  ## Cleans up generated files.
+docker: build  ## Builds a docker image tagged with $(APP_NAME):$(DOCKER_BUILD_TAG)
+	@echo Building docker image...
+	@docker build --file Dockerfile -t $(APP_NAME):$(DOCKER_BUILD_TAG) bin/
+
+clean:  ## Cleans up generated files.
 	@echo Cleaning...
 	@rm -f app
 	@rm -rf ./dist/

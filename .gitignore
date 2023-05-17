@@ -4,3 +4,4 @@ coverage.out
 *.pem
 audit.log
 .tools/
+identity-api

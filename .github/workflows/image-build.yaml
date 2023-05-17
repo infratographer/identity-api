@@ -31,10 +31,14 @@ jobs:
           tags: |
             type=sha
             type=raw,value=latest,enable={{is_default_branch}}
+      
+      - name: Build binary
+        run: make build
 
-      - name: Build and push
+      - name: Container build and push
         uses: docker/build-push-action@v4
         with:
-          context: .
+          context: bin/
+          file: Dockerfile
           push: true
           tags: ${{ steps.metadata.outputs.tags }}
