@@ -218,22 +218,46 @@ func (s userInfoService) StoreUserInfo(ctx context.Context, userInfo types.UserI
 	return userInfo, err
 }
 
-// FetchUserInfoFromIssuer uses the subject access token to retrieve
-// information from the OIDC /userinfo endpoint.
+// FetchUserInfoFromIssuer uses the subject access token to retrieve information from the OIDC UserInfo
+// endpoint, as defined by OIDC Discovery.
 func (s userInfoService) FetchUserInfoFromIssuer(ctx context.Context, iss, rawToken string) (types.UserInfo, error) {
-	endpoint, err := url.JoinPath(iss, "userinfo")
+	// Append /.well-known/openid-configuration to the issuer as defined in the spec:
+	// https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig
+	configEndpoint, err := url.JoinPath(iss, "/.well-known/openid-configuration")
 	if err != nil {
 		return types.UserInfo{}, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, configEndpoint, nil)
+	if err != nil {
+		return types.UserInfo{}, err
+	}
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return types.UserInfo{}, err
+	}
+
+	// Only unmarshal the UserInfo endpoint because that's all we need
+	var config struct {
+		UserInfoEndpoint string `json:"userinfo_endpoint"`
+	}
+
+	defer resp.Body.Close()
+
+	err = json.NewDecoder(resp.Body).Decode(&config)
+	if err != nil {
+		return types.UserInfo{}, err
+	}
+
+	req, err = http.NewRequestWithContext(ctx, http.MethodGet, config.UserInfoEndpoint, nil)
 	if err != nil {
 		return types.UserInfo{}, err
 	}
 
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", rawToken))
 
-	resp, err := s.httpClient.Do(req)
+	resp, err = s.httpClient.Do(req)
 	if err != nil {
 		return types.UserInfo{}, err
 	}
