@@ -39,7 +39,7 @@ func TestUserInfoStore(t *testing.T) {
 		TenantID:      tenantID,
 		ID:            gidx.MustNewID("testiss"),
 		Name:          "Example",
-		URI:           "https://example.com/",
+		URI:           "https://example.com",
 		JWKSURI:       "https://example.com/.well-known/jwks.json",
 		ClaimMappings: types.ClaimsMapping{},
 	}
@@ -200,9 +200,9 @@ func TestUserInfoStore(t *testing.T) {
 		t.Parallel()
 
 		type fetchInput struct {
-			issuer   string
-			token    string
-			respBody *string
+			issuer    string
+			token     string
+			responses map[string]string
 		}
 
 		type fetchResult struct {
@@ -210,9 +210,12 @@ func TestUserInfoStore(t *testing.T) {
 			ui types.UserInfo
 		}
 
-		exampleResp := `
+		configResp := `{"userinfo_endpoint": "https://woo.com/notsowellknown/userinfo"}`
+
+		userinfoResp := `
                   {
-                    "name": "adam", "email": "ad@am.com",
+                    "name": "adam",
+                    "email": "ad@am.com",
                     "sub": "super-admin"
                   }`
 
@@ -222,14 +225,28 @@ func TestUserInfoStore(t *testing.T) {
 
 		cases := []testingx.TestCase[fetchInput, fetchResult]{
 			{
-				Name:    "Success",
-				Input:   fetchInput{issuer: "https://someidp.com", token: "supersecrettoken"},
+				Name: "Success",
+				Input: fetchInput{
+					issuer: "https://woo.com",
+					token:  "supersecrettoken",
+					responses: map[string]string{
+						"/.well-known/openid-configuration": configResp,
+						"/notsowellknown/userinfo":          userinfoResp,
+					},
+				},
 				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[fetchResult]) {
 					tr := res.Success.tr
-					assert.Equal(t, "https://someidp.com/userinfo", tr.req.URL.String())
-					assert.Equal(t, "Bearer supersecrettoken", tr.req.Header.Get("authorization"))
-					assert.Equal(t, http.MethodGet, tr.req.Method)
+					assert.Equal(t, 2, len(tr.reqs))
+
+					configReq := tr.reqs[0]
+					assert.Equal(t, "https://woo.com/.well-known/openid-configuration", configReq.URL.String())
+					assert.Equal(t, http.MethodGet, configReq.Method)
+
+					userinfoReq := tr.reqs[1]
+					assert.Equal(t, "https://woo.com/notsowellknown/userinfo", userinfoReq.URL.String())
+					assert.Equal(t, "Bearer supersecrettoken", userinfoReq.Header.Get("authorization"))
+					assert.Equal(t, http.MethodGet, userinfoReq.Method)
 				},
 				CleanupFn: cleanupFn,
 			},
@@ -246,9 +263,12 @@ func TestUserInfoStore(t *testing.T) {
 			{
 				Name: "FullFetch",
 				Input: fetchInput{
-					issuer:   "https://woo.com",
-					token:    "supersecrettoken",
-					respBody: &exampleResp,
+					issuer: "https://woo.com",
+					token:  "supersecrettoken",
+					responses: map[string]string{
+						"/.well-known/openid-configuration": configResp,
+						"/notsowellknown/userinfo":          userinfoResp,
+					},
 				},
 				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[fetchResult]) {
@@ -269,9 +289,12 @@ func TestUserInfoStore(t *testing.T) {
 			{
 				Name: "EmptyUserInfo",
 				Input: fetchInput{
-					issuer:   "https://woo.com",
-					token:    "supersecretoken",
-					respBody: &emptyResp,
+					issuer: "https://woo.com",
+					token:  "supersecretoken",
+					responses: map[string]string{
+						"/.well-known/openid-configuration": configResp,
+						"/notsowellknown/userinfo":          emptyResp,
+					},
 				},
 				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[fetchResult]) {
@@ -293,9 +316,12 @@ func TestUserInfoStore(t *testing.T) {
 			{
 				Name: "NullNameResponse",
 				Input: fetchInput{
-					issuer:   "https://woo.com",
-					token:    "supersecretoken",
-					respBody: &nullResp,
+					issuer: "https://woo.com",
+					token:  "supersecretoken",
+					responses: map[string]string{
+						"/.well-known/openid-configuration": configResp,
+						"/notsowellknown/userinfo":          nullResp,
+					},
 				},
 				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[fetchResult]) {
@@ -317,7 +343,7 @@ func TestUserInfoStore(t *testing.T) {
 		}
 
 		runFn := func(ctx context.Context, input fetchInput) testingx.TestResult[fetchResult] {
-			tr := recordingTransport{body: input.respBody}
+			tr := recordingTransport{responses: input.responses}
 			client := http.Client{Transport: &tr}
 			svc, err := newUserInfoService(db, WithHTTPClient(&client))
 			if !assert.NoError(t, err) {
@@ -374,7 +400,7 @@ func TestUserInfoStore(t *testing.T) {
 				Input: types.UserInfo{
 					Name:    "example-name",
 					Email:   "example@example.web",
-					Issuer:  "https://example.com/",
+					Issuer:  "https://example.com",
 					Subject: "user:person001",
 				},
 				SetupFn: caseSetupFn,
@@ -436,20 +462,22 @@ func TestUserInfoStore(t *testing.T) {
 }
 
 type recordingTransport struct {
-	req  *http.Request
-	body *string
+	reqs      []*http.Request
+	responses map[string]string
 }
 
 func (rt *recordingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	rt.req = req
+	rt.reqs = append(rt.reqs, req)
 
-	if rt.body != nil {
+	body, ok := rt.responses[req.URL.Path]
+
+	if ok {
 		resp := http.Response{
 			Status:     http.StatusText(http.StatusOK),
 			StatusCode: http.StatusOK,
 		}
 
-		r := io.NopCloser(bytes.NewReader([]byte(*rt.body)))
+		r := io.NopCloser(bytes.NewReader([]byte(body)))
 		resp.Body = r
 
 		return &resp, nil
