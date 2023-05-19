@@ -210,8 +210,6 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 		return errorsx.WithStack(fosite.ErrInvalidRequest.WithHintf("error mapping claims: %s", err))
 	}
 
-	issuer := claims.Issuer
-
 	userInfoSvc := s.config.GetUserInfoStrategy(ctx)
 
 	txManager, ok := userInfoSvc.(storage.TransactionManager)
@@ -224,7 +222,7 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 		return errorsx.WithStack(fosite.ErrServerError.WithHint("could not start transaction"))
 	}
 
-	userInfo, err := s.populateUserInfo(dbCtx, issuer, claims.Subject, subjectToken)
+	userInfo, err := s.populateUserInfo(dbCtx, claims)
 	if err != nil {
 		return errorsx.WithStack(fosite.ErrInvalidRequest.WithHintf("unable to populate user info: %s", err))
 	}
@@ -328,9 +326,9 @@ func (s *TokenExchangeHandler) CanHandleTokenEndpointRequest(_ context.Context, 
 	return requester.GetGrantTypes().ExactOne(GrantTypeTokenExchange)
 }
 
-func (s *TokenExchangeHandler) populateUserInfo(ctx context.Context, issuer string, subject string, token string) (types.UserInfo, error) {
+func (s *TokenExchangeHandler) populateUserInfo(ctx context.Context, claims *jwt.JWTClaims) (types.UserInfo, error) {
 	userInfoSvc := s.config.GetUserInfoStrategy(ctx)
-	userInfo, err := userInfoSvc.LookupUserInfoByClaims(ctx, issuer, subject)
+	userInfo, err := userInfoSvc.LookupUserInfoByClaims(ctx, claims.Issuer, claims.Subject)
 
 	if err != nil {
 		// We can handle ErrUserInfoNotFound by hitting the
@@ -344,7 +342,9 @@ func (s *TokenExchangeHandler) populateUserInfo(ctx context.Context, issuer stri
 		return userInfo, nil
 	}
 
-	userInfo, err = userInfoSvc.FetchUserInfoFromIssuer(ctx, issuer, token)
+	claimsMap := claims.ToMap()
+
+	userInfo, err = userInfoSvc.ParseUserInfoFromClaims(claimsMap)
 	if err != nil {
 		fmt.Println("failed to fetch userinfo")
 		return types.UserInfo{}, err

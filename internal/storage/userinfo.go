@@ -3,15 +3,24 @@ package storage
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
-	"net/url"
 	"strings"
 
 	"go.infratographer.com/identity-api/internal/types"
 	"go.infratographer.com/x/gidx"
+)
+
+const (
+	jwtClaimSubject = "sub"
+	jwtClaimName    = "name"
+	jwtClaimEmail   = "email"
+	jwtClaimIssuer  = "iss"
+)
+
+var (
+	errMissingClaim = errors.New("missing required claim")
+	errInvalidClaim = errors.New("invalid claim value")
 )
 
 var userInfoCols = struct {
@@ -29,16 +38,14 @@ var userInfoCols = struct {
 }
 
 type userInfoService struct {
-	db         *sql.DB
-	httpClient *http.Client
+	db *sql.DB
 }
 
 type userInfoServiceOpt func(*userInfoService)
 
 func newUserInfoService(db *sql.DB, opts ...userInfoServiceOpt) (*userInfoService, error) {
 	s := &userInfoService{
-		db:         db,
-		httpClient: http.DefaultClient,
+		db: db,
 	}
 
 	for _, opt := range opts {
@@ -46,14 +53,6 @@ func newUserInfoService(db *sql.DB, opts ...userInfoServiceOpt) (*userInfoServic
 	}
 
 	return s, nil
-}
-
-// WithHTTPClient allows configuring the HTTP client used by
-// userInfoService to call out to userinfo endpoints.
-func WithHTTPClient(client *http.Client) func(svc *userInfoService) {
-	return func(svc *userInfoService) {
-		svc.httpClient = client
-	}
 }
 
 // LookupUserInfoByClaims fetches UserInfo from the store.
@@ -218,70 +217,51 @@ func (s userInfoService) StoreUserInfo(ctx context.Context, userInfo types.UserI
 	return userInfo, err
 }
 
-// FetchUserInfoFromIssuer uses the subject access token to retrieve information from the OIDC UserInfo
-// endpoint, as defined by OIDC Discovery.
-func (s userInfoService) FetchUserInfoFromIssuer(ctx context.Context, iss, rawToken string) (types.UserInfo, error) {
-	// Append /.well-known/openid-configuration to the issuer as defined in the spec:
-	// https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig
-	configEndpoint, err := url.JoinPath(iss, "/.well-known/openid-configuration")
+func parseClaim(claims map[string]any, key string, required bool) (string, error) {
+	rawVal, ok := claims[key]
+	if !ok {
+		rawVal = ""
+	}
+
+	val, ok := rawVal.(string)
+	if !ok {
+		return "", errInvalidClaim
+	}
+
+	if required && val == "" {
+		return "", errMissingClaim
+	}
+
+	return val, nil
+}
+
+func (s userInfoService) ParseUserInfoFromClaims(claims map[string]any) (types.UserInfo, error) {
+	iss, err := parseClaim(claims, jwtClaimIssuer, true)
 	if err != nil {
 		return types.UserInfo{}, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, configEndpoint, nil)
+	sub, err := parseClaim(claims, jwtClaimSubject, true)
 	if err != nil {
 		return types.UserInfo{}, err
 	}
 
-	resp, err := s.httpClient.Do(req)
+	name, err := parseClaim(claims, jwtClaimName, false)
 	if err != nil {
 		return types.UserInfo{}, err
 	}
 
-	// Only unmarshal the UserInfo endpoint because that's all we need
-	var config struct {
-		UserInfoEndpoint string `json:"userinfo_endpoint"`
-	}
-
-	defer resp.Body.Close()
-
-	err = json.NewDecoder(resp.Body).Decode(&config)
+	email, err := parseClaim(claims, jwtClaimEmail, false)
 	if err != nil {
 		return types.UserInfo{}, err
 	}
 
-	req, err = http.NewRequestWithContext(ctx, http.MethodGet, config.UserInfoEndpoint, nil)
-	if err != nil {
-		return types.UserInfo{}, err
+	out := types.UserInfo{
+		Issuer:  iss,
+		Subject: sub,
+		Name:    name,
+		Email:   email,
 	}
 
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", rawToken))
-
-	resp, err = s.httpClient.Do(req)
-	if err != nil {
-		return types.UserInfo{}, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return types.UserInfo{}, fmt.Errorf(
-			"unexpected response code %d from request: %w",
-			resp.StatusCode,
-			types.ErrFetchUserInfo,
-		)
-	}
-
-	var ui types.UserInfo
-
-	defer resp.Body.Close()
-
-	err = json.NewDecoder(resp.Body).Decode(&ui)
-	if err != nil {
-		return types.UserInfo{}, err
-	}
-
-	if ui.Issuer == "" {
-		ui.Issuer = iss
-	}
-
-	return ui, nil
+	return out, nil
 }
