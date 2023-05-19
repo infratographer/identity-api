@@ -1,15 +1,12 @@
 package storage
 
 import (
-	"bytes"
 	"context"
-	"errors"
-	"io"
-	"net/http"
 	"testing"
 
 	"github.com/cockroachdb/cockroach-go/v2/testserver"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"go.infratographer.com/identity-api/internal/testingx"
 	"go.infratographer.com/identity-api/internal/types"
@@ -28,11 +25,6 @@ func TestUserInfoStore(t *testing.T) {
 	}
 
 	t.Cleanup(shutdown)
-
-	tr := &recordingTransport{}
-	httpClient := &http.Client{
-		Transport: tr,
-	}
 
 	tenantID := gidx.MustNewID("testten")
 	issuer := types.Issuer{
@@ -61,7 +53,7 @@ func TestUserInfoStore(t *testing.T) {
 	err = issSvc.seedDatabase(context.Background(), seedIssuers)
 	assert.Nil(t, err)
 
-	svc, err := newUserInfoService(db, WithHTTPClient(httpClient))
+	svc, err := newUserInfoService(db)
 	assert.NoError(t, err)
 
 	ctx := context.Background()
@@ -196,296 +188,91 @@ func TestUserInfoStore(t *testing.T) {
 		testingx.RunTests(context.Background(), t, cases, runFn)
 	})
 
-	t.Run("FetchUserInfoFromIssuer", func(t *testing.T) {
+	t.Run("ParseUserInfoFromClaims", func(t *testing.T) {
 		t.Parallel()
 
-		type fetchInput struct {
-			issuer    string
-			token     string
-			responses map[string]string
-		}
-
-		type fetchResult struct {
-			tr recordingTransport
-			ui types.UserInfo
-		}
-
-		configResp := `{"userinfo_endpoint": "https://woo.com/notsowellknown/userinfo"}`
-
-		userinfoResp := `
-                  {
-                    "name": "adam",
-                    "email": "ad@am.com",
-                    "sub": "super-admin"
-                  }`
-
-		emptyResp := `{}`
-
-		nullResp := `{"name": null, "email": null, "sub": null}`
-
-		cases := []testingx.TestCase[fetchInput, fetchResult]{
+		cases := []testingx.TestCase[map[string]any, types.UserInfo]{
 			{
 				Name: "Success",
-				Input: fetchInput{
-					issuer: "https://woo.com",
-					token:  "supersecrettoken",
-					responses: map[string]string{
-						"/.well-known/openid-configuration": configResp,
-						"/notsowellknown/userinfo":          userinfoResp,
-					},
+				Input: map[string]any{
+					"iss":   "https://woo.com",
+					"sub":   "badman@woo.com",
+					"name":  "Badman",
+					"email": "badman@woo.com",
 				},
-				SetupFn: setupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[fetchResult]) {
-					tr := res.Success.tr
-					assert.Equal(t, 2, len(tr.reqs))
-
-					configReq := tr.reqs[0]
-					assert.Equal(t, "https://woo.com/.well-known/openid-configuration", configReq.URL.String())
-					assert.Equal(t, http.MethodGet, configReq.Method)
-
-					userinfoReq := tr.reqs[1]
-					assert.Equal(t, "https://woo.com/notsowellknown/userinfo", userinfoReq.URL.String())
-					assert.Equal(t, "Bearer supersecrettoken", userinfoReq.Header.Get("authorization"))
-					assert.Equal(t, http.MethodGet, userinfoReq.Method)
-				},
-				CleanupFn: cleanupFn,
-			},
-			{
-				Name:    "BadIssuer",
-				Input:   fetchInput{issuer: "://", token: "supersecrettoken"},
-				SetupFn: setupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[fetchResult]) {
-					err := res.Err
-					assert.ErrorContains(t, err, "missing protocol scheme")
-				},
-				CleanupFn: cleanupFn,
-			},
-			{
-				Name: "FullFetch",
-				Input: fetchInput{
-					issuer: "https://woo.com",
-					token:  "supersecrettoken",
-					responses: map[string]string{
-						"/.well-known/openid-configuration": configResp,
-						"/notsowellknown/userinfo":          userinfoResp,
-					},
-				},
-				SetupFn: setupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[fetchResult]) {
-					info := res.Success.ui
-					err := res.Err
-					assert.NoError(t, err)
-					expected := types.UserInfo{
-						Name:    "adam",
-						Email:   "ad@am.com",
-						Subject: "super-admin",
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
+					exp := types.UserInfo{
 						Issuer:  "https://woo.com",
+						Subject: "badman@woo.com",
+						Name:    "Badman",
+						Email:   "badman@woo.com",
 					}
 
-					assert.Equal(t, expected, info)
+					assert.NoError(t, res.Err)
+					assert.Equal(t, exp, res.Success)
 				},
-				CleanupFn: cleanupFn,
 			},
 			{
-				Name: "EmptyUserInfo",
-				Input: fetchInput{
-					issuer: "https://woo.com",
-					token:  "supersecretoken",
-					responses: map[string]string{
-						"/.well-known/openid-configuration": configResp,
-						"/notsowellknown/userinfo":          emptyResp,
-					},
+				Name: "OnlySomeFields",
+				Input: map[string]any{
+					"iss": "https://woo.com",
+					"sub": "badman@woo.com",
 				},
-				SetupFn: setupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[fetchResult]) {
-					err := res.Err
-					assert.NoError(t, err)
-					userinfo := res.Success.ui
-					emptyUserInfo := types.UserInfo{
-						ID:      "",
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
+					exp := types.UserInfo{
+						Issuer:  "https://woo.com",
+						Subject: "badman@woo.com",
 						Name:    "",
 						Email:   "",
-						Subject: "",
-						Issuer:  "https://woo.com",
 					}
 
-					assert.Equal(t, emptyUserInfo, userinfo)
-				},
-				CleanupFn: cleanupFn,
-			},
-			{
-				Name: "NullNameResponse",
-				Input: fetchInput{
-					issuer: "https://woo.com",
-					token:  "supersecretoken",
-					responses: map[string]string{
-						"/.well-known/openid-configuration": configResp,
-						"/notsowellknown/userinfo":          nullResp,
-					},
-				},
-				SetupFn: setupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[fetchResult]) {
-					err := res.Err
-					assert.NoError(t, err)
-					userinfo := res.Success.ui
-					emptyUserInfo := types.UserInfo{
-						ID:      "",
-						Name:    "",
-						Email:   "",
-						Subject: "",
-						Issuer:  "https://woo.com",
-					}
-
-					assert.Equal(t, emptyUserInfo, userinfo)
-				},
-				CleanupFn: cleanupFn,
-			},
-		}
-
-		runFn := func(ctx context.Context, input fetchInput) testingx.TestResult[fetchResult] {
-			tr := recordingTransport{responses: input.responses}
-			client := http.Client{Transport: &tr}
-			svc, err := newUserInfoService(db, WithHTTPClient(&client))
-			if !assert.NoError(t, err) {
-				assert.FailNow(t, "failed to create new fake transport: %v", err)
-			}
-			res, err := svc.FetchUserInfoFromIssuer(ctx, input.issuer, input.token)
-			return testingx.TestResult[fetchResult]{
-				Success: fetchResult{
-					tr: tr,
-					ui: res,
-				},
-				Err: err,
-			}
-		}
-		testingx.RunTests(context.Background(), t, cases, runFn)
-	})
-
-	t.Run("StoreUserInfo", func(t *testing.T) {
-		t.Parallel()
-
-		caseSetupFn := func(ctx context.Context) context.Context {
-			ctx = setupFn(ctx)
-			ctx, err := beginTxContext(ctx, db)
-			if !assert.NoError(t, err) {
-				assert.FailNow(t, "setup failed")
-			}
-			return ctx
-		}
-
-		caseCleanupFn := func(ctx context.Context) {
-			err := rollbackContextTx(ctx)
-			if !assert.NoError(t, err) {
-				assert.FailNow(t, "failed to rollback after test case")
-			}
-		}
-
-		cases := []testingx.TestCase[types.UserInfo, types.UserInfo]{
-			{
-				Name: "UnboundIssuer",
-				Input: types.UserInfo{
-					Name:    "example-name",
-					Email:   "example@example.web",
-					Issuer:  "not-real",
-					Subject: "user:person001",
-				},
-				SetupFn: caseSetupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
-					assert.ErrorIs(t, res.Err, types.ErrorIssuerNotFound)
-				},
-				CleanupFn: caseCleanupFn,
-			},
-			{
-				Name: "Success",
-				Input: types.UserInfo{
-					Name:    "example-name",
-					Email:   "example@example.web",
-					Issuer:  "https://example.com",
-					Subject: "user:person001",
-				},
-				SetupFn: caseSetupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
 					assert.NoError(t, res.Err)
+					assert.Equal(t, exp, res.Success)
 				},
-				CleanupFn: caseCleanupFn,
 			},
 			{
-				Name: "EmptyIssuer",
-				Input: types.UserInfo{
-					Name:    "example-name",
-					Email:   "example@example.web",
-					Issuer:  "",
-					Subject: "user:person001",
+				Name: "MissingIssuer",
+				Input: map[string]any{
+					"sub": "badman@woo.com",
 				},
-				SetupFn: caseSetupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
-					assert.ErrorIs(t, res.Err, types.ErrInvalidUserInfo)
-					assert.ErrorContains(t, res.Err, "issuer is empty")
+					assert.ErrorIs(t, errMissingClaim, res.Err)
 				},
-				CleanupFn: caseCleanupFn,
 			},
 			{
-				Name:    "DuplicateEntryForSubject",
-				Input:   user,
-				SetupFn: caseSetupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
-					assert.NoError(t, res.Err)
-					assert.Equal(t, userInfoStored.ID, res.Success.ID)
+				Name: "MissingSubject",
+				Input: map[string]any{
+					"iss": "https://woo.com",
 				},
-				CleanupFn: caseCleanupFn,
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
+					assert.ErrorIs(t, errMissingClaim, res.Err)
+				},
 			},
 			{
-				Name: "EmptySubject",
-				Input: types.UserInfo{
-					Name:    "",
-					Email:   "",
-					Subject: "",
-					Issuer:  "https://example.com",
+				Name: "MalformedClaim",
+				Input: map[string]any{
+					"iss": false,
 				},
-				SetupFn: caseSetupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
-					assert.ErrorIs(t, res.Err, types.ErrInvalidUserInfo)
-					assert.ErrorContains(t, res.Err, "subject is empty")
+					assert.ErrorIs(t, errInvalidClaim, res.Err)
 				},
-				CleanupFn: caseCleanupFn,
 			},
 		}
 
-		runFn := func(ctx context.Context, input types.UserInfo) (out testingx.TestResult[types.UserInfo]) {
-			res, err := svc.StoreUserInfo(ctx, input)
-			out.Success = res
-			out.Err = err
+		runFn := func(ctx context.Context, input map[string]any) testingx.TestResult[types.UserInfo] {
+			svc, err := newUserInfoService(db)
+			require.NoError(t, err)
+
+			userinfo, err := svc.ParseUserInfoFromClaims(input)
+
+			out := testingx.TestResult[types.UserInfo]{
+				Success: userinfo,
+				Err:     err,
+			}
+
 			return out
 		}
+
 		testingx.RunTests(context.Background(), t, cases, runFn)
 	})
 }
-
-type recordingTransport struct {
-	reqs      []*http.Request
-	responses map[string]string
-}
-
-func (rt *recordingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	rt.reqs = append(rt.reqs, req)
-
-	body, ok := rt.responses[req.URL.Path]
-
-	if ok {
-		resp := http.Response{
-			Status:     http.StatusText(http.StatusOK),
-			StatusCode: http.StatusOK,
-		}
-
-		r := io.NopCloser(bytes.NewReader([]byte(body)))
-		resp.Body = r
-
-		return &resp, nil
-	}
-
-	// Just error out to prevent making the network call, but we
-	// can ensure the request is built properly
-	return nil, errFakeHTTP
-}
-
-var errFakeHTTP = errors.New("error to stop http client from making a network call")

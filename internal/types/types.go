@@ -184,9 +184,8 @@ type UserInfoService interface {
 	// StoreUserInfo stores the userInfo into the storage backend.
 	StoreUserInfo(ctx context.Context, userInfo UserInfo) (UserInfo, error)
 
-	// FetchUserInfoFromIssuer uses the rawToken to make a userinfo endpoint request
-	// and unpacks it into the UserInfo type.
-	FetchUserInfoFromIssuer(ctx context.Context, iss, rawToken string) (UserInfo, error)
+	// ParseUserInfoFromClaims parses OIDC ID token claims from the given claim map.
+	ParseUserInfoFromClaims(claims map[string]any) (UserInfo, error)
 }
 
 // OAuthClientManager defines the storage interface for OAuth clients.
