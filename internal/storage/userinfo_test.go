@@ -244,7 +244,7 @@ func TestUserInfoStore(t *testing.T) {
 					assert.Equal(t, http.MethodGet, configReq.Method)
 
 					userinfoReq := tr.reqs[1]
-					assert.Equal(t, "https://woo.com/notsowellknown/userinfo", configReq.URL.String())
+					assert.Equal(t, "https://woo.com/notsowellknown/userinfo", userinfoReq.URL.String())
 					assert.Equal(t, "Bearer supersecrettoken", userinfoReq.Header.Get("authorization"))
 					assert.Equal(t, http.MethodGet, userinfoReq.Method)
 				},
