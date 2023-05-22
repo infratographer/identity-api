@@ -64,6 +64,11 @@ func TestUserInfoStore(t *testing.T) {
 		Subject: "sub0|malikadmin",
 	}
 
+	// This user ID should be deterministically generated, so we precompute it here rather
+	// than use generateSubjectID
+	expUserInfoID, err := gidx.Parse("idntusr-JJ5-CXOzTNil-ncNcX8U")
+	require.NoError(t, err)
+
 	var userInfoStored types.UserInfo
 
 	// seed the DB
@@ -166,7 +171,7 @@ func TestUserInfoStore(t *testing.T) {
 		cases := []testingx.TestCase[gidx.PrefixedID, types.UserInfo]{
 			{
 				Name:    "Success",
-				Input:   userInfoStored.ID,
+				Input:   expUserInfoID,
 				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
 					assert.NoError(t, res.Err)
