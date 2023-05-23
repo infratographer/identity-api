@@ -2,7 +2,9 @@ package storage
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"strings"
@@ -16,6 +18,9 @@ const (
 	jwtClaimName    = "name"
 	jwtClaimEmail   = "email"
 	jwtClaimIssuer  = "iss"
+
+	subHashPrefixSize  = 15
+	encodedSubHashSize = 20
 )
 
 var (
@@ -35,6 +40,24 @@ var userInfoCols = struct {
 	Email:    "email",
 	Subject:  "sub",
 	IssuerID: "iss_id",
+}
+
+func generateSubjectID(prefix, iss, sub string) (gidx.PrefixedID, error) {
+	// Concatenate the iss and sub values, then hash them
+	issSub := iss + sub
+	issSubHash := sha256.Sum256([]byte(issSub))
+
+	// Take the first 15 bytes of the hash
+	hashHead := issSubHash[:subHashPrefixSize]
+
+	// Base64-encode the hash. The base64-encoded digest will always be 20 bytes
+	digest := make([]byte, encodedSubHashSize)
+	base64.RawURLEncoding.Encode(digest, hashHead)
+
+	// Concatenate the prefix with the digest
+	out := prefix + "-" + string(digest)
+
+	return gidx.Parse(out)
 }
 
 type userInfoService struct {
@@ -186,7 +209,7 @@ func (s userInfoService) StoreUserInfo(ctx context.Context, userInfo types.UserI
 		userInfoCols.IssuerID,
 	}, ",")
 
-	newID, err := gidx.NewID(types.IdentityUserIDPrefix)
+	newID, err := generateSubjectID(types.IdentityUserIDPrefix, userInfo.Issuer, userInfo.Subject)
 	if err != nil {
 		return types.UserInfo{}, err
 	}

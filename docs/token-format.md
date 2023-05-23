@@ -1,8 +1,8 @@
 # Token Format
 
-Clients can expect to exchange JWTs from one security domain for OAuth 2.0 access tokens issued by identity-manager-sts. This document outlines the parameters for token requests, how they affect the response and the meaning of the claims contained in the issued access token.
+Clients can expect to exchange JWTs from one security domain for OAuth 2.0 access tokens issued by identity-api. This document outlines the parameters for token requests, how they affect the response and the meaning of the claims contained in the issued access token.
 
-We anticipate that these tokens will be used to inform further authorization decisions later in the API gateway stack. While RFC 8693 allows for issuing ID tokens, access tokens give us the ability to use standard claims to provide information necessary for making authorization decisions.
+These tokens are used to inform further authorization decisions later in the API gateway stack. While RFC 8693 allows for issuing ID tokens, Infratographer in general does not enforce particular conventions around identity management and thus ID tokens are not in the scope of what identity-api provides.
 
 ### Token Request
 
@@ -10,27 +10,21 @@ This is as defined in [RFC 8693][rfc-8693]. At minimum, a token request includes
 
 - `grant_type` (always set to `urn:ietf:params:oauth:grant-type:token-exchange`)
 - `subject_token`
-- `subject_token_type`
-
-Issued access tokens can be restricted further through the use of `audience`, `resource`, and `scope` parameters in the token request. `audience` and `resource` restrict the class of resources for which the issued token may be used. `scope` restricts the type of actions the token can perform on resources.
-
-For the first iteration of identity-manager-sts, we are only supporting the use of `resource`, which will allow us to expose a set of services that a user may use to restrict the context in which the token is valid. The `resource` parameter maps to the `aud` claim on the issued token, as outlined in [RFC 9068][rfc-9068].
-
+- `subject_token_type` (currently only `urn:iet:params:oauth:token-type:jwt`)
 
 ### Token Response
 
 The token returned is an [RFC 9068][rfc-9068]-compliant access token JWT with the following claims:
 
-| claim              | description                                                                                      |
-|--------------------|--------------------------------------------------------------------------------------------------|
-| iss                | FQDN for identity-manager-sts issuer                                                             |
-| iat                | The time the token was issued                                                                    |
-| jti                | Unique ID for the token issued                                                                   |
-| exp                | Token expiration time                                                                            |
-| sub                | URN of the user in the infratographer namespace, e.g. `urn:infratographer:user:{uuid}`           |
-| aud                | Resources on which the token may operate                                                         |
-| client_id          | ID of the client requesting the token, or `null` if no client was used when requesting the token |
-| infratographer.sub | Private claim which indicates the subject be used in policy enforcement                          |
+| claim     | description                                                                                      |
+|-----------|--------------------------------------------------------------------------------------------------|
+| iss       | FQDN for identity-manager-sts issuer                                                             |
+| iat       | The time the token was issued                                                                    |
+| jti       | Unique ID for the token issued                                                                   |
+| exp       | Token expiration time                                                                            |
+| sub       | ID of the user as defined in [Subject Identifier Generation](#subject-identifier-generation)     |
+| aud       | Resources on which the token may operate                                                         |
+| client_id | ID of the client requesting the token, or `null` if no client was used when requesting the token |
 
 The following are defined in [RFC 8693][rfc-8693] and [RFC 9068][rfc-9068], but for now aren't supported until we run into/identify the use cases for them:
 
@@ -40,11 +34,31 @@ The following are defined in [RFC 8693][rfc-8693] and [RFC 9068][rfc-9068], but 
 - `roles`: Describes roles assigned to the subject in the context of the issued access token.
 - `entitlements`: Describes individual resources the subject can access in the context of the issued access token.
 
-### Claim Mapping
+### Subject Identifier Generation
 
-In many scenarios, organizations may have their own set of ways of assigning permissions to users, and may want that to map the same way when operating with an exchanged token. In order to accomplish this, a user may provide custom claim mappings when defining an issuer in identity-manager-sts.
+[RFC 7519][rfc-7519] requires that the `sub` value of a JWT be either globally unique or unique in the context of the issuer. Thus, exchanged tokens must have a `sub` value that is at minimum unique to identity-api itself. However, in many scenarios it can be useful to know what the value of the `sub` claim of an exchanged token will be before the exchange occurs. For example, automation accounts may be configured to access resources before those accounts are created. For this reason this document includes a simple deterministic algorithm for subject ID generation.
 
-Users may provide a mapping for the `infratographer.sub` claim which builds a subject based on claims in the subject token. This claim in the issued access token is expected to be used in place of the JWT "sub" claim for policy enforcement.
+The `sub` value of an access token is the concatenation of:
 
+* A selected 7-character prefix `prefix`
+* A literal `-`
+* The first 15 bytes of the SHA256 digest of the concatenation of the `iss` and `sub` claims in the subject token, base64-encoded with URL safe alphabet as defined in [RFC 4648][rfc-4648]
+
+In pseudocode, this looks something like:
+
+```
+sub = prefix + "-" + base64encode(sha256(iss + sub)[:15])
+```
+
+For example, consider a token exchange for a subject token with an `iss` claim of `https://example.com` and a `sub` claim of `foo@example.com`. Assuming a prefix of `idntusr`, the algorithm for subject ID generation looks like so:
+
+```
+sub = "idntusr" + "-" + base64encode(sha256("https://example.comfoo@example.com")[:15])
+```
+
+The resulting `sub` value will be `idntusr-G9KRgCBGlE6lYkoLKCdK`.
+
+[rfc-4648]: https://www.rfc-editor.org/rfc/rfc4648.html#section-5
+[rfc-7519]: https://www.rfc-editor.org/rfc/rfc7519#section-4.1.2
 [rfc-8693]: https://www.rfc-editor.org/rfc/rfc8693.html
 [rfc-9068]: https://www.rfc-editor.org/rfc/rfc9068.html
