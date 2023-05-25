@@ -4,7 +4,6 @@ go 1.20
 
 require (
 	github.com/MicahParks/keyfunc v1.9.0
-	github.com/MicahParks/keyfunc/v2 v2.0.3
 	github.com/cockroachdb/cockroach-go/v2 v2.3.3
 	github.com/deepmap/oapi-codegen v1.12.4
 	github.com/getkin/kin-openapi v0.116.0
@@ -18,7 +17,7 @@ require (
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.15.0
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.3
 	go.infratographer.com/x v0.0.10
 	go.uber.org/zap v1.24.0
 	google.golang.org/genproto v0.0.0-20230524185152-1884fd1fac28
