@@ -4,10 +4,9 @@ go 1.20
 
 require (
 	github.com/MicahParks/keyfunc v1.9.0
-	github.com/MicahParks/keyfunc/v2 v2.0.3
 	github.com/cockroachdb/cockroach-go/v2 v2.3.3
 	github.com/deepmap/oapi-codegen v1.12.4
-	github.com/getkin/kin-openapi v0.116.0
+	github.com/getkin/kin-openapi v0.117.0
 	github.com/google/cel-go v0.15.3
 	github.com/labstack/echo-jwt/v4 v4.1.0
 	github.com/labstack/echo/v4 v4.10.2
