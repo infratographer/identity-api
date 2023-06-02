@@ -12,7 +12,7 @@ require (
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/metal-toolbox/auditevent v0.8.0
 	github.com/ory/fosite v0.44.0
-	github.com/ory/x v0.0.555
+	github.com/ory/x v0.0.556
 	github.com/pressly/goose/v3 v3.11.2
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
