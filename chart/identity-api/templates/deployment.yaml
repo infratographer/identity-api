@@ -55,12 +55,11 @@ spec:
               mountPath: /keys/
         {{- if .Values.config.storage.migrateOnInit }}
         - name: db-migrate
-          env:
-            - name: PGSSLROOTCERT
-              value: /etc/ssl/crdb/ca.crt
+          {{- with .Values.config.storage.crdb.uriSecretName }}
           envFrom:
             - secretRef:
-                name: "{{ .Values.config.storage.crdb.uriSecretName }}"
+                name: "{{ . }}"
+          {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy | default "Always" }}
           args:
@@ -72,19 +71,20 @@ spec:
           volumeMounts:
             - name: app-config
               mountPath: /etc/identity-api/
+          {{- if .Values.config.storage.crdb.caSecretName }}
             - name: crdb-ca
-              mountPath: /etc/ssl/crdb/
+              mountPath: "{{ .Values.config.storage.crdb.certMountPath }}"
+          {{- end }}
         {{- end }}
       containers:
         - name: {{ include "common.names.name" . }}
-          env:
-            - name: PGSSLROOTCERT
-              value: /etc/ssl/crdb/ca.crt
           envFrom:
             - secretRef:
                 name: "{{ .Values.config.oauth.secretName }}"
+            {{- with .Values.config.storage.crdb.uriSecretName }}
             - secretRef:
-                name: "{{ .Values.config.storage.crdb.uriSecretName }}"
+                name: "{{ . }}"
+            {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy | default "Always" }}
           volumeMounts:
@@ -93,8 +93,10 @@ spec:
               readOnly: true
             - name: app-config
               mountPath: /etc/identity-api/
+          {{- if .Values.config.storage.crdb.caSecretName }}
             - name: crdb-ca
-              mountPath: /etc/ssl/crdb/
+              mountPath: "{{ .Values.config.storage.crdb.certMountPath }}"
+          {{- end }}
           ports:
             - name: web
               containerPort: {{ include "idapi.listenPort" . }}
@@ -112,6 +114,8 @@ spec:
         - name: app-config
           configMap:
             name: {{ include "common.names.name" . }}-app-config
+        {{- with .Values.config.storage.crdb.caSecretName }}
         - name: crdb-ca
           secret:
-            secretName: {{ .Values.config.storage.crdb.caSecretName }}
+            secretName: "{{ . }}"
+        {{- end }}

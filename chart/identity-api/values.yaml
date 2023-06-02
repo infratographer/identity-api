@@ -43,6 +43,7 @@ config:
     crdb:
       caSecretName: ""
       uriSecretName: ""
+      certMountPath: /dbcerts
 
   oauth:
     # issuer is the `iss` claim in the exchanged tokens
