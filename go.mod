@@ -20,7 +20,7 @@ require (
 	github.com/stretchr/testify v1.8.4
 	go.infratographer.com/x v0.3.0
 	go.uber.org/zap v1.24.0
-	google.golang.org/genproto/googleapis/api v0.0.0-20230526015343-6ee61e4f9d5f
+	google.golang.org/genproto/googleapis/api v0.0.0-20230530153820-e85fd2cbaebc
 	google.golang.org/protobuf v1.30.0
 	gopkg.in/square/go-jose.v2 v2.6.0
 	gopkg.in/yaml.v3 v3.0.1
