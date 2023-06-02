@@ -3,7 +3,7 @@ module go.infratographer.com/identity-api
 go 1.20
 
 require (
-	github.com/MicahParks/keyfunc/v2 v2.0.3
+	github.com/MicahParks/keyfunc/v2 v2.1.0
 	github.com/cockroachdb/cockroach-go/v2 v2.3.3
 	github.com/deepmap/oapi-codegen v1.12.4
 	github.com/getkin/kin-openapi v0.117.0
