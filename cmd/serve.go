@@ -177,13 +177,12 @@ func getAuthMiddleware(ctx context.Context, config fositex.OAuth2Configurator, s
 
 	authConfig := echojwtx.AuthConfig{
 		Issuer: issuer,
-		JWTConfig: echojwt.Config{
-			Skipper: multiSkipper(skippers...),
-			KeyFunc: jwks.Keyfunc,
-		},
 	}
 
-	auth, err := echojwtx.NewAuth(ctx, authConfig)
+	auth, err := echojwtx.NewAuth(ctx, authConfig, echojwtx.WithJWTConfig(echojwt.Config{
+		Skipper: multiSkipper(skippers...),
+		KeyFunc: jwks.Keyfunc,
+	}))
 	if err != nil {
 		return nil, err
 	}
