@@ -66,7 +66,7 @@ func TestUserInfoStore(t *testing.T) {
 
 	// This user ID should be deterministically generated, so we precompute it here rather
 	// than use generateSubjectID
-	expUserInfoID, err := gidx.Parse("idntusr-JJ5-CXOzTNil-ncNcX8U")
+	expUserInfoID, err := gidx.Parse("idntusr-JJ5-CXOzTNil-ncNcX8UIGzsDYSRGj1Ktc6oI-s9fSs")
 	require.NoError(t, err)
 
 	var userInfoStored types.UserInfo

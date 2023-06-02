@@ -18,9 +18,6 @@ const (
 	jwtClaimName    = "name"
 	jwtClaimEmail   = "email"
 	jwtClaimIssuer  = "iss"
-
-	subHashPrefixSize  = 15
-	encodedSubHashSize = 20
 )
 
 var (
@@ -47,15 +44,10 @@ func generateSubjectID(prefix, iss, sub string) (gidx.PrefixedID, error) {
 	issSub := iss + sub
 	issSubHash := sha256.Sum256([]byte(issSub))
 
-	// Take the first 15 bytes of the hash
-	hashHead := issSubHash[:subHashPrefixSize]
-
-	// Base64-encode the hash. The base64-encoded digest will always be 20 bytes
-	digest := make([]byte, encodedSubHashSize)
-	base64.RawURLEncoding.Encode(digest, hashHead)
+	digest := base64.RawURLEncoding.EncodeToString(issSubHash[:])
 
 	// Concatenate the prefix with the digest
-	out := prefix + "-" + string(digest)
+	out := prefix + "-" + digest
 
 	return gidx.Parse(out)
 }

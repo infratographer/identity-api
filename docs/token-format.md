@@ -42,18 +42,18 @@ The `sub` value of an access token is the concatenation of:
 
 * A selected 7-character prefix `prefix`
 * A literal `-`
-* The first 15 bytes of the SHA256 digest of the concatenation of the `iss` and `sub` claims in the subject token, base64-encoded with URL safe alphabet as defined in [RFC 4648][rfc-4648]
+* The SHA256 digest of the concatenation of the `iss` and `sub` claims in the subject token, base64-encoded with URL safe alphabet as defined in [RFC 4648][rfc-4648]
 
 In pseudocode, this looks something like:
 
 ```
-sub = prefix + "-" + base64encode(sha256(iss + sub)[:15])
+sub = prefix + "-" + base64encode(sha256(iss + sub))
 ```
 
 For example, consider a token exchange for a subject token with an `iss` claim of `https://example.com` and a `sub` claim of `foo@example.com`. Assuming a prefix of `idntusr`, the algorithm for subject ID generation looks like so:
 
 ```
-sub = "idntusr" + "-" + base64encode(sha256("https://example.comfoo@example.com")[:15])
+sub = "idntusr" + "-" + base64encode(sha256("https://example.comfoo@example.com"))
 ```
 
 The resulting `sub` value will be `idntusr-G9KRgCBGlE6lYkoLKCdK`.
