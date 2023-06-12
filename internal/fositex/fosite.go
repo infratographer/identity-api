@@ -126,8 +126,6 @@ func parsePrivateKeys(keys []PrivateKey) (*jose.JSONWebKey, *jose.JSONWebKeySet,
 			return nil, nil, err
 		}
 
-		var jwks jose.JSONWebKeySet
-
 		jwks.Keys = append(jwks.Keys, jwk)
 	}
 
