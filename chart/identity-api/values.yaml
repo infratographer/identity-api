@@ -76,6 +76,8 @@ config:
           path: "/keys/default.pem"
           algorithm: RS256
 
+  auditLogPath: /app-audit/audit.log
+
 ingress:
   enabled: false
   annotations: {}

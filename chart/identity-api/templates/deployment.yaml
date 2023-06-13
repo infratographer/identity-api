@@ -85,6 +85,11 @@ spec:
             - secretRef:
                 name: "{{ . }}"
             {{- end }}
+          {{- with .Values.config.auditLogPath }}
+          env:
+            - name: IDAPI_AUDIT_LOG_PATH
+              value: "{{ . }}"
+          {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy | default "Always" }}
           volumeMounts:
