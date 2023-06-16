@@ -1,7 +1,7 @@
 # Used to install CRDB into the devcontainer
 FROM cockroachdb/cockroach:latest-v22.2 as CRDB
 
-FROM mcr.microsoft.com/vscode/devcontainers/go:0-1.20-bullseye
+FROM mcr.microsoft.com/vscode/devcontainers/go:1-1.20-bullseye
 
 RUN mkdir /home/vscode/.ssh && \
     chown vscode:vscode /home/vscode/.ssh && \
