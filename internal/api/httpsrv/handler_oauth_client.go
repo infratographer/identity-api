@@ -10,12 +10,12 @@ import (
 
 const defaultTokenLength = 26
 
-// CreateOAuthClient creates a client for a tenant with a set name.
+// CreateOAuthClient creates a client for a owner with a set name.
 // This endpoint returns the OAuth client ID and secret that the client
 // needs to provide to authenticate when requesting a token.
 func (h *apiHandler) CreateOAuthClient(ctx context.Context, request CreateOAuthClientRequestObject) (CreateOAuthClientResponseObject, error) {
 	var newClient types.OAuthClient
-	newClient.TenantID = request.TenantID
+	newClient.OwnerID = request.OwnerID
 	newClient.Name = request.Body.Name
 
 	newClient.Audience = []string{}

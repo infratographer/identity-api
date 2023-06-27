@@ -16,9 +16,9 @@ Requiring that downstream services trust multiple JWT issuers introduces a great
 
 Many use cases, particularly those focused on applications, assume the existence of some kind of persistent token for authentication. We need to be able to mint these, validate them, and pass a JWT derived from them to backend services.
 
-## As a user, I want to be able to restrict tokens to individual tenants
+## As a user, I want to be able to restrict tokens to individual owners
 
-In general, it is desirable to be able to limit a token to be usable only in the context of a single tenant, so that said tokens have a lower blast radius if leaked.
+In general, it is desirable to be able to limit a token to be usable only in the context of a single owner, so that said tokens have a lower blast radius if leaked.
 
 ## As a user, I want to manage persistent tokens that belong to applications I own
 

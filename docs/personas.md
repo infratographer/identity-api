@@ -16,7 +16,7 @@ A service is a program that accepts requests from users, authorizes them, and pe
 
 ## Application
 
-An application is a program that is able to perform actions on resources within a tenant. It may or may not also function as a service.
+An application is a program that is able to perform actions on resources within an owner. It may or may not also function as a service.
 
 ## Enterprise
 

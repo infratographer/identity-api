@@ -44,7 +44,7 @@ func TestClaimMappingEval(t *testing.T) {
 	seedData := storage.SeedData{
 		Issuers: []storage.SeedIssuer{
 			{
-				TenantID:      gidx.MustNewID("testten"),
+				OwnerID:       gidx.MustNewID("testten"),
 				ID:            gidx.MustNewID("testiss"),
 				Name:          "Example",
 				URI:           "https://example.com/",

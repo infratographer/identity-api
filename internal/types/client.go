@@ -9,7 +9,7 @@ import (
 // OAuthClient is an OAuth 2.0 Client
 type OAuthClient struct {
 	ID       gidx.PrefixedID
-	TenantID gidx.PrefixedID
+	OwnerID  gidx.PrefixedID
 	Name     string
 	Secret   string
 	Audience []string

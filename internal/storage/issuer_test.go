@@ -55,9 +55,9 @@ func TestIssuerService(t *testing.T) {
 		panic(err)
 	}
 
-	tenantID := gidx.MustNewID("testten")
+	ownerID := gidx.MustNewID("testten")
 	issuer := types.Issuer{
-		TenantID:      tenantID,
+		OwnerID:       ownerID,
 		ID:            gidx.PrefixedID("testiss-abc"),
 		Name:          "Example",
 		URI:           "https://example.com/",
@@ -67,7 +67,7 @@ func TestIssuerService(t *testing.T) {
 
 	seedIssuers := []SeedIssuer{
 		{
-			TenantID:      tenantID,
+			OwnerID:       ownerID,
 			ID:            issuer.ID,
 			Name:          issuer.Name,
 			URI:           issuer.URI,
@@ -86,7 +86,7 @@ func TestIssuerService(t *testing.T) {
 		t.Parallel()
 
 		issuer := types.Issuer{
-			TenantID:      tenantID,
+			OwnerID:       ownerID,
 			ID:            gidx.MustNewID("testiss"),
 			Name:          "Good issuer",
 			URI:           "https://issuer-a27d96.info/",
@@ -251,7 +251,7 @@ func TestIssuerService(t *testing.T) {
 		t.Parallel()
 
 		issuer := types.Issuer{
-			TenantID:      tenantID,
+			OwnerID:       ownerID,
 			ID:            gidx.MustNewID("testiss"),
 			Name:          "Good issuer",
 			URI:           "https://issuer-bba1a3.info/",
@@ -328,7 +328,7 @@ func TestIssuerService(t *testing.T) {
 		t.Parallel()
 
 		issuer := types.Issuer{
-			TenantID:      tenantID,
+			OwnerID:       ownerID,
 			ID:            gidx.MustNewID("testiss"),
 			Name:          "Good issuer",
 			URI:           "https://issuer-f4ac18.info/",

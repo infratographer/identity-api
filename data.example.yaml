@@ -1,5 +1,5 @@
 issuers:
-  - tenantID: tnntten-abc123
+  - ownerID: tnntten-abc123
     id: idntiss-abc123
     name: "Example"
     uri: "https://auth.equinix.com/"
