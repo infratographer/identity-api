@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE TABLE issuers (
     id        VARCHAR(29) PRIMARY KEY NOT NULL,
-    tenant_id VARCHAR(29) NOT NULL,
+    owner_id VARCHAR(29) NOT NULL,
     uri       STRING NOT NULL UNIQUE,
     name      STRING NOT NULL,
     jwksuri   STRING NOT NULL,

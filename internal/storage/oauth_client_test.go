@@ -32,22 +32,22 @@ func TestOAuthClientManager(t *testing.T) {
 		shutdown()
 	})
 
-	tenantID := gidx.MustNewID("testten")
+	ownerID := gidx.MustNewID("testten")
 	issuer := types.Issuer{
-		TenantID: tenantID,
-		ID:       gidx.MustNewID("testiss"),
-		Name:     "Example",
-		URI:      "https://example.com/",
-		JWKSURI:  "https://example.com/.well-known/jwks.json",
+		OwnerID: ownerID,
+		ID:      gidx.MustNewID("testiss"),
+		Name:    "Example",
+		URI:     "https://example.com/",
+		JWKSURI: "https://example.com/.well-known/jwks.json",
 	}
 
 	seedIssuers := []SeedIssuer{
 		{
-			TenantID: tenantID,
-			ID:       issuer.ID,
-			Name:     issuer.Name,
-			URI:      issuer.URI,
-			JWKSURI:  issuer.JWKSURI,
+			OwnerID: ownerID,
+			ID:      issuer.ID,
+			Name:    issuer.Name,
+			URI:     issuer.URI,
+			JWKSURI: issuer.JWKSURI,
 		},
 	}
 
@@ -60,7 +60,7 @@ func TestOAuthClientManager(t *testing.T) {
 	assert.NoError(t, err)
 
 	defaultClient := types.OAuthClient{
-		TenantID: tenantID,
+		OwnerID:  ownerID,
 		Name:     "my-client",
 		Secret:   "foobar",
 		Audience: []string{"aud1", "aud2"},
@@ -149,7 +149,7 @@ func TestOAuthClientManager(t *testing.T) {
 			{
 				Name: "Success",
 				Input: types.OAuthClient{
-					TenantID: tenantID,
+					OwnerID:  ownerID,
 					Name:     "newclient",
 					Secret:   secret,
 					Audience: []string{"abc", "def", "ghi"},
@@ -160,7 +160,7 @@ func TestOAuthClientManager(t *testing.T) {
 					assert.NoError(t, res.Err)
 					client := res.Success
 					assert.NotEqual(t, secret, client.Secret)
-					assert.Equal(t, tenantID, client.TenantID)
+					assert.Equal(t, ownerID, client.OwnerID)
 					assert.Equal(t, "newclient", client.Name)
 					assert.Equal(t, []string{"abc", "def", "ghi"}, client.Audience)
 				},

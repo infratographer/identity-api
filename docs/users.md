@@ -2,11 +2,11 @@
 
 A user as defined in identity-api is any unique subject as identified by an issuer. Users are bound to the issuer that provides identifying JWTs for them (i.e., `foo@example.com` from one OIDC provider is not the same user as `foo@example.com` from another OIDC provider).
 
-## Tenant scoping
+## Owner scoping
 
-Currently, identity-api does not support any particular mechanism for binding an issuer to a given tenant. This work is being tracked as part of Issue [#23][issue-23].
+Currently, identity-api does not support any particular mechanism for binding an issuer to a given owner. This work is being tracked as part of Issue [#23][issue-23].
 
-At minimum, it is expected that identity-api should ultimately support constraining tokens to tenants using the OAuth 2.0 `resource` parameter.
+At minimum, it is expected that identity-api should ultimately support constraining tokens to owners using the OAuth 2.0 `resource` parameter.
 
 [issue-23]: https://github.com/infratographer/identity-api/issues/23
 

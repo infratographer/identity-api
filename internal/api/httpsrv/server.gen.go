@@ -33,11 +33,11 @@ type ServerInterface interface {
 	// (PATCH /api/v1/issuers/{id})
 	UpdateIssuer(ctx echo.Context, id gidx.PrefixedID) error
 	// Creates an OAuth client.
-	// (POST /api/v1/tenants/{tenantID}/clients)
-	CreateOAuthClient(ctx echo.Context, tenantID gidx.PrefixedID) error
+	// (POST /api/v1/owners/{ownerID}/clients)
+	CreateOAuthClient(ctx echo.Context, ownerID gidx.PrefixedID) error
 	// Creates an issuer.
-	// (POST /api/v1/tenants/{tenantID}/issuers)
-	CreateIssuer(ctx echo.Context, tenantID gidx.PrefixedID) error
+	// (POST /api/v1/owners/{ownerID}/issuers)
+	CreateIssuer(ctx echo.Context, ownerID gidx.PrefixedID) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -128,32 +128,32 @@ func (w *ServerInterfaceWrapper) UpdateIssuer(ctx echo.Context) error {
 // CreateOAuthClient converts echo context to params.
 func (w *ServerInterfaceWrapper) CreateOAuthClient(ctx echo.Context) error {
 	var err error
-	// ------------- Path parameter "tenantID" -------------
-	var tenantID gidx.PrefixedID
+	// ------------- Path parameter "ownerID" -------------
+	var ownerID gidx.PrefixedID
 
-	err = runtime.BindStyledParameterWithLocation("simple", false, "tenantID", runtime.ParamLocationPath, ctx.Param("tenantID"), &tenantID)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "ownerID", runtime.ParamLocationPath, ctx.Param("ownerID"), &ownerID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tenantID: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter ownerID: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.CreateOAuthClient(ctx, tenantID)
+	err = w.Handler.CreateOAuthClient(ctx, ownerID)
 	return err
 }
 
 // CreateIssuer converts echo context to params.
 func (w *ServerInterfaceWrapper) CreateIssuer(ctx echo.Context) error {
 	var err error
-	// ------------- Path parameter "tenantID" -------------
-	var tenantID gidx.PrefixedID
+	// ------------- Path parameter "ownerID" -------------
+	var ownerID gidx.PrefixedID
 
-	err = runtime.BindStyledParameterWithLocation("simple", false, "tenantID", runtime.ParamLocationPath, ctx.Param("tenantID"), &tenantID)
+	err = runtime.BindStyledParameterWithLocation("simple", false, "ownerID", runtime.ParamLocationPath, ctx.Param("ownerID"), &ownerID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter tenantID: %s", err))
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter ownerID: %s", err))
 	}
 
 	// Invoke the callback with all the unmarshalled arguments
-	err = w.Handler.CreateIssuer(ctx, tenantID)
+	err = w.Handler.CreateIssuer(ctx, ownerID)
 	return err
 }
 
@@ -190,8 +190,8 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.DELETE(baseURL+"/api/v1/issuers/:id", wrapper.DeleteIssuer)
 	router.GET(baseURL+"/api/v1/issuers/:id", wrapper.GetIssuerByID)
 	router.PATCH(baseURL+"/api/v1/issuers/:id", wrapper.UpdateIssuer)
-	router.POST(baseURL+"/api/v1/tenants/:tenantID/clients", wrapper.CreateOAuthClient)
-	router.POST(baseURL+"/api/v1/tenants/:tenantID/issuers", wrapper.CreateIssuer)
+	router.POST(baseURL+"/api/v1/owners/:ownerID/clients", wrapper.CreateOAuthClient)
+	router.POST(baseURL+"/api/v1/owners/:ownerID/issuers", wrapper.CreateIssuer)
 
 }
 
@@ -282,8 +282,8 @@ func (response UpdateIssuer200JSONResponse) VisitUpdateIssuerResponse(w http.Res
 }
 
 type CreateOAuthClientRequestObject struct {
-	TenantID gidx.PrefixedID `json:"tenantID"`
-	Body     *CreateOAuthClientJSONRequestBody
+	OwnerID gidx.PrefixedID `json:"ownerID"`
+	Body    *CreateOAuthClientJSONRequestBody
 }
 
 type CreateOAuthClientResponseObject interface {
@@ -300,8 +300,8 @@ func (response CreateOAuthClient200JSONResponse) VisitCreateOAuthClientResponse(
 }
 
 type CreateIssuerRequestObject struct {
-	TenantID gidx.PrefixedID `json:"tenantID"`
-	Body     *CreateIssuerJSONRequestBody
+	OwnerID gidx.PrefixedID `json:"ownerID"`
+	Body    *CreateIssuerJSONRequestBody
 }
 
 type CreateIssuerResponseObject interface {
@@ -335,10 +335,10 @@ type StrictServerInterface interface {
 	// (PATCH /api/v1/issuers/{id})
 	UpdateIssuer(ctx context.Context, request UpdateIssuerRequestObject) (UpdateIssuerResponseObject, error)
 	// Creates an OAuth client.
-	// (POST /api/v1/tenants/{tenantID}/clients)
+	// (POST /api/v1/owners/{ownerID}/clients)
 	CreateOAuthClient(ctx context.Context, request CreateOAuthClientRequestObject) (CreateOAuthClientResponseObject, error)
 	// Creates an issuer.
-	// (POST /api/v1/tenants/{tenantID}/issuers)
+	// (POST /api/v1/owners/{ownerID}/issuers)
 	CreateIssuer(ctx context.Context, request CreateIssuerRequestObject) (CreateIssuerResponseObject, error)
 }
 
@@ -487,10 +487,10 @@ func (sh *strictHandler) UpdateIssuer(ctx echo.Context, id gidx.PrefixedID) erro
 }
 
 // CreateOAuthClient operation middleware
-func (sh *strictHandler) CreateOAuthClient(ctx echo.Context, tenantID gidx.PrefixedID) error {
+func (sh *strictHandler) CreateOAuthClient(ctx echo.Context, ownerID gidx.PrefixedID) error {
 	var request CreateOAuthClientRequestObject
 
-	request.TenantID = tenantID
+	request.OwnerID = ownerID
 
 	var body CreateOAuthClientJSONRequestBody
 	if err := ctx.Bind(&body); err != nil {
@@ -518,10 +518,10 @@ func (sh *strictHandler) CreateOAuthClient(ctx echo.Context, tenantID gidx.Prefi
 }
 
 // CreateIssuer operation middleware
-func (sh *strictHandler) CreateIssuer(ctx echo.Context, tenantID gidx.PrefixedID) error {
+func (sh *strictHandler) CreateIssuer(ctx echo.Context, ownerID gidx.PrefixedID) error {
 	var request CreateIssuerRequestObject
 
-	request.TenantID = tenantID
+	request.OwnerID = ownerID
 
 	var body CreateIssuerJSONRequestBody
 	if err := ctx.Bind(&body); err != nil {

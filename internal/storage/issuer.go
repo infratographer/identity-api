@@ -12,14 +12,14 @@ import (
 )
 
 var issuerCols = struct {
-	TenantID string
+	OwnerID  string
 	ID       string
 	Name     string
 	URI      string
 	JWKSURI  string
 	Mappings string
 }{
-	TenantID: "tenant_id",
+	OwnerID:  "owner_id",
 	ID:       "id",
 	Name:     "name",
 	URI:      "uri",
@@ -29,7 +29,7 @@ var issuerCols = struct {
 
 var (
 	issuerColumns = []string{
-		issuerCols.TenantID,
+		issuerCols.OwnerID,
 		issuerCols.ID,
 		issuerCols.Name,
 		issuerCols.URI,
@@ -187,7 +187,7 @@ func (s *issuerService) scanIssuer(row *sql.Row) (*types.Issuer, error) {
 
 	var mapping sql.NullString
 
-	err := row.Scan(&iss.TenantID, &iss.ID, &iss.Name, &iss.URI, &iss.JWKSURI, &mapping)
+	err := row.Scan(&iss.OwnerID, &iss.ID, &iss.Name, &iss.URI, &iss.JWKSURI, &mapping)
 
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
@@ -234,7 +234,7 @@ func (s *issuerService) insertIssuer(ctx context.Context, iss types.Issuer) erro
 	_, err = tx.ExecContext(
 		ctx,
 		q,
-		iss.TenantID,
+		iss.OwnerID,
 		iss.ID,
 		iss.Name,
 		iss.URI,

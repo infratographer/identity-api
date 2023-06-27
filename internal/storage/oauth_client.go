@@ -14,13 +14,13 @@ import (
 
 var oauthClientCols = struct {
 	ID       string
-	TenantID string
+	OwnerID  string
 	Name     string
 	Secret   string
 	Audience string
 }{
 	ID:       "id",
-	TenantID: "tenant_id",
+	OwnerID:  "owner_id",
 	Name:     "name",
 	Secret:   "secret",
 	Audience: "audience",
@@ -29,7 +29,7 @@ var oauthClientCols = struct {
 var (
 	oauthClientColumns = []string{
 		oauthClientCols.ID,
-		oauthClientCols.TenantID,
+		oauthClientCols.OwnerID,
 		oauthClientCols.Name,
 		oauthClientCols.Secret,
 		oauthClientCols.Audience,
@@ -106,7 +106,7 @@ func (s *oauthClientManager) CreateOAuthClient(ctx context.Context, client types
 		ctx,
 		q,
 		clientID,
-		client.TenantID,
+		client.OwnerID,
 		client.Name,
 		client.Secret,
 		strings.Join(client.Audience, " "),
@@ -159,7 +159,7 @@ func (s *oauthClientManager) LookupOAuthClientByID(ctx context.Context, clientID
 
 	err = row.Scan(
 		&model.ID,
-		&model.TenantID,
+		&model.OwnerID,
 		&model.Name,
 		&model.Secret,
 		&aud,

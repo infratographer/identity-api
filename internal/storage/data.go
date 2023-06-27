@@ -11,7 +11,7 @@ import (
 
 // SeedIssuer represents the seed data for a single issuer.
 type SeedIssuer struct {
-	TenantID      gidx.PrefixedID   `yaml:"tenantID"`
+	OwnerID       gidx.PrefixedID   `yaml:"ownerID"`
 	ID            gidx.PrefixedID   `yaml:"id"`
 	Name          string            `yaml:"name"`
 	URI           string            `yaml:"uri"`

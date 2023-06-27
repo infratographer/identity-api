@@ -26,9 +26,9 @@ func TestUserInfoStore(t *testing.T) {
 
 	t.Cleanup(shutdown)
 
-	tenantID := gidx.MustNewID("testten")
+	ownerID := gidx.MustNewID("testten")
 	issuer := types.Issuer{
-		TenantID:      tenantID,
+		OwnerID:       ownerID,
 		ID:            gidx.MustNewID("testiss"),
 		Name:          "Example",
 		URI:           "https://example.com",
@@ -38,7 +38,7 @@ func TestUserInfoStore(t *testing.T) {
 
 	seedIssuers := []SeedIssuer{
 		{
-			TenantID:      tenantID,
+			OwnerID:       ownerID,
 			ID:            issuer.ID,
 			Name:          issuer.Name,
 			URI:           issuer.URI,

@@ -10,7 +10,7 @@ import (
 )
 
 func (h *apiHandler) CreateIssuer(ctx context.Context, req CreateIssuerRequestObject) (CreateIssuerResponseObject, error) {
-	tenantID := req.TenantID
+	ownerID := req.OwnerID
 	createOp := req.Body
 
 	var (
@@ -41,7 +41,7 @@ func (h *apiHandler) CreateIssuer(ctx context.Context, req CreateIssuerRequestOb
 	}
 
 	issuerToCreate := types.Issuer{
-		TenantID:      tenantID,
+		OwnerID:       ownerID,
 		ID:            id,
 		Name:          createOp.Name,
 		URI:           createOp.URI,

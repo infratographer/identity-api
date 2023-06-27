@@ -41,10 +41,10 @@ func TestAPIHandler(t *testing.T) {
 		panic(err)
 	}
 
-	tenantID := gidx.MustNewID("testten")
+	ownerID := gidx.MustNewID("testten")
 	issuerID := gidx.MustNewID("testiss")
 	issuer := types.Issuer{
-		TenantID:      tenantID,
+		OwnerID:       ownerID,
 		ID:            issuerID,
 		Name:          "Example",
 		URI:           "https://example.com/",
@@ -59,7 +59,7 @@ func TestAPIHandler(t *testing.T) {
 	seedData := storage.SeedData{
 		Issuers: []storage.SeedIssuer{
 			{
-				TenantID:      gidx.MustNewID("testten"),
+				OwnerID:       gidx.MustNewID("testten"),
 				ID:            issuerID,
 				Name:          "Example",
 				URI:           "https://example.com/",
@@ -105,8 +105,8 @@ func TestAPIHandler(t *testing.T) {
 			{
 				Name: "Success",
 				Input: CreateIssuerRequestObject{
-					TenantID: tenantID,
-					Body:     createOp,
+					OwnerID: ownerID,
+					Body:    createOp,
 				},
 				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[CreateIssuerResponseObject]) {
@@ -137,7 +137,7 @@ func TestAPIHandler(t *testing.T) {
 			{
 				Name: "CELError",
 				Input: CreateIssuerRequestObject{
-					TenantID: tenantID,
+					OwnerID: ownerID,
 					Body: &v1.CreateIssuer{
 						ClaimMappings: &map[string]string{
 							"bad": "'123",
@@ -245,7 +245,7 @@ func TestAPIHandler(t *testing.T) {
 		issuerID := gidx.MustNewID("testiss")
 
 		issuer := types.Issuer{
-			TenantID:      tenantID,
+			OwnerID:       ownerID,
 			ID:            issuerID,
 			Name:          "Example",
 			URI:           "https://issuer.info/",
@@ -348,7 +348,7 @@ func TestAPIHandler(t *testing.T) {
 		issuerID := gidx.MustNewID("testiss")
 
 		issuer := types.Issuer{
-			TenantID:      tenantID,
+			OwnerID:       ownerID,
 			ID:            issuerID,
 			Name:          "Example",
 			URI:           "https://issuer.info/",
@@ -484,7 +484,7 @@ func TestAPIHandler(t *testing.T) {
 			{
 				Name: "Success",
 				Input: CreateOAuthClientRequestObject{
-					TenantID: gidx.MustNewID("testten"),
+					OwnerID: gidx.MustNewID("testten"),
 					Body: &v1.CreateOAuthClientJSONRequestBody{
 						Name:     "test-client",
 						Audience: &[]string{"aud1", "aud2"},
@@ -513,7 +513,7 @@ func TestAPIHandler(t *testing.T) {
 			engine: store,
 		}
 		client := types.OAuthClient{
-			TenantID: tenantID,
+			OwnerID:  ownerID,
 			Name:     "Example",
 			Secret:   "abc1234",
 			Audience: []string{},
@@ -589,7 +589,7 @@ func TestAPIHandler(t *testing.T) {
 		}
 
 		client := types.OAuthClient{
-			TenantID: tenantID,
+			OwnerID:  ownerID,
 			Name:     "Example",
 			Secret:   "abc1234",
 			Audience: []string{},

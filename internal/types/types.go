@@ -16,8 +16,8 @@ import (
 
 // Issuer represents a token issuer.
 type Issuer struct {
-	// TenantID represents the ID of the tenant the issuer belongs to.
-	TenantID gidx.PrefixedID
+	// OwnerID represents the ID of the owner the issuer belongs to.
+	OwnerID gidx.PrefixedID
 	// ID represents the ID of the issuer in identity-api.
 	ID gidx.PrefixedID
 	// Name represents the human-readable name of the issuer.

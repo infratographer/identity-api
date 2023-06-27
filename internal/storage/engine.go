@@ -73,7 +73,7 @@ func buildIssuerFromSeed(seed SeedIssuer) (types.Issuer, error) {
 	}
 
 	out := types.Issuer{
-		TenantID:      seed.TenantID,
+		OwnerID:       seed.OwnerID,
 		ID:            seed.ID,
 		Name:          seed.Name,
 		URI:           seed.URI,
