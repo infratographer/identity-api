@@ -91,6 +91,17 @@
                       "type": "boolean"
                     }
                   }
+                },
+                "otlp": {
+                  "type": "object",
+                  "properties": {
+                    "endpoint": {
+                      "type": "string"
+                    },
+                    "insecure": {
+                      "type": "boolean"
+                    }
+                  }
                 }
               }
             },
