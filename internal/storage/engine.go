@@ -27,26 +27,6 @@ type Engine interface {
 // EngineOption defines an initialization option for a storage engine.
 type EngineOption func(*engine) error
 
-// WithTracing enables tracing for the storage engine.
-func WithTracing(config crdbx.Config) EngineOption {
-	return func(e *engine) error {
-		// Shut down the old database and replace it with a new one
-		err := e.db.Close()
-		if err != nil {
-			return err
-		}
-
-		db, err := crdbx.NewDB(config, true)
-		if err != nil {
-			return err
-		}
-
-		e.db = db
-
-		return nil
-	}
-}
-
 // WithSeedData adds seed data to the storage engine.
 func WithSeedData(data SeedData) EngineOption {
 	return func(e *engine) error {

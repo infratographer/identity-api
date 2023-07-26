@@ -12,6 +12,9 @@ import (
 	"github.com/ory/fosite/handler/oauth2"
 	"github.com/ory/fosite/token/jwt"
 	"github.com/ory/x/errorsx"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"go.infratographer.com/identity-api/internal/fositex"
 	"go.infratographer.com/identity-api/internal/storage"
@@ -35,6 +38,8 @@ const (
 	ClaimClientID = "client_id"
 
 	responseIssuedTokenType = "issued_token_type"
+
+	instrumentationName = "go.infratographer.com/identity-api/internal/rfc6893"
 )
 
 var (
@@ -103,6 +108,7 @@ func findMatchingKey(ctx context.Context, config fositex.OAuth2Configurator, tok
 // TokenExchangeHandler contains the logic for the token exchange grant type.
 // it implements the fosite.TokenEndpointHandler interface.
 type TokenExchangeHandler struct {
+	tracer              trace.Tracer
 	accessTokenStrategy oauth2.AccessTokenStrategy
 	accessTokenStorage  oauth2.AccessTokenStorage
 	config              fositex.OAuth2Configurator
@@ -116,7 +122,10 @@ var _ fositex.Factory = NewTokenExchangeHandler
 
 // NewTokenExchangeHandler creates a new TokenExchangeHandler,
 func NewTokenExchangeHandler(config fositex.OAuth2Configurator, storage any, strategy any) any {
+	tracer := otel.Tracer(instrumentationName)
+
 	return &TokenExchangeHandler{
+		tracer:              tracer,
 		accessTokenStrategy: strategy.(oauth2.AccessTokenStrategy),
 		accessTokenStorage:  storage.(oauth2.AccessTokenStorage),
 		config:              config,
@@ -149,6 +158,10 @@ func (s *TokenExchangeHandler) validateJWT(ctx context.Context, token string) (*
 }
 
 func (s *TokenExchangeHandler) getSubjectClaims(ctx context.Context, token string) (*jwt.JWTClaims, error) {
+	ctx, span := s.tracer.Start(ctx, "getSubjectClaims")
+
+	defer span.End()
+
 	validated, err := s.validateJWT(ctx, token)
 
 	if err != nil {
@@ -163,6 +176,10 @@ func (s *TokenExchangeHandler) getSubjectClaims(ctx context.Context, token strin
 }
 
 func (s *TokenExchangeHandler) getMappedSubjectClaims(ctx context.Context, claims *jwt.JWTClaims) (jwt.JWTClaimsContainer, error) {
+	ctx, span := s.tracer.Start(ctx, "getMappedSubjectClaims")
+
+	defer span.End()
+
 	mappingStrategy := s.config.GetClaimMappingStrategy(ctx)
 
 	mappedClaims, err := mappingStrategy.MapClaims(ctx, claims)
@@ -176,6 +193,10 @@ func (s *TokenExchangeHandler) getMappedSubjectClaims(ctx context.Context, claim
 // HandleTokenEndpointRequest handles a RFC 8693 token request and provides a response that can be used to
 // generate a token. Currently only supports JWT subject tokens and impersonation semantics.
 func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, requester fosite.AccessRequester) error {
+	ctx, span := s.tracer.Start(ctx, "HandleTokenEndpointRequest")
+
+	defer span.End()
+
 	form := requester.GetRequestForm()
 
 	subjectToken := form.Get(ParamSubjectToken)
@@ -204,6 +225,18 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 	if err != nil {
 		return err
 	}
+
+	// Set JWT claims as attributes if we have them
+	span.SetAttributes(
+		attribute.String(
+			"subject_claims.iss",
+			claims.Issuer,
+		),
+		attribute.String(
+			"subject_claims.sub",
+			claims.Subject,
+		),
+	)
 
 	mappedClaims, err := s.getMappedSubjectClaims(ctx, claims)
 	if err != nil {
@@ -267,6 +300,21 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 	headers := jwt.Headers{}
 	headers.Add("kid", kid)
 
+	span.SetAttributes(
+		attribute.String(
+			"jwt_headers.kid",
+			kid,
+		),
+		attribute.String(
+			"jwt_claims.sub",
+			newClaims.Subject,
+		),
+		attribute.String(
+			"jwt_claims.exp",
+			expiry.Format(time.RFC3339),
+		),
+	)
+
 	var session *oauth2.JWTSession
 
 	reqSess := requester.GetSession()
@@ -299,6 +347,10 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 
 // PopulateTokenEndpointResponse populates the response with a token.
 func (s *TokenExchangeHandler) PopulateTokenEndpointResponse(ctx context.Context, requester fosite.AccessRequester, responder fosite.AccessResponder) error {
+	ctx, span := s.tracer.Start(ctx, "PopulateTokenEndpointResponse")
+
+	defer span.End()
+
 	if !s.CanHandleTokenEndpointRequest(ctx, requester) {
 		return errorsx.WithStack(fosite.ErrUnknownRequest)
 	}
@@ -327,6 +379,10 @@ func (s *TokenExchangeHandler) CanHandleTokenEndpointRequest(_ context.Context, 
 }
 
 func (s *TokenExchangeHandler) populateUserInfo(ctx context.Context, claims *jwt.JWTClaims) (types.UserInfo, error) {
+	ctx, span := s.tracer.Start(ctx, "populateUserInfo")
+
+	defer span.End()
+
 	userInfoSvc := s.config.GetUserInfoStrategy(ctx)
 	userInfo, err := userInfoSvc.LookupUserInfoByClaims(ctx, claims.Issuer, claims.Subject)
 

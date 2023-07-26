@@ -63,12 +63,6 @@ func serve(ctx context.Context) {
 		logger.Fatalf("error initializing tracing: %s", err)
 	}
 
-	var engineOpts []storage.EngineOption
-
-	if config.Config.OTel.Enabled {
-		engineOpts = append(engineOpts, storage.WithTracing(config.Config.CRDB))
-	}
-
 	auditMiddleware, auditCloseFn, err := newAuditMiddleware(ctx)
 	if err != nil {
 		logger.Fatal("Failed to initialize audit middleware", zap.Error(err))
@@ -78,7 +72,7 @@ func serve(ctx context.Context) {
 		defer auditCloseFn() //nolint:errcheck // Not needed to check returned error.
 	}
 
-	storageEngine, err := storage.NewEngine(config.Config.CRDB, engineOpts...)
+	storageEngine, err := storage.NewEngine(config.Config.CRDB)
 	if err != nil {
 		logger.Fatalf("error initializing storage: %s", err)
 	}

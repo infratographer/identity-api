@@ -3,19 +3,25 @@
 package fositex
 
 import (
+	"context"
 	"crypto"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 	"os"
 	"time"
 
 	"github.com/ory/fosite"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 	"gopkg.in/square/go-jose.v2"
 )
+
+const instrumentationName = "go.infratographer.com/identity-api/internal/fositex"
 
 var (
 	// ErrInvalidKey is returned when the key is not valid.
@@ -161,6 +167,28 @@ func NewOAuth2Config(config Config) (*OAuth2Config, error) {
 	return out, nil
 }
 
+type instrumentedProvider struct {
+	tracer trace.Tracer
+
+	fosite.OAuth2Provider
+}
+
+func (p *instrumentedProvider) NewAccessRequest(ctx context.Context, req *http.Request, session fosite.Session) (fosite.AccessRequester, error) {
+	ctx, span := p.tracer.Start(ctx, "fositex.NewAccessRequest")
+
+	defer span.End()
+
+	return p.OAuth2Provider.NewAccessRequest(ctx, req, session)
+}
+
+func (p *instrumentedProvider) NewAccessResponse(ctx context.Context, req fosite.AccessRequester) (fosite.AccessResponder, error) {
+	ctx, span := p.tracer.Start(ctx, "fositex.NewAccessResponse")
+
+	defer span.End()
+
+	return p.OAuth2Provider.NewAccessResponse(ctx, req)
+}
+
 // NewOAuth2Provider creates a new fosite.OAuth2Provider.
 // The configurator, store, and strategy are all passed to the factories
 // and the resulting endpoint handlers are registered to the fosite.Config.
@@ -194,7 +222,14 @@ func NewOAuth2Provider(configurator *OAuth2Config, store interface{}, strategy i
 		}
 	}
 
-	return f
+	tracer := otel.Tracer(instrumentationName)
+
+	out := &instrumentedProvider{
+		tracer:         tracer,
+		OAuth2Provider: f,
+	}
+
+	return out
 }
 
 // Factory is a constructor which is used to create an OAuth2 endpoin handler.

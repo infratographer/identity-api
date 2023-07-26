@@ -31,7 +31,8 @@ func (*engine) GetAccessTokenSession(_ context.Context, _ string, _ fosite.Sessi
 }
 
 func newCRDBEngine(config crdbx.Config, options ...EngineOption) (*engine, error) {
-	db, err := crdbx.NewDB(config, false)
+	// Always enable tracing for the DB; spans will just be associated with a no-op tracer
+	db, err := crdbx.NewDB(config, true)
 	if err != nil {
 		return nil, err
 	}

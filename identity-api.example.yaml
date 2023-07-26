@@ -9,9 +9,10 @@ oauth:
       algorithm: RS256
       path: tests/data/privkey.pem
 otel:
-  enabled: false
-  provider: stdout
-  stdout:
-    prettyPrint: true
+  enabled: true
+  provider: otlpgrpc
+  otlp:
+    endpoint: jaeger:4317
+    insecure: true
 crdb:
   uri: postgresql://root@cockroachdb:26257/identity_api_dev?sslmode=disable
