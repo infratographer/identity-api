@@ -41,6 +41,15 @@ services:
       retries: 3
       start_period: 5s
 
+  jaeger:
+    image: jaegertracing/all-in-one:1.46.0
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - 16687:16686
+    networks:
+      - idapinet
+
 networks:
   idapinet:
 
