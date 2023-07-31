@@ -8,12 +8,17 @@ import (
 	"github.com/ory/x/errorsx"
 	"go.infratographer.com/identity-api/internal/fositex"
 	"go.infratographer.com/identity-api/internal/storage"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/ory/fosite"
 	"github.com/ory/fosite/handler/oauth2"
 	"github.com/ory/fosite/token/jwt"
 	"go.infratographer.com/x/gidx"
 )
+
+const instrumentationName = "go.infratographer.com/identity-api/internal/oauth2"
 
 var _ fosite.TokenEndpointHandler = &ClientCredentialsGrantHandler{}
 
@@ -31,11 +36,23 @@ type ClientCredentialsGrantHandler struct {
 	*oauth2.HandleHelper
 	storage.TransactionManager
 	Config clientCredentialsConfigurator
+	tracer trace.Tracer
 }
 
 // HandleTokenEndpointRequest implements https://tools.ietf.org/html/rfc6749#section-4.4.2
 func (c *ClientCredentialsGrantHandler) HandleTokenEndpointRequest(ctx context.Context, request fosite.AccessRequester) error {
+	ctx, span := c.tracer.Start(ctx, "HandleTokenEndpointRequest")
+
+	defer span.End()
 	client := request.GetClient()
+
+	span.SetAttributes(
+		attribute.String(
+			"oauth2.client_id",
+			client.GetID(),
+		),
+	)
+
 	// The client MUST authenticate with the authorization server as described in Section 3.2.1.
 	// This requirement is already fulfilled because fosite requires all token requests to be authenticated as described
 	// in https://tools.ietf.org/html/rfc6749#section-3.2.1
@@ -61,8 +78,10 @@ func (c *ClientCredentialsGrantHandler) HandleTokenEndpointRequest(ctx context.C
 	atLifespan := fosite.GetEffectiveLifespan(client, fosite.GrantTypeClientCredentials, fosite.AccessToken, c.Config.GetAccessTokenLifespan(ctx))
 	session := request.GetSession().(*oauth2.JWTSession)
 
+	kid := c.Config.GetSigningKey(ctx).KeyID
+
 	headers := jwt.Headers{}
-	headers.Add("kid", c.Config.GetSigningKey(ctx).KeyID)
+	headers.Add("kid", kid)
 
 	clientID, err := gidx.Parse(client.GetID())
 	if err != nil {
@@ -72,10 +91,31 @@ func (c *ClientCredentialsGrantHandler) HandleTokenEndpointRequest(ctx context.C
 	session.JWTClaims = &jwt.JWTClaims{}
 	session.JWTClaims.Add("client_id", clientID.String())
 
+	expiry := time.Now().UTC().Add(atLifespan)
+
 	session.JWTHeader = &headers
-	session.SetExpiresAt(fosite.AccessToken, time.Now().UTC().Add(atLifespan))
+	session.SetExpiresAt(fosite.AccessToken, expiry)
 
 	session.JWTClaims.Subject = clientID.String()
+
+	span.SetAttributes(
+		attribute.Stringer(
+			"jwt_headers.client_id",
+			clientID,
+		),
+		attribute.String(
+			"jwt_headers.kid",
+			kid,
+		),
+		attribute.Stringer(
+			"jwt_claims.sub",
+			clientID,
+		),
+		attribute.String(
+			"jwt_claims.exp",
+			expiry.Format(time.RFC3339),
+		),
+	)
 
 	return nil
 }
@@ -86,6 +126,10 @@ func (c *ClientCredentialsGrantHandler) PopulateTokenEndpointResponse(ctx contex
 	if !c.CanHandleTokenEndpointRequest(ctx, request) {
 		return errorsx.WithStack(fosite.ErrUnknownRequest)
 	}
+
+	ctx, span := c.tracer.Start(ctx, "PopulateTokenEndpointResponse")
+
+	defer span.End()
 
 	atLifespan := fosite.GetEffectiveLifespan(request.GetClient(), fosite.GrantTypeClientCredentials, fosite.AccessToken, c.Config.GetAccessTokenLifespan(ctx))
 
@@ -109,6 +153,8 @@ var _ fositex.Factory = NewClientCredentialsHandlerFactory
 // NewClientCredentialsHandlerFactory is a fositex.Factory that
 // produces a handler for the 'client_credentials' grant type.
 func NewClientCredentialsHandlerFactory(config fositex.OAuth2Configurator, store any, strategy any) any {
+	tracer := otel.Tracer(instrumentationName)
+
 	return &ClientCredentialsGrantHandler{
 		HandleHelper: &oauth2.HandleHelper{
 			AccessTokenStrategy: strategy.(oauth2.AccessTokenStrategy),
@@ -117,5 +163,6 @@ func NewClientCredentialsHandlerFactory(config fositex.OAuth2Configurator, store
 		},
 		TransactionManager: store.(storage.TransactionManager),
 		Config:             config.(clientCredentialsConfigurator),
+		tracer:             tracer,
 	}
 }
