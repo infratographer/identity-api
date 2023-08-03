@@ -44,6 +44,7 @@ func (c *ClientCredentialsGrantHandler) HandleTokenEndpointRequest(ctx context.C
 	ctx, span := c.tracer.Start(ctx, "HandleTokenEndpointRequest")
 
 	defer span.End()
+
 	client := request.GetClient()
 
 	span.SetAttributes(
