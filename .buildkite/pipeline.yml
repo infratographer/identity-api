@@ -7,7 +7,7 @@ steps:
   - label: ":golangci-lint: lint :lint-roller:"
     key: "lint"
     plugins:
-      - docker#v5.7.0:
+      - docker#v5.8.0:
           image: "golang:1.20"
           command: |
             make lint
@@ -15,7 +15,7 @@ steps:
   - label: ":test_tube: test"
     key: "gotest"
     plugins:
-      - docker#v5.7.0:
+      - docker#v5.8.0:
           image: "golang:1.20"
           command: |
             make test
@@ -24,7 +24,7 @@ steps:
     key: "gobuild"
     artifact_paths: "bin/${APP_NAME}"
     plugins:
-      - docker#v5.7.0:
+      - docker#v5.8.0:
           image: "golang:1.20"
           environment:
             - APP_NAME
