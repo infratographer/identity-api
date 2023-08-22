@@ -144,6 +144,10 @@ func (s *TokenExchangeHandler) validateJWT(ctx context.Context, token string) (*
 		return parsed, nil
 	}
 
+	var claims jwt.JWTClaims
+
+	claims.FromMapClaims(parsed.Claims)
+
 	validationErr, ok := err.(*jwt.ValidationError)
 	if !ok {
 		return nil, errorsx.WithStack(fosite.ErrServerError.WithDebugf("Unknown error: %s", err))
@@ -153,7 +157,17 @@ func (s *TokenExchangeHandler) validateJWT(ctx context.Context, token string) (*
 	case jwt.ValidationErrorUnverifiable:
 		return nil, errorsx.WithStack(fosite.ErrServerError.WithHintf("Server error: %s", err))
 	default:
-		return nil, errorsx.WithStack(fosite.ErrInvalidRequest.WithHintf("Invalid subject token: %s", err))
+		cause := types.ErrorInvalidTokenRequest{
+			Subject: map[string]string{
+				"issuer":  claims.Issuer,
+				"subject": claims.Subject,
+			},
+		}
+
+		fositeErr := fosite.ErrInvalidRequest.WithHintf("Invalid subject token: %s", err).WithWrap(cause)
+		stackErr := errorsx.WithStack(fositeErr)
+
+		return nil, stackErr
 	}
 }
 

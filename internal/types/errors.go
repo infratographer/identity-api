@@ -1,6 +1,9 @@
 package types
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 var (
 	// ErrorIssuerNotFound represents an error condition where an issuer was not found.
@@ -20,3 +23,12 @@ var (
 	// ErrOAuthClientNotFound is returned if the OAuthClient doesn't exist.
 	ErrOAuthClientNotFound = errors.New("oauth client does not exist")
 )
+
+// ErrorInvalidTokenRequest represents an error where an access token request failed.
+type ErrorInvalidTokenRequest struct {
+	Subject map[string]string
+}
+
+func (e ErrorInvalidTokenRequest) Error() string {
+	return fmt.Sprintf("invalid access request for subject %v", e.Subject)
+}

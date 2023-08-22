@@ -7,6 +7,7 @@ import (
 	"go.infratographer.com/x/loggingx"
 	"go.infratographer.com/x/otelx"
 
+	"go.infratographer.com/identity-api/internal/auditx"
 	"go.infratographer.com/identity-api/internal/fositex"
 )
 
@@ -17,4 +18,5 @@ var Config struct {
 	OAuth   fositex.Config
 	OTel    otelx.Config
 	CRDB    crdbx.Config
+	Audit   auditx.Config
 }
