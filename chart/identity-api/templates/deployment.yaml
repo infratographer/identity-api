@@ -76,6 +76,17 @@ spec:
               mountPath: "{{ .Values.config.storage.crdb.certMountPath }}"
           {{- end }}
         {{- end }}
+        {{- if .Values.config.audit.enabled }}
+        - image: ghcr.io/metal-toolbox/audittail:v0.8.0
+          args:
+            - 'init'
+            - '-f'
+            - '/app-audit/audit.log'
+          name: init-audit-logs
+          volumeMounts:
+            - mountPath: /app-audit
+              name: audit-logs
+        {{- end }}
       containers:
         - name: {{ include "common.names.name" . }}
           envFrom:
@@ -85,11 +96,6 @@ spec:
             - secretRef:
                 name: "{{ . }}"
             {{- end }}
-          {{- with .Values.config.auditLogPath }}
-          env:
-            - name: IDAPI_AUDIT_LOG_PATH
-              value: "{{ . }}"
-          {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy | default "Always" }}
           volumeMounts:
@@ -101,6 +107,10 @@ spec:
           {{- if .Values.config.storage.crdb.caSecretName }}
             - name: crdb-ca
               mountPath: "{{ .Values.config.storage.crdb.certMountPath }}"
+          {{- end }}
+          {{- if .Values.config.audit.enabled }}
+            - name: audit-logs
+              mountPath: /app-audit
           {{- end }}
           ports:
             - name: web
@@ -121,6 +131,17 @@ spec:
           resources:
           {{- toYaml . | nindent 12 }}
           {{- end }}
+        {{- if .Values.config.audit.enabled }}
+        - image: ghcr.io/metal-toolbox/audittail:v0.8.0
+          args:
+            - '-f'
+            - '/app-audit/audit.log'
+          name: audit-logger
+          volumeMounts:
+            - mountPath: /app-audit
+              name: audit-logs
+              readOnly: true
+        {{- end }}
       volumes:
         - name: signing-keys-seed
           secret:
@@ -135,4 +156,8 @@ spec:
         - name: crdb-ca
           secret:
             secretName: "{{ . }}"
+        {{- end }}
+        {{- if .Values.config.audit.enabled }}
+        - name: audit-logs
+          emptyDir: {}
         {{- end }}
