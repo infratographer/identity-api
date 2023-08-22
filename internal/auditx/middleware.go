@@ -55,6 +55,7 @@ func newNopMiddleware() (*echoaudit.Middleware, func() error, error) {
 	return mdw, closer, nil
 }
 
+// NewMiddleware creates a new echoaudit middleware with closer function based on the given config.
 func NewMiddleware(ctx context.Context, c Config) (*echoaudit.Middleware, func() error, error) {
 	if !c.Enabled {
 		return newNopMiddleware()
