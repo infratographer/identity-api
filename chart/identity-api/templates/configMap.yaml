@@ -36,4 +36,8 @@ data:
         {{- end }}
     storage:
       type: crdb
+    audit:
+      enabled: {{ .audit.enabled }}
+      path: /app-audit/audit.log
+      component: {{ .audit.component }}
   {{- end }}

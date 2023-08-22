@@ -154,6 +154,17 @@
                   }
                 }
               }
+            },
+            "audit": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "component": {
+                  "type": "string"
+                }
+              }
             }
           }
         },
