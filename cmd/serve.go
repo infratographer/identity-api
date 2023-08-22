@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/MicahParks/keyfunc/v2"
 	echojwt "github.com/labstack/echo-jwt/v4"
@@ -21,6 +20,7 @@ import (
 	"go.uber.org/zap"
 
 	"go.infratographer.com/identity-api/internal/api/httpsrv"
+	"go.infratographer.com/identity-api/internal/auditx"
 	"go.infratographer.com/identity-api/internal/config"
 	"go.infratographer.com/identity-api/internal/fositex"
 	"go.infratographer.com/identity-api/internal/jwks"
@@ -30,7 +30,6 @@ import (
 	"go.infratographer.com/identity-api/internal/storage"
 	"go.infratographer.com/identity-api/internal/userinfo"
 
-	audithelpers "github.com/metal-toolbox/auditevent/helpers"
 	"github.com/metal-toolbox/auditevent/middleware/echoaudit"
 )
 
@@ -55,6 +54,7 @@ func init() {
 	crdbx.MustViperFlags(v, flags)
 	echox.MustViperFlags(v, flags, defaultListen)
 	otelx.MustViperFlags(v, flags)
+	auditx.MustViperFlags(v, flags)
 }
 
 func serve(ctx context.Context) {
@@ -63,7 +63,7 @@ func serve(ctx context.Context) {
 		logger.Fatalf("error initializing tracing: %s", err)
 	}
 
-	auditMiddleware, auditCloseFn, err := newAuditMiddleware(ctx)
+	auditMiddleware, auditCloseFn, err := newAuditMiddleware(ctx, config.Config.Audit)
 	if err != nil {
 		logger.Fatal("Failed to initialize audit middleware", zap.Error(err))
 	}
@@ -196,19 +196,6 @@ func multiSkipper(skippers ...middleware.Skipper) func(c echo.Context) bool {
 	}
 }
 
-func newAuditMiddleware(ctx context.Context) (*echoaudit.Middleware, func() error, error) {
-	auditFile := viper.GetString("audit.log.path")
-	if auditFile == "" {
-		logger.Warn("audit log path not provied, logging disabled.")
-		return nil, nil, nil
-	}
-
-	auditLogPath := viper.GetViper().GetString("audit.log.path")
-
-	fd, err := audithelpers.OpenAuditLogFileUntilSuccessWithContext(ctx, auditLogPath)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to open audit log file: %w", err)
-	}
-
-	return echoaudit.NewJSONMiddleware(appName, fd), fd.Close, nil
+func newAuditMiddleware(ctx context.Context, c auditx.Config) (*echoaudit.Middleware, func() error, error) {
+	return auditx.NewMiddleware(ctx, c)
 }
