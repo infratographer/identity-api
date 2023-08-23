@@ -80,6 +80,27 @@ config:
     enabled: false
     component: identity-api
 
+audit:
+  image:
+    repository: ghcr.io/metal-toolbox/audittail
+    tag: v0.8.0
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1Gi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  initContainer:
+    resources:
+      limits:
+        cpu: 100m
+        memory: 20Mi
+      requests:
+        cpu: 100m
+        memory: 20Mi
+    
 ingress:
   enabled: false
   annotations: {}
