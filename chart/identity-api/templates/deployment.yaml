@@ -77,12 +77,17 @@ spec:
           {{- end }}
         {{- end }}
         {{- if .Values.config.audit.enabled }}
-        - image: ghcr.io/metal-toolbox/audittail:v0.8.0
+        - name: init-audit-logs
+          image: {{ .Values.audit.image.repository }}:{{ .Values.audit.image.tag }}
+          imagePullPolicy: {{ .Values.audit.image.pullPolicy }}
           args:
             - 'init'
             - '-f'
             - '/app-audit/audit.log'
-          name: init-audit-logs
+          {{- with .Values.audit.initContainer.resources }}
+          resources:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - mountPath: /app-audit
               name: audit-logs
@@ -132,15 +137,20 @@ spec:
           {{- toYaml . | nindent 12 }}
           {{- end }}
         {{- if .Values.config.audit.enabled }}
-        - image: ghcr.io/metal-toolbox/audittail:v0.8.0
+        - name: audit-logger
+          image: {{ .Values.audit.image.repository }}:{{ .Values.audit.image.tag }}
+          imagePullPolicy: {{ .Values.audit.image.pullPolicy }}
           args:
             - '-f'
             - '/app-audit/audit.log'
-          name: audit-logger
           volumeMounts:
             - mountPath: /app-audit
               name: audit-logs
               readOnly: true
+          {{- with .Values.audit.resources }}
+          resources:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
         {{- end }}
       volumes:
         - name: signing-keys-seed
