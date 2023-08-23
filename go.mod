@@ -13,7 +13,7 @@ require (
 	github.com/metal-toolbox/auditevent v0.8.0
 	github.com/ory/fosite v0.44.0
 	github.com/ory/x v0.0.577
-	github.com/pressly/goose/v3 v3.14.0
+	github.com/pressly/goose/v3 v3.15.0
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.16.0
