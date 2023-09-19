@@ -12,6 +12,7 @@ import (
 	"github.com/ory/fosite/compose"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"go.infratographer.com/permissions-api/pkg/permissions"
 	"go.infratographer.com/x/crdbx"
 	"go.infratographer.com/x/echojwtx"
 	"go.infratographer.com/x/echox"
@@ -55,6 +56,7 @@ func init() {
 	echox.MustViperFlags(v, flags, defaultListen)
 	otelx.MustViperFlags(v, flags)
 	auditx.MustViperFlags(v, flags)
+	permissions.MustViperFlags(v, flags)
 }
 
 func serve(ctx context.Context) {
@@ -105,7 +107,15 @@ func serve(ctx context.Context) {
 		oauth2.NewClientCredentialsHandlerFactory,
 	)
 
-	apiHandler, err := httpsrv.NewAPIHandler(storageEngine, auditMiddleware)
+	perms, err := permissions.New(
+		config.Config.Permissions,
+		permissions.WithDefaultChecker(permissions.DefaultAllowChecker),
+	)
+	if err != nil {
+		logger.Fatal("error initializing permissions middleware: %s", err)
+	}
+
+	apiHandler, err := httpsrv.NewAPIHandler(storageEngine, auditMiddleware, perms)
 	if err != nil {
 		logger.Fatal("error initializing API server: %s", err)
 	}

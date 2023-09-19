@@ -6,14 +6,41 @@ import (
 
 	"go.infratographer.com/identity-api/internal/crypto"
 	"go.infratographer.com/identity-api/internal/types"
+	"go.infratographer.com/x/gidx"
 )
 
-const defaultTokenLength = 26
+const (
+	defaultTokenLength = 26
 
-// CreateOAuthClient creates a client for a owner with a set name.
+	actionOAuthClientCreate = "oauthclient_create"
+	actionOAuthClientGet    = "oauthclient_get"
+	actionOAuthClientDelete = "oauthclient_delete"
+)
+
+func (h *apiHandler) lookupOAuthClientWithResponse(ctx context.Context, id gidx.PrefixedID) (types.OAuthClient, error) {
+	client, err := h.engine.LookupOAuthClientByID(ctx, id)
+
+	switch err {
+	case nil:
+		return client, nil
+	case types.ErrOAuthClientNotFound:
+		return types.OAuthClient{}, errorWithStatus{
+			status:  http.StatusNotFound,
+			message: err.Error(),
+		}
+	default:
+		return types.OAuthClient{}, err
+	}
+}
+
+// Createoauthclient creates a client for a owner with a set name.
 // This endpoint returns the OAuth client ID and secret that the client
 // needs to provide to authenticate when requesting a token.
 func (h *apiHandler) CreateOAuthClient(ctx context.Context, request CreateOAuthClientRequestObject) (CreateOAuthClientResponseObject, error) {
+	if err := checkAccessWithResponse(ctx, request.OwnerID, actionOAuthClientCreate); err != nil {
+		return nil, err
+	}
+
 	var newClient types.OAuthClient
 	newClient.OwnerID = request.OwnerID
 	newClient.Name = request.Body.Name
@@ -46,15 +73,12 @@ func (h *apiHandler) CreateOAuthClient(ctx context.Context, request CreateOAuthC
 
 // GetOAuthClient returns the OAuth client for that ID
 func (h *apiHandler) GetOAuthClient(ctx context.Context, request GetOAuthClientRequestObject) (GetOAuthClientResponseObject, error) {
-	client, err := h.engine.LookupOAuthClientByID(ctx, request.ClientID)
-	switch err {
-	case nil:
-	case types.ErrOAuthClientNotFound:
-		return nil, errorWithStatus{
-			status:  http.StatusNotFound,
-			message: err.Error(),
-		}
-	default:
+	client, err := h.lookupOAuthClientWithResponse(ctx, request.ClientID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := checkAccessWithResponse(ctx, client.OwnerID, actionOAuthClientGet); err != nil {
 		return nil, err
 	}
 
@@ -65,10 +89,16 @@ func (h *apiHandler) GetOAuthClient(ctx context.Context, request GetOAuthClientR
 
 // DeleteOAuthClient removes the OAuth client.
 func (h *apiHandler) DeleteOAuthClient(ctx context.Context, request DeleteOAuthClientRequestObject) (DeleteOAuthClientResponseObject, error) {
-	err := h.engine.DeleteOAuthClient(ctx, request.ClientID)
-	switch err {
-	case nil, types.ErrOAuthClientNotFound:
-	default:
+	client, err := h.lookupOAuthClientWithResponse(ctx, request.ClientID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := checkAccessWithResponse(ctx, client.OwnerID, actionOAuthClientDelete); err != nil {
+		return nil, err
+	}
+
+	if err := h.engine.DeleteOAuthClient(ctx, request.ClientID); err != nil {
 		return nil, err
 	}
 

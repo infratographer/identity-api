@@ -11,6 +11,7 @@ import (
 	"go.infratographer.com/identity-api/internal/testingx"
 	"go.infratographer.com/identity-api/internal/types"
 	v1 "go.infratographer.com/identity-api/pkg/api/v1"
+	"go.infratographer.com/permissions-api/pkg/permissions"
 	"go.infratographer.com/x/crdbx"
 	"go.infratographer.com/x/gidx"
 )
@@ -68,6 +69,14 @@ func TestAPIHandler(t *testing.T) {
 			},
 		},
 	}
+
+	// permissions-api doesn't expose a function to set a context key, but it does expose a key, so we
+	// can use that here.
+	backgroundCtx := context.WithValue(
+		context.Background(),
+		permissions.CheckerCtxKey,
+		permissions.DefaultAllowChecker,
+	)
 
 	store, err := storage.NewEngine(config, storage.WithMigrations(), storage.WithSeedData(seedData))
 	if !assert.NoError(t, err) {
@@ -171,7 +180,7 @@ func TestAPIHandler(t *testing.T) {
 			return result
 		}
 
-		testingx.RunTests(context.Background(), t, testCases, runFn)
+		testingx.RunTests(backgroundCtx, t, testCases, runFn)
 	})
 
 	t.Run("GetIssuer", func(t *testing.T) {
@@ -232,7 +241,7 @@ func TestAPIHandler(t *testing.T) {
 			return result
 		}
 
-		testingx.RunTests(context.Background(), t, testCases, runFn)
+		testingx.RunTests(backgroundCtx, t, testCases, runFn)
 	})
 
 	t.Run("UpdateIssuer", func(t *testing.T) {
@@ -335,7 +344,7 @@ func TestAPIHandler(t *testing.T) {
 			return result
 		}
 
-		testingx.RunTests(context.Background(), t, testCases, runFn)
+		testingx.RunTests(backgroundCtx, t, testCases, runFn)
 	})
 
 	t.Run("DeleteIssuer", func(t *testing.T) {
@@ -445,7 +454,7 @@ func TestAPIHandler(t *testing.T) {
 			return result
 		}
 
-		testingx.RunTests(context.Background(), t, testCases, runFn)
+		testingx.RunTests(backgroundCtx, t, testCases, runFn)
 	})
 
 	t.Run("CreateOAuthClient", func(t *testing.T) {
@@ -503,7 +512,7 @@ func TestAPIHandler(t *testing.T) {
 			},
 		}
 
-		testingx.RunTests(context.Background(), t, testCases, runFn)
+		testingx.RunTests(backgroundCtx, t, testCases, runFn)
 	})
 
 	t.Run("GetOAuthClient", func(t *testing.T) {
@@ -578,7 +587,7 @@ func TestAPIHandler(t *testing.T) {
 			return result
 		}
 
-		testingx.RunTests(context.Background(), t, testCases, runFn)
+		testingx.RunTests(backgroundCtx, t, testCases, runFn)
 	})
 
 	t.Run("DeleteOAuthClient", func(t *testing.T) {
@@ -648,22 +657,8 @@ func TestAPIHandler(t *testing.T) {
 				},
 				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[DeleteOAuthClientResponseObject]) {
-					if !assert.NoError(t, result.Err) {
-						return
-					}
-
-					resp, ok := result.Success.(DeleteOAuthClient200JSONResponse)
-					if !ok {
-						assert.FailNow(t, "unexpected result type for delete issuer response")
-					}
-
-					obsResp := v1.DeleteResponse(resp)
-
-					expResp := v1.DeleteResponse{
-						Success: true,
-					}
-
-					assert.Equal(t, expResp, obsResp)
+					assert.IsType(t, errorWithStatus{}, result.Err)
+					assert.Equal(t, http.StatusNotFound, result.Err.(errorWithStatus).status)
 				},
 				CleanupFn: cleanupFn,
 			},
@@ -680,7 +675,7 @@ func TestAPIHandler(t *testing.T) {
 			return result
 		}
 
-		testingx.RunTests(context.Background(), t, testCases, runFn)
+		testingx.RunTests(backgroundCtx, t, testCases, runFn)
 	})
 }
 
