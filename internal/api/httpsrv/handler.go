@@ -51,10 +51,11 @@ type APIHandler struct {
 	handler              *apiHandler
 	validationMiddleware echo.MiddlewareFunc
 	auditMiddleware      *echoaudit.Middleware
+	middleware           []echo.MiddlewareFunc
 }
 
 // NewAPIHandler creates an API handler with the given storage engine.
-func NewAPIHandler(engine storage.Engine, amw *echoaudit.Middleware) (*APIHandler, error) {
+func NewAPIHandler(engine storage.Engine, amw *echoaudit.Middleware, middleware ...echo.MiddlewareFunc) (*APIHandler, error) {
 	validationMiddleware, err := oapiValidationMiddleware()
 	if err != nil {
 		return nil, err
@@ -68,6 +69,7 @@ func NewAPIHandler(engine storage.Engine, amw *echoaudit.Middleware) (*APIHandle
 		handler:              &handler,
 		validationMiddleware: validationMiddleware,
 		auditMiddleware:      amw,
+		middleware:           middleware,
 	}
 
 	return out, nil
@@ -83,6 +85,8 @@ func (h *APIHandler) Routes(rg *echo.Group) {
 	if h.auditMiddleware != nil {
 		middleware = append(middleware, h.auditMiddleware.Audit())
 	}
+
+	middleware = append(middleware, h.middleware...)
 
 	rg.Use(middleware...)
 

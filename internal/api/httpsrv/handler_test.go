@@ -11,9 +11,14 @@ import (
 	"go.infratographer.com/identity-api/internal/testingx"
 	"go.infratographer.com/identity-api/internal/types"
 	v1 "go.infratographer.com/identity-api/pkg/api/v1"
+	"go.infratographer.com/permissions-api/pkg/permissions"
 	"go.infratographer.com/x/crdbx"
 	"go.infratographer.com/x/gidx"
 )
+
+func ctxPermsAllow(ctx context.Context) context.Context {
+	return context.WithValue(ctx, permissions.CheckerCtxKey, permissions.DefaultAllowChecker)
+}
 
 func TestAPIHandler(t *testing.T) {
 	t.Parallel()
@@ -171,7 +176,7 @@ func TestAPIHandler(t *testing.T) {
 			return result
 		}
 
-		testingx.RunTests(context.Background(), t, testCases, runFn)
+		testingx.RunTests(ctxPermsAllow(context.Background()), t, testCases, runFn)
 	})
 
 	t.Run("GetIssuer", func(t *testing.T) {
@@ -232,7 +237,7 @@ func TestAPIHandler(t *testing.T) {
 			return result
 		}
 
-		testingx.RunTests(context.Background(), t, testCases, runFn)
+		testingx.RunTests(ctxPermsAllow(context.Background()), t, testCases, runFn)
 	})
 
 	t.Run("UpdateIssuer", func(t *testing.T) {
@@ -335,7 +340,7 @@ func TestAPIHandler(t *testing.T) {
 			return result
 		}
 
-		testingx.RunTests(context.Background(), t, testCases, runFn)
+		testingx.RunTests(ctxPermsAllow(context.Background()), t, testCases, runFn)
 	})
 
 	t.Run("DeleteIssuer", func(t *testing.T) {
@@ -413,22 +418,11 @@ func TestAPIHandler(t *testing.T) {
 				},
 				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[DeleteIssuerResponseObject]) {
-					if !assert.NoError(t, result.Err) {
+					if !assert.Error(t, result.Err) {
 						return
 					}
 
-					resp, ok := result.Success.(DeleteIssuer200JSONResponse)
-					if !ok {
-						assert.FailNow(t, "unexpected result type for delete issuer response")
-					}
-
-					obsResp := v1.DeleteResponse(resp)
-
-					expResp := v1.DeleteResponse{
-						Success: true,
-					}
-
-					assert.Equal(t, expResp, obsResp)
+					assert.ErrorIs(t, result.Err, errorNotFound)
 				},
 				CleanupFn: cleanupFn,
 			},
@@ -445,7 +439,7 @@ func TestAPIHandler(t *testing.T) {
 			return result
 		}
 
-		testingx.RunTests(context.Background(), t, testCases, runFn)
+		testingx.RunTests(ctxPermsAllow(context.Background()), t, testCases, runFn)
 	})
 
 	t.Run("CreateOAuthClient", func(t *testing.T) {
@@ -503,7 +497,7 @@ func TestAPIHandler(t *testing.T) {
 			},
 		}
 
-		testingx.RunTests(context.Background(), t, testCases, runFn)
+		testingx.RunTests(ctxPermsAllow(context.Background()), t, testCases, runFn)
 	})
 
 	t.Run("GetOAuthClient", func(t *testing.T) {
@@ -578,7 +572,7 @@ func TestAPIHandler(t *testing.T) {
 			return result
 		}
 
-		testingx.RunTests(context.Background(), t, testCases, runFn)
+		testingx.RunTests(ctxPermsAllow(context.Background()), t, testCases, runFn)
 	})
 
 	t.Run("DeleteOAuthClient", func(t *testing.T) {
@@ -648,22 +642,16 @@ func TestAPIHandler(t *testing.T) {
 				},
 				SetupFn: setupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[DeleteOAuthClientResponseObject]) {
-					if !assert.NoError(t, result.Err) {
+					if !assert.Error(t, result.Err) {
 						return
 					}
 
-					resp, ok := result.Success.(DeleteOAuthClient200JSONResponse)
+					err, ok := result.Err.(errorWithStatus)
 					if !ok {
-						assert.FailNow(t, "unexpected result type for delete issuer response")
+						assert.FailNow(t, "unexpected error type returned", result.Err)
 					}
 
-					obsResp := v1.DeleteResponse(resp)
-
-					expResp := v1.DeleteResponse{
-						Success: true,
-					}
-
-					assert.Equal(t, expResp, obsResp)
+					assert.Equal(t, types.ErrOAuthClientNotFound.Error(), err.Error())
 				},
 				CleanupFn: cleanupFn,
 			},
@@ -680,7 +668,7 @@ func TestAPIHandler(t *testing.T) {
 			return result
 		}
 
-		testingx.RunTests(context.Background(), t, testCases, runFn)
+		testingx.RunTests(ctxPermsAllow(context.Background()), t, testCases, runFn)
 	})
 }
 

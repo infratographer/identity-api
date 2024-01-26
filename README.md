@@ -70,7 +70,18 @@ $ openssl genpkey -out privkey.pem -algorithm RSA -pkeyopt rsa_keygen_bits:4096
 
 Update the config file and/or Docker Compose volume mounts accordingly.
 
+If the permissions config has been defined, the actor will need access to the following actions to make the corresponding api calls. See [Permissions-API][permissionsapi] for more details on updating your policy.
+
+* iam_issuer_create
+* iam_issuer_update
+* iam_issuer_delete
+* iam_issuer_get
+* iam_oauthclient_create
+* iam_oauthclient_delete
+* iam_oauthclient_get
+
 [pkcs8]: https://en.wikipedia.org/wiki/PKCS_8
+[permissionsapi]: https://github.com/infratographer/permissions-api
 
 ## Development
 

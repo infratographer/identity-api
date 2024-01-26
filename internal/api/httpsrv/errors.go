@@ -1,6 +1,12 @@
 package httpsrv
 
-import "net/http"
+import (
+	"errors"
+	"net/http"
+
+	"github.com/labstack/echo/v4"
+	"go.infratographer.com/permissions-api/pkg/permissions"
+)
 
 type errorWithStatus struct {
 	status  int
@@ -17,3 +23,11 @@ var (
 		message: "not found",
 	}
 )
+
+func permissionsError(err error) error {
+	if errors.Is(err, permissions.ErrPermissionDenied) {
+		return echo.NewHTTPError(http.StatusForbidden, err)
+	}
+
+	return err
+}

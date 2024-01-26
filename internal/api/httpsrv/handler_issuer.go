@@ -6,12 +6,24 @@ import (
 
 	"go.infratographer.com/identity-api/internal/types"
 	v1 "go.infratographer.com/identity-api/pkg/api/v1"
+	"go.infratographer.com/permissions-api/pkg/permissions"
 	"go.infratographer.com/x/gidx"
+)
+
+const (
+	actionIssuerCreate = "iam_issuer_create"
+	actionIssuerUpdate = "iam_issuer_update"
+	actionIssuerDelete = "iam_issuer_delete"
+	actionIssuerGet    = "iam_issuer_get"
 )
 
 func (h *apiHandler) CreateIssuer(ctx context.Context, req CreateIssuerRequestObject) (CreateIssuerResponseObject, error) {
 	ownerID := req.OwnerID
 	createOp := req.Body
+
+	if err := permissions.CheckAccess(ctx, ownerID, actionIssuerCreate); err != nil {
+		return nil, permissionsError(err)
+	}
 
 	var (
 		claimsMapping types.ClaimsMapping
@@ -72,6 +84,10 @@ func (h *apiHandler) GetIssuerByID(ctx context.Context, req GetIssuerByIDRequest
 		return nil, err
 	}
 
+	if err := permissions.CheckAccess(ctx, iss.OwnerID, actionIssuerGet); err != nil {
+		return nil, permissionsError(err)
+	}
+
 	out, err := iss.ToV1Issuer()
 	if err != nil {
 		return nil, err
@@ -81,12 +97,23 @@ func (h *apiHandler) GetIssuerByID(ctx context.Context, req GetIssuerByIDRequest
 }
 
 func (h *apiHandler) UpdateIssuer(ctx context.Context, req UpdateIssuerRequestObject) (UpdateIssuerResponseObject, error) {
+	// We must fetch the issuer to retrieve the owner so we may check for permission to update.
+	iss, err := h.engine.GetIssuerByID(ctx, req.Id)
+	switch err {
+	case nil:
+	case types.ErrorIssuerNotFound:
+		return nil, errorNotFound
+	default:
+		return nil, err
+	}
+
+	if err := permissions.CheckAccess(ctx, iss.OwnerID, actionIssuerUpdate); err != nil {
+		return nil, permissionsError(err)
+	}
+
 	updateOp := req.Body
 
-	var (
-		claimsMapping types.ClaimsMapping
-		err           error
-	)
+	var claimsMapping types.ClaimsMapping
 
 	if updateOp.ClaimMappings != nil {
 		claimsMapping, err = types.NewClaimsMapping(*updateOp.ClaimMappings)
@@ -125,7 +152,21 @@ func (h *apiHandler) UpdateIssuer(ctx context.Context, req UpdateIssuerRequestOb
 }
 
 func (h *apiHandler) DeleteIssuer(ctx context.Context, req DeleteIssuerRequestObject) (DeleteIssuerResponseObject, error) {
-	err := h.engine.DeleteIssuer(ctx, req.Id)
+	// We must fetch the issuer to retrieve the owner so we may check for permission to delete.
+	iss, err := h.engine.GetIssuerByID(ctx, req.Id)
+	switch err {
+	case nil:
+	case types.ErrorIssuerNotFound:
+		return nil, errorNotFound
+	default:
+		return nil, err
+	}
+
+	if err := permissions.CheckAccess(ctx, iss.OwnerID, actionIssuerDelete); err != nil {
+		return nil, permissionsError(err)
+	}
+
+	err = h.engine.DeleteIssuer(ctx, req.Id)
 	switch err {
 	case nil, types.ErrorIssuerNotFound:
 	default:

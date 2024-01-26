@@ -36,6 +36,9 @@ data:
         {{- end }}
     storage:
       type: crdb
+    permissions:
+      url: {{ .permissions.url | quote }}
+      defaultAllow: {{ .permissions.defaultAllow }}
     audit:
       enabled: {{ .audit.enabled }}
       path: /app-audit/audit.log

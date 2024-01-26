@@ -15,4 +15,6 @@ otel:
     endpoint: jaeger:4317
     insecure: true
 crdb:
-  uri: postgresql://root@cockroachdb:26257/identity_api_dev?sslmode=disable
+  uri: postgresql://root@crdb:26257/identityapi?sslmode=disable
+# permissions:
+#   url: http://permissionsapi:7602/api/v1/allow
