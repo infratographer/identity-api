@@ -6,9 +6,16 @@ import (
 
 	"go.infratographer.com/identity-api/internal/crypto"
 	"go.infratographer.com/identity-api/internal/types"
+	"go.infratographer.com/permissions-api/pkg/permissions"
 )
 
 const defaultTokenLength = 26
+
+const (
+	actionOAuthClientCreate = "iam_oauthclient_create"
+	actionOAuthClientDelete = "iam_oauthclient_delete"
+	actionOAuthClientGet    = "iam_oauthclient_get"
+)
 
 // CreateOAuthClient creates a client for a owner with a set name.
 // This endpoint returns the OAuth client ID and secret that the client
@@ -17,6 +24,10 @@ func (h *apiHandler) CreateOAuthClient(ctx context.Context, request CreateOAuthC
 	var newClient types.OAuthClient
 	newClient.OwnerID = request.OwnerID
 	newClient.Name = request.Body.Name
+
+	if err := permissions.CheckAccess(ctx, newClient.OwnerID, actionOAuthClientCreate); err != nil {
+		return nil, permissionsError(err)
+	}
 
 	newClient.Audience = []string{}
 	if request.Body.Audience != nil {
@@ -58,6 +69,10 @@ func (h *apiHandler) GetOAuthClient(ctx context.Context, request GetOAuthClientR
 		return nil, err
 	}
 
+	if err := permissions.CheckAccess(ctx, client.OwnerID, actionOAuthClientGet); err != nil {
+		return nil, permissionsError(err)
+	}
+
 	apiType := client.ToV1OAuthClient()
 
 	return GetOAuthClient200JSONResponse(apiType), nil
@@ -65,7 +80,24 @@ func (h *apiHandler) GetOAuthClient(ctx context.Context, request GetOAuthClientR
 
 // DeleteOAuthClient removes the OAuth client.
 func (h *apiHandler) DeleteOAuthClient(ctx context.Context, request DeleteOAuthClientRequestObject) (DeleteOAuthClientResponseObject, error) {
-	err := h.engine.DeleteOAuthClient(ctx, request.ClientID)
+	// We must fetch the oauth client to retrieve the owner so we may check for permission to delete.
+	client, err := h.engine.LookupOAuthClientByID(ctx, request.ClientID)
+	switch err {
+	case nil:
+	case types.ErrOAuthClientNotFound:
+		return nil, errorWithStatus{
+			status:  http.StatusNotFound,
+			message: err.Error(),
+		}
+	default:
+		return nil, err
+	}
+
+	if err := permissions.CheckAccess(ctx, client.OwnerID, actionOAuthClientDelete); err != nil {
+		return nil, permissionsError(err)
+	}
+
+	err = h.engine.DeleteOAuthClient(ctx, request.ClientID)
 	switch err {
 	case nil, types.ErrOAuthClientNotFound:
 	default:

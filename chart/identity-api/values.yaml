@@ -76,6 +76,15 @@ config:
           path: "/keys/default.pem"
           algorithm: RS256
 
+  permissions:
+    # url should point to a permissions-api authorization API route, such as https://example.com/api/v1/allow.
+    # If not set, all permissions checks will be denied by default. To override this behavior, set defaultAllow
+    # to true.
+    url: ""
+
+    # defaultAllow if set to true, will allow all permissions checks when URL is not set.
+    defaultAllow: false
+
   audit:
     enabled: false
     component: identity-api
