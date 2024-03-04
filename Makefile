@@ -32,8 +32,8 @@ COCKROACH_RELEASE_URL = https://binaries.cockroachdb.com/$(COCKROACH_VERSION_FIL
 GCI_REPO = github.com/daixiang0/gci
 GCI_VERSION = v0.10.1
 
-OAPI_CODEGEN_REPO = github.com/deepmap/oapi-codegen
-OAPI_CODEGEN_VERSION = f4cf8f9
+OAPI_CODEGEN_REPO = github.com/deepmap/oapi-codegen/v2
+OAPI_CODEGEN_VERSION = v2.1.0
 
 GOLANGCI_LINT_REPO = github.com/golangci/golangci-lint
 GOLANGCI_LINT_VERSION = v1.51.2
