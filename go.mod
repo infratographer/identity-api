@@ -11,6 +11,7 @@ require (
 	github.com/labstack/echo-jwt/v4 v4.2.0
 	github.com/labstack/echo/v4 v4.11.4
 	github.com/metal-toolbox/auditevent v0.8.0
+	github.com/oapi-codegen/echo-middleware v1.0.1
 	github.com/ory/fosite v0.46.1
 	github.com/ory/x v0.0.589
 	github.com/pressly/goose/v3 v3.15.0
