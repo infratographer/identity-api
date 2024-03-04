@@ -3,7 +3,7 @@ package httpsrv
 import (
 	"github.com/labstack/echo/v4"
 
-	"github.com/deepmap/oapi-codegen/pkg/middleware"
+	echomiddleware "github.com/oapi-codegen/echo-middleware"
 	v1 "go.infratographer.com/identity-api/pkg/api/v1"
 )
 
@@ -13,5 +13,5 @@ func oapiValidationMiddleware() (echo.MiddlewareFunc, error) {
 		return nil, err
 	}
 
-	return middleware.OapiRequestValidator(swagger), nil
+	return echomiddleware.OapiRequestValidator(swagger), nil
 }
