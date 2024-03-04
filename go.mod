@@ -6,6 +6,7 @@ require (
 	github.com/MicahParks/keyfunc/v2 v2.1.0
 	github.com/cockroachdb/cockroach-go/v2 v2.3.6
 	github.com/deepmap/oapi-codegen v1.16.2
+	github.com/deepmap/oapi-codegen/v2 v2.1.0
 	github.com/getkin/kin-openapi v0.123.0
 	github.com/go-jose/go-jose/v3 v3.0.1
 	github.com/google/cel-go v0.20.0
