@@ -15,10 +15,10 @@ import (
 	"os"
 	"time"
 
+	jose "github.com/go-jose/go-jose/v3"
 	"github.com/ory/fosite"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
-	"gopkg.in/square/go-jose.v2"
 )
 
 const instrumentationName = "go.infratographer.com/identity-api/internal/fositex"

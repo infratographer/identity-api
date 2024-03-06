@@ -3,12 +3,12 @@ package fositex
 import (
 	"context"
 
+	jose "github.com/go-jose/go-jose/v3"
 	"github.com/ory/fosite"
 	"github.com/ory/fosite/token/jwt"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"go.infratographer.com/x/viperx"
-	"gopkg.in/square/go-jose.v2"
 
 	"go.infratographer.com/identity-api/internal/types"
 )
