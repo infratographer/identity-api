@@ -3,9 +3,9 @@ package routes
 import (
 	"net/http"
 
+	jose "github.com/go-jose/go-jose/v3"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
-	"gopkg.in/square/go-jose.v2"
 
 	"go.infratographer.com/identity-api/internal/fositex"
 )
