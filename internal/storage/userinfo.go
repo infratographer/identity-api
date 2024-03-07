@@ -162,6 +162,40 @@ func (s userInfoService) LookupUserInfoByID(ctx context.Context, id gidx.Prefixe
 	return ui, err
 }
 
+// LookupUserOwnerID finds the Owner ID of the Issuer for the given User ID.
+func (s userInfoService) LookupUserOwnerID(ctx context.Context, id gidx.PrefixedID) (gidx.PrefixedID, error) {
+	stmt := `
+        SELECT issuers.owner_id
+		FROM issuers, user_info
+		WHERE
+			issuers.id = user_info.iss_id AND
+			user_info.id = $1
+    `
+
+	var row *sql.Row
+
+	tx, err := getContextTx(ctx)
+
+	switch err {
+	case nil:
+		row = tx.QueryRowContext(ctx, stmt, id)
+	case ErrorMissingContextTx:
+		row = s.db.QueryRowContext(ctx, stmt, id)
+	default:
+		return gidx.NullPrefixedID, err
+	}
+
+	var ownerID gidx.PrefixedID
+
+	err = row.Scan(&ownerID)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return gidx.NullPrefixedID, types.ErrUserInfoNotFound
+	}
+
+	return ownerID, err
+}
+
 // StoreUserInfo is used to store user information by issuer and
 // subject pairs. UserInfo is unique to issuer/subject pairs.
 func (s userInfoService) StoreUserInfo(ctx context.Context, userInfo types.UserInfo) (types.UserInfo, error) {
