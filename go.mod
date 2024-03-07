@@ -1,12 +1,15 @@
 module go.infratographer.com/identity-api
 
-go 1.20
+go 1.21
+
+toolchain go1.22.1
 
 require (
 	github.com/MicahParks/keyfunc/v2 v2.1.0
 	github.com/cockroachdb/cockroach-go/v2 v2.3.7
 	github.com/getkin/kin-openapi v0.123.0
-	github.com/go-jose/go-jose/v3 v3.0.2
+	github.com/go-jose/go-jose/v3 v3.0.0
+	github.com/go-jose/go-jose/v4 v4.0.1
 	github.com/google/cel-go v0.20.0
 	github.com/labstack/echo-jwt/v4 v4.2.0
 	github.com/labstack/echo/v4 v4.11.4
