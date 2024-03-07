@@ -670,6 +670,112 @@ func TestAPIHandler(t *testing.T) {
 
 		testingx.RunTests(ctxPermsAllow(context.Background()), t, testCases, runFn)
 	})
+
+	t.Run("GetUser", func(t *testing.T) {
+		t.Parallel()
+
+		handler := apiHandler{
+			engine: store,
+		}
+		issuer := types.Issuer{
+			OwnerID: ownerID,
+			Name:    "Example",
+			URI:     "https://example2.com/",
+			JWKSURI: "https://example2.com/.well-known/jwks.json",
+		}
+
+		withStoredIssuers(t, store, &issuer)
+
+		userInfo := types.UserInfo{
+			Name:    t.Name(),
+			Email:   t.Name() + "@example.com",
+			Issuer:  issuer.URI,
+			Subject: t.Name() + "Test",
+		}
+
+		withStoredUsers(t, store, &userInfo)
+
+		setupFn := func(ctx context.Context) context.Context {
+			ctx, err := store.BeginContext(ctx)
+			if !assert.NoError(t, err) {
+				assert.FailNow(t, "setup failed")
+			}
+
+			return ctx
+		}
+
+		cleanupFn := func(ctx context.Context) {
+			err := store.RollbackContext(ctx)
+			assert.NoError(t, err)
+		}
+
+		testCases := []testingx.TestCase[GetUserByIDRequestObject, GetUserByIDResponseObject]{
+			{
+				Name: "NotFound",
+				Input: GetUserByIDRequestObject{
+					UserID: "",
+				},
+				SetupFn:   setupFn,
+				CleanupFn: cleanupFn,
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[GetUserByIDResponseObject]) {
+					assert.IsType(t, errorWithStatus{}, res.Err)
+					assert.Equal(t, http.StatusNotFound, res.Err.(errorWithStatus).status)
+				},
+			},
+			{
+				Name: "Success",
+				Input: GetUserByIDRequestObject{
+					UserID: userInfo.ID,
+				},
+				SetupFn:   setupFn,
+				CleanupFn: cleanupFn,
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[GetUserByIDResponseObject]) {
+					assert.NoError(t, err)
+					assert.IsType(t, GetUserByID200JSONResponse{}, res.Success)
+					item := v1.User(res.Success.(GetUserByID200JSONResponse))
+					assert.Equal(t, userInfo.ID, item.ID)
+					assert.Equal(t, userInfo.Name, *item.Name)
+					assert.Equal(t, userInfo.Email, *item.Email)
+					assert.Equal(t, userInfo.Issuer, item.Issuer)
+					assert.Equal(t, userInfo.Subject, item.Subject)
+				},
+			},
+		}
+
+		runFn := func(ctx context.Context, input GetUserByIDRequestObject) testingx.TestResult[GetUserByIDResponseObject] {
+			resp, err := handler.GetUserByID(ctx, input)
+
+			result := testingx.TestResult[GetUserByIDResponseObject]{
+				Success: resp,
+				Err:     err,
+			}
+
+			return result
+		}
+
+		testingx.RunTests(ctxPermsAllow(context.Background()), t, testCases, runFn)
+	})
+}
+
+func withStoredIssuers(t *testing.T, s storage.Engine, issuers ...*types.Issuer) {
+	seedCtx, err := s.BeginContext(context.Background())
+	if err != nil {
+		assert.FailNow(t, "failed to begin context")
+	}
+
+	for _, issuer := range issuers {
+		i, err := s.CreateIssuer(seedCtx, *issuer)
+
+		if !assert.NoError(t, err) {
+			assert.FailNow(t, "error initializing issuer")
+		}
+
+		*issuer = *i
+	}
+
+	if err := s.CommitContext(seedCtx); err != nil {
+		assert.FailNow(t, "error committing seed issuers")
+	}
 }
 
 func withStoredClients(t *testing.T, s storage.Engine, clients ...*types.OAuthClient) {
@@ -689,5 +795,25 @@ func withStoredClients(t *testing.T, s storage.Engine, clients ...*types.OAuthCl
 
 	if err := s.CommitContext(seedCtx); err != nil {
 		assert.FailNow(t, "error committing seed clients")
+	}
+}
+
+func withStoredUsers(t *testing.T, s storage.Engine, users ...*types.UserInfo) {
+	seedCtx, err := s.BeginContext(context.Background())
+	if err != nil {
+		assert.FailNow(t, "failed to begin context")
+	}
+
+	for _, u := range users {
+		user := u
+		*user, err = s.StoreUserInfo(seedCtx, *user)
+
+		if !assert.NoError(t, err) {
+			assert.FailNow(t, "error initializing user")
+		}
+	}
+
+	if err := s.CommitContext(seedCtx); err != nil {
+		assert.FailNow(t, "error committing seed users")
 	}
 }

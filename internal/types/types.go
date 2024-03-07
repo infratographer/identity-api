@@ -172,6 +172,32 @@ type UserInfo struct {
 	Subject string          `json:"sub"`
 }
 
+// ToV1User converts an user info to an API user info.
+func (u UserInfo) ToV1User() (v1.User, error) {
+	var (
+		name  *string
+		email *string
+	)
+
+	if u.Name != "" {
+		name = &u.Name
+	}
+
+	if u.Email != "" {
+		email = &u.Email
+	}
+
+	out := v1.User{
+		ID:      u.ID,
+		Name:    name,
+		Email:   email,
+		Issuer:  u.Issuer,
+		Subject: u.Subject,
+	}
+
+	return out, nil
+}
+
 // UserInfoService defines the storage class for storing User
 // information related to the subject tokens.
 type UserInfoService interface {
@@ -180,6 +206,9 @@ type UserInfoService interface {
 
 	// LookupUserInfoByID returns the user info for a STS user ID
 	LookupUserInfoByID(ctx context.Context, id gidx.PrefixedID) (UserInfo, error)
+
+	// LookupUserOwnerID finds the Owner ID of the Issuer for the given User ID.
+	LookupUserOwnerID(ctx context.Context, id gidx.PrefixedID) (gidx.PrefixedID, error)
 
 	// StoreUserInfo stores the userInfo into the storage backend.
 	StoreUserInfo(ctx context.Context, userInfo UserInfo) (UserInfo, error)

@@ -39,6 +39,9 @@ type ServerInterface interface {
 	// Creates an issuer.
 	// (POST /api/v1/owners/{ownerID}/issuers)
 	CreateIssuer(ctx echo.Context, ownerID gidx.PrefixedID) error
+	// Gets information about a User.
+	// (GET /api/v1/users/{userID})
+	GetUserByID(ctx echo.Context, userID gidx.PrefixedID) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -158,6 +161,22 @@ func (w *ServerInterfaceWrapper) CreateIssuer(ctx echo.Context) error {
 	return err
 }
 
+// GetUserByID converts echo context to params.
+func (w *ServerInterfaceWrapper) GetUserByID(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "userID" -------------
+	var userID gidx.PrefixedID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userID", ctx.Param("userID"), &userID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter userID: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetUserByID(ctx, userID)
+	return err
+}
+
 // This is a simple interface which specifies echo.Route addition functions which
 // are present on both echo.Echo and echo.Group, since we want to allow using
 // either of them for path registration
@@ -193,6 +212,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.PATCH(baseURL+"/api/v1/issuers/:id", wrapper.UpdateIssuer)
 	router.POST(baseURL+"/api/v1/owners/:ownerID/clients", wrapper.CreateOAuthClient)
 	router.POST(baseURL+"/api/v1/owners/:ownerID/issuers", wrapper.CreateIssuer)
+	router.GET(baseURL+"/api/v1/users/:userID", wrapper.GetUserByID)
 
 }
 
@@ -318,6 +338,23 @@ func (response CreateIssuer200JSONResponse) VisitCreateIssuerResponse(w http.Res
 	return json.NewEncoder(w).Encode(response)
 }
 
+type GetUserByIDRequestObject struct {
+	UserID gidx.PrefixedID `json:"userID"`
+}
+
+type GetUserByIDResponseObject interface {
+	VisitGetUserByIDResponse(w http.ResponseWriter) error
+}
+
+type GetUserByID200JSONResponse User
+
+func (response GetUserByID200JSONResponse) VisitGetUserByIDResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// Deletes an OAuth Client
@@ -341,6 +378,9 @@ type StrictServerInterface interface {
 	// Creates an issuer.
 	// (POST /api/v1/owners/{ownerID}/issuers)
 	CreateIssuer(ctx context.Context, request CreateIssuerRequestObject) (CreateIssuerResponseObject, error)
+	// Gets information about a User.
+	// (GET /api/v1/users/{userID})
+	GetUserByID(ctx context.Context, request GetUserByIDRequestObject) (GetUserByIDResponseObject, error)
 }
 
 type StrictHandlerFunc = strictecho.StrictEchoHandlerFunc
@@ -542,6 +582,31 @@ func (sh *strictHandler) CreateIssuer(ctx echo.Context, ownerID gidx.PrefixedID)
 		return err
 	} else if validResponse, ok := response.(CreateIssuerResponseObject); ok {
 		return validResponse.VisitCreateIssuerResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetUserByID operation middleware
+func (sh *strictHandler) GetUserByID(ctx echo.Context, userID gidx.PrefixedID) error {
+	var request GetUserByIDRequestObject
+
+	request.UserID = userID
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetUserByID(ctx.Request().Context(), request.(GetUserByIDRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetUserByID")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetUserByIDResponseObject); ok {
+		return validResponse.VisitGetUserByIDResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("unexpected response type: %T", response)
 	}
