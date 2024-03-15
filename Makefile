@@ -36,7 +36,7 @@ OAPI_CODEGEN_REPO = github.com/deepmap/oapi-codegen/v2
 OAPI_CODEGEN_VERSION = v2.1.0
 
 GOLANGCI_LINT_REPO = github.com/golangci/golangci-lint
-GOLANGCI_LINT_VERSION = v1.51.2
+GOLANGCI_LINT_VERSION = v1.56.2
 
 # go files to be checked
 GO_FILES=$(shell git ls-files '*.go')

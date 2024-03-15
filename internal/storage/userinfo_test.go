@@ -117,6 +117,7 @@ func TestUserInfoStore(t *testing.T) {
 
 		runFn := func(ctx context.Context, input lookupType) testingx.TestResult[types.UserInfo] {
 			out, err := svc.LookupUserInfoByClaims(ctx, input.issuer, input.subject)
+
 			return testingx.TestResult[types.UserInfo]{
 				Success: out,
 				Err:     err,
@@ -128,7 +129,7 @@ func TestUserInfoStore(t *testing.T) {
 				Name:    "LoadAfterStore",
 				Input:   lookupType{issuer: user.Issuer, subject: user.Subject},
 				SetupFn: setupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
 					assert.NoError(t, res.Err)
 					assert.Equal(t, user, res.Success)
 				},
@@ -138,7 +139,7 @@ func TestUserInfoStore(t *testing.T) {
 				Name:    "IncorrectIssuer",
 				Input:   lookupType{issuer: user.Issuer + "foobar", subject: user.Subject},
 				SetupFn: setupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
 					assert.ErrorIs(t, res.Err, types.ErrUserInfoNotFound)
 				},
 				CleanupFn: cleanupFn,
@@ -147,7 +148,7 @@ func TestUserInfoStore(t *testing.T) {
 				Name:    "IncorrectSubject",
 				Input:   lookupType{issuer: user.Issuer, subject: ""},
 				SetupFn: setupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
 					assert.ErrorIs(t, res.Err, types.ErrUserInfoNotFound)
 				},
 				CleanupFn: cleanupFn,
@@ -173,7 +174,7 @@ func TestUserInfoStore(t *testing.T) {
 				Name:    "Success",
 				Input:   expUserInfoID,
 				SetupFn: setupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
 					assert.NoError(t, res.Err)
 					assert.Equal(t, userInfoStored, res.Success)
 				},
@@ -183,7 +184,7 @@ func TestUserInfoStore(t *testing.T) {
 				Name:    "InvalidID",
 				Input:   gidx.MustNewID("invldid"),
 				SetupFn: setupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
 					assert.ErrorIs(t, res.Err, types.ErrUserInfoNotFound)
 				},
 				CleanupFn: cleanupFn,
@@ -205,7 +206,7 @@ func TestUserInfoStore(t *testing.T) {
 					"name":  "Badman",
 					"email": "badman@woo.com",
 				},
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
 					exp := types.UserInfo{
 						Issuer:  "https://woo.com",
 						Subject: "badman@woo.com",
@@ -223,7 +224,7 @@ func TestUserInfoStore(t *testing.T) {
 					"iss": "https://woo.com",
 					"sub": "badman@woo.com",
 				},
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
 					exp := types.UserInfo{
 						Issuer:  "https://woo.com",
 						Subject: "badman@woo.com",
@@ -240,7 +241,7 @@ func TestUserInfoStore(t *testing.T) {
 				Input: map[string]any{
 					"sub": "badman@woo.com",
 				},
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
 					assert.ErrorIs(t, errMissingClaim, res.Err)
 				},
 			},
@@ -249,7 +250,7 @@ func TestUserInfoStore(t *testing.T) {
 				Input: map[string]any{
 					"iss": "https://woo.com",
 				},
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
 					assert.ErrorIs(t, errMissingClaim, res.Err)
 				},
 			},
@@ -258,13 +259,13 @@ func TestUserInfoStore(t *testing.T) {
 				Input: map[string]any{
 					"iss": false,
 				},
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
 					assert.ErrorIs(t, errInvalidClaim, res.Err)
 				},
 			},
 		}
 
-		runFn := func(ctx context.Context, input map[string]any) testingx.TestResult[types.UserInfo] {
+		runFn := func(_ context.Context, input map[string]any) testingx.TestResult[types.UserInfo] {
 			svc, err := newUserInfoService(db)
 			require.NoError(t, err)
 

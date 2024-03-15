@@ -81,6 +81,7 @@ func TestAPIHandler(t *testing.T) {
 
 	t.Run("CreateIssuer", func(t *testing.T) {
 		t.Parallel()
+
 		handler := apiHandler{
 			engine: store,
 		}
@@ -114,7 +115,7 @@ func TestAPIHandler(t *testing.T) {
 					Body:    createOp,
 				},
 				SetupFn: setupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[CreateIssuerResponseObject]) {
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[CreateIssuerResponseObject]) {
 					// Just stop if we failed
 					if !assert.NoError(t, result.Err) {
 						return
@@ -153,7 +154,7 @@ func TestAPIHandler(t *testing.T) {
 					},
 				},
 				SetupFn: setupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[CreateIssuerResponseObject]) {
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[CreateIssuerResponseObject]) {
 					expErr := errorWithStatus{
 						status:  http.StatusBadRequest,
 						message: "error parsing CEL expression",
@@ -192,7 +193,7 @@ func TestAPIHandler(t *testing.T) {
 				Input: GetIssuerByIDRequestObject{
 					Id: issuerID,
 				},
-				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[GetIssuerByIDResponseObject]) {
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[GetIssuerByIDResponseObject]) {
 					if !assert.NoError(t, result.Err) {
 						return
 					}
@@ -220,7 +221,7 @@ func TestAPIHandler(t *testing.T) {
 				Input: GetIssuerByIDRequestObject{
 					Id: gidx.MustNewID("ntfound"),
 				},
-				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[GetIssuerByIDResponseObject]) {
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[GetIssuerByIDResponseObject]) {
 					assert.ErrorIs(t, errorNotFound, result.Err)
 				},
 			},
@@ -289,7 +290,7 @@ func TestAPIHandler(t *testing.T) {
 					},
 				},
 				SetupFn: setupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[UpdateIssuerResponseObject]) {
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[UpdateIssuerResponseObject]) {
 					if !assert.NoError(t, result.Err) {
 						return
 					}
@@ -322,7 +323,7 @@ func TestAPIHandler(t *testing.T) {
 					},
 				},
 				SetupFn: setupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[UpdateIssuerResponseObject]) {
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[UpdateIssuerResponseObject]) {
 					assert.ErrorIs(t, errorNotFound, result.Err)
 				},
 				CleanupFn: cleanupFn,
@@ -417,7 +418,7 @@ func TestAPIHandler(t *testing.T) {
 					Id: gidx.MustNewID("ntfound"),
 				},
 				SetupFn: setupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[DeleteIssuerResponseObject]) {
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[DeleteIssuerResponseObject]) {
 					if !assert.Error(t, result.Err) {
 						return
 					}
@@ -485,7 +486,7 @@ func TestAPIHandler(t *testing.T) {
 					},
 				},
 				SetupFn: setupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[CreateOAuthClientResponseObject]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[CreateOAuthClientResponseObject]) {
 					assert.NoError(t, res.Err)
 					assert.IsType(t, CreateOAuthClient200JSONResponse{}, res.Success)
 					resp := v1.OAuthClient(res.Success.(CreateOAuthClient200JSONResponse))
@@ -537,7 +538,7 @@ func TestAPIHandler(t *testing.T) {
 				},
 				SetupFn:   setupFn,
 				CleanupFn: cleanupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[GetOAuthClientResponseObject]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[GetOAuthClientResponseObject]) {
 					assert.IsType(t, errorWithStatus{}, res.Err)
 					assert.Equal(t, http.StatusNotFound, res.Err.(errorWithStatus).status)
 				},
@@ -549,7 +550,7 @@ func TestAPIHandler(t *testing.T) {
 				},
 				SetupFn:   setupFn,
 				CleanupFn: cleanupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[GetOAuthClientResponseObject]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[GetOAuthClientResponseObject]) {
 					assert.NoError(t, err)
 					assert.IsType(t, GetOAuthClient200JSONResponse{}, res.Success)
 					item := v1.OAuthClient(res.Success.(GetOAuthClient200JSONResponse))
@@ -641,7 +642,7 @@ func TestAPIHandler(t *testing.T) {
 					ClientID: gidx.MustNewID("ntfound"),
 				},
 				SetupFn: setupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, result testingx.TestResult[DeleteOAuthClientResponseObject]) {
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[DeleteOAuthClientResponseObject]) {
 					if !assert.Error(t, result.Err) {
 						return
 					}

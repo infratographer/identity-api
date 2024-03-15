@@ -1,6 +1,8 @@
 module go.infratographer.com/identity-api
 
-go 1.20
+go 1.22
+
+toolchain go1.22.1
 
 require (
 	github.com/MicahParks/keyfunc/v2 v2.1.0
@@ -20,7 +22,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.9.0
-	go.infratographer.com/permissions-api v0.3.2
+	go.infratographer.com/permissions-api v0.3.3
 	go.infratographer.com/x v0.3.9
 	go.opentelemetry.io/otel v1.16.0
 	go.opentelemetry.io/otel/trace v1.16.0
