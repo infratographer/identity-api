@@ -18,7 +18,7 @@ type tokenHandler struct {
 	provider fosite.OAuth2Provider
 }
 
-func getOutcomeFromError(c echo.Context, err error) string {
+func getOutcomeFromError(_ echo.Context, err error) string {
 	rfcErr := fosite.ErrorToRFC6749Error(err)
 
 	if rfcErr == nil {
