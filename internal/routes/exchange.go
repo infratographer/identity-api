@@ -18,7 +18,7 @@ type tokenHandler struct {
 	provider fosite.OAuth2Provider
 }
 
-func getOutcomeFromError(c echo.Context, err error) string {
+func getOutcomeFromError(err error) string {
 	rfcErr := fosite.ErrorToRFC6749Error(err)
 
 	if rfcErr == nil {
@@ -39,7 +39,7 @@ func getOutcomeFromError(c echo.Context, err error) string {
 }
 
 func setContextFromError(c echo.Context, err error) {
-	outcome := getOutcomeFromError(c, err)
+	outcome := getOutcomeFromError(err)
 
 	auditx.SetOutcome(c, outcome)
 
