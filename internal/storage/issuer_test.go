@@ -106,7 +106,7 @@ func TestIssuerService(t *testing.T) {
 
 					return txCtx
 				},
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
 					if assert.NoError(t, res.Err) {
 						compareIssuers(t, issuer, *res.Success)
 					}
@@ -139,7 +139,7 @@ func TestIssuerService(t *testing.T) {
 			{
 				Name:  "NotFound",
 				Input: "https://evil.biz/",
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
 					assert.ErrorIs(t, types.ErrorIssuerNotFound, res.Err)
 				},
 			},
@@ -154,7 +154,7 @@ func TestIssuerService(t *testing.T) {
 					return txCtx
 				},
 				Input: "https://example.com/",
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
 					if assert.NoError(t, res.Err) {
 						compareIssuers(t, issuer, *res.Success)
 					}
@@ -167,7 +167,7 @@ func TestIssuerService(t *testing.T) {
 			{
 				Name:  "UsingDB",
 				Input: "https://example.com/",
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
 					if assert.NoError(t, res.Err) {
 						compareIssuers(t, issuer, *res.Success)
 					}
@@ -196,7 +196,7 @@ func TestIssuerService(t *testing.T) {
 			{
 				Name:  "NotFound",
 				Input: gidx.MustNewID("ntfound"),
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
 					assert.ErrorIs(t, types.ErrorIssuerNotFound, res.Err)
 				},
 			},
@@ -211,7 +211,7 @@ func TestIssuerService(t *testing.T) {
 
 					return txCtx
 				},
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
 					if assert.NoError(t, res.Err) {
 						compareIssuers(t, issuer, *res.Success)
 					}
@@ -225,7 +225,7 @@ func TestIssuerService(t *testing.T) {
 			{
 				Name:  "UsingDB",
 				Input: issuer.ID,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
 					if assert.NoError(t, res.Err) {
 						compareIssuers(t, issuer, *res.Success)
 					}
@@ -295,7 +295,7 @@ func TestIssuerService(t *testing.T) {
 				Name:    "Full",
 				Input:   fullUpdate,
 				SetupFn: setupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[*types.Issuer]) {
 					exp := issuer
 					exp.Name = newName
 					exp.URI = newURI
@@ -372,7 +372,7 @@ func TestIssuerService(t *testing.T) {
 				Name:    "NotFound",
 				Input:   gidx.MustNewID("ntfound"),
 				SetupFn: setupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[any]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[any]) {
 					assert.ErrorIs(t, types.ErrorIssuerNotFound, res.Err)
 				},
 				CleanupFn: cleanupFn,

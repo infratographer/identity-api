@@ -94,6 +94,7 @@ func TestOAuthClientManager(t *testing.T) {
 
 		runFn := func(ctx context.Context, input gidx.PrefixedID) testingx.TestResult[types.OAuthClient] {
 			res, err := oauthClientStore.LookupOAuthClientByID(ctx, input)
+
 			return testingx.TestResult[types.OAuthClient]{
 				Success: res,
 				Err:     err,
@@ -104,7 +105,7 @@ func TestOAuthClientManager(t *testing.T) {
 			{
 				Name:  "NotFoundWithoutTx",
 				Input: gidx.MustNewID("ntfound"),
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.OAuthClient]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[types.OAuthClient]) {
 					assert.ErrorIs(t, res.Err, types.ErrOAuthClientNotFound)
 				},
 			},
@@ -112,7 +113,7 @@ func TestOAuthClientManager(t *testing.T) {
 				Name:    "NotFoundWithTx",
 				Input:   gidx.MustNewID("ntfound"),
 				SetupFn: setupWithTx,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.OAuthClient]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[types.OAuthClient]) {
 					assert.ErrorIs(t, res.Err, types.ErrOAuthClientNotFound)
 				},
 				CleanupFn: cleanupWithTx,
@@ -121,7 +122,7 @@ func TestOAuthClientManager(t *testing.T) {
 				Name:    "FoundWithTx",
 				Input:   defaultClient.ID,
 				SetupFn: setupWithTx,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.OAuthClient]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[types.OAuthClient]) {
 					assert.NoError(t, res.Err)
 					assert.Equal(t, defaultClient, res.Success)
 					assert.NotEqual(t, "foobar", res.Success.Secret)
@@ -138,6 +139,7 @@ func TestOAuthClientManager(t *testing.T) {
 
 		runFn := func(ctx context.Context, input types.OAuthClient) testingx.TestResult[types.OAuthClient] {
 			out, err := oauthClientStore.CreateOAuthClient(ctx, input)
+
 			return testingx.TestResult[types.OAuthClient]{
 				Success: out,
 				Err:     err,
@@ -156,7 +158,7 @@ func TestOAuthClientManager(t *testing.T) {
 				},
 				SetupFn:   setupWithTx,
 				CleanupFn: cleanupWithTx,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[types.OAuthClient]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[types.OAuthClient]) {
 					assert.NoError(t, res.Err)
 					client := res.Success
 					assert.NotEqual(t, secret, client.Secret)
@@ -175,6 +177,7 @@ func TestOAuthClientManager(t *testing.T) {
 
 		runFn := func(ctx context.Context, input gidx.PrefixedID) testingx.TestResult[any] {
 			err := oauthClientStore.DeleteOAuthClient(ctx, input)
+
 			return testingx.TestResult[any]{
 				Err: err,
 			}
@@ -208,7 +211,7 @@ func TestOAuthClientManager(t *testing.T) {
 				Input:     gidx.MustNewID("ntfound"),
 				SetupFn:   setupWithTx,
 				CleanupFn: cleanupWithTx,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[any]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[any]) {
 					assert.NoError(t, res.Err)
 				},
 			},

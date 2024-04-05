@@ -23,7 +23,7 @@ func init() {
 var migrateCmd = &cobra.Command{
 	Use:   "migrate",
 	Short: "runs identity-api database migrations",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		migrate(cmd.Context())
 	},
 }
