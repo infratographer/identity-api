@@ -5,7 +5,6 @@ go 1.22
 toolchain go1.22.2
 
 require (
-	github.com/MicahParks/keyfunc/v2 v2.1.0
 	github.com/MicahParks/keyfunc/v3 v3.3.2
 	github.com/cockroachdb/cockroach-go/v2 v2.3.7
 	github.com/getkin/kin-openapi v0.123.0

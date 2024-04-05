@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/MicahParks/keyfunc/v2"
+	"github.com/MicahParks/keyfunc/v3"
 	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -172,7 +172,7 @@ func getAuthMiddleware(ctx context.Context, config fositex.OAuth2Configurator, s
 		return nil, err
 	}
 
-	jwks, err := keyfunc.NewJSON(json.RawMessage(buff.Bytes()))
+	jwks, err := keyfunc.NewJWKJSON(json.RawMessage(buff.Bytes()))
 	if err != nil {
 		return nil, err
 	}
