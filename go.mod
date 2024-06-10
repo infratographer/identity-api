@@ -7,7 +7,7 @@ toolchain go1.22.2
 require (
 	github.com/MicahParks/keyfunc/v3 v3.3.2
 	github.com/cockroachdb/cockroach-go/v2 v2.3.7
-	github.com/getkin/kin-openapi v0.123.0
+	github.com/getkin/kin-openapi v0.125.0
 	github.com/go-jose/go-jose/v3 v3.0.3
 	github.com/google/cel-go v0.20.1
 	github.com/labstack/echo-jwt/v4 v4.2.0
