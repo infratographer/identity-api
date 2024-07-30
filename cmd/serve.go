@@ -172,7 +172,7 @@ func getAuthMiddleware(ctx context.Context, config fositex.OAuth2Configurator, s
 		return nil, err
 	}
 
-	jwks, err := keyfunc.NewJWKJSON(json.RawMessage(buff.Bytes()))
+	jwks, err := keyfunc.NewJWKSetJSON(json.RawMessage(buff.Bytes()))
 	if err != nil {
 		return nil, err
 	}
