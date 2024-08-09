@@ -7,13 +7,13 @@ toolchain go1.22.6
 require (
 	github.com/MicahParks/keyfunc/v3 v3.3.3
 	github.com/cockroachdb/cockroach-go/v2 v2.3.8
-	github.com/getkin/kin-openapi v0.123.0
+	github.com/getkin/kin-openapi v0.124.0
 	github.com/go-jose/go-jose/v3 v3.0.3
 	github.com/google/cel-go v0.20.1
 	github.com/labstack/echo-jwt/v4 v4.2.0
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/metal-toolbox/auditevent v0.8.0
-	github.com/oapi-codegen/echo-middleware v1.0.1
+	github.com/oapi-codegen/echo-middleware v1.0.2
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/ory/fosite v0.46.1
 	github.com/ory/x v0.0.625
