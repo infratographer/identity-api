@@ -6,6 +6,7 @@ import (
 
 	"github.com/cockroachdb/cockroach-go/v2/testserver"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"go.infratographer.com/identity-api/internal/testingx"
 	"go.infratographer.com/identity-api/internal/types"
@@ -327,6 +328,9 @@ func TestIssuerService(t *testing.T) {
 	t.Run("DeleteIssuer", func(t *testing.T) {
 		t.Parallel()
 
+		userSvc, err := newUserInfoService(db)
+		assert.NoError(t, err)
+
 		issuer := types.Issuer{
 			OwnerID:       ownerID,
 			ID:            gidx.MustNewID("testiss"),
@@ -342,10 +346,20 @@ func TestIssuerService(t *testing.T) {
 				assert.FailNow(t, "setup failed")
 			}
 
-			_, err = issSvc.CreateIssuer(ctx, issuer)
+			issuer, err := issSvc.CreateIssuer(ctx, issuer)
 			if !assert.NoError(t, err) {
 				assert.FailNow(t, "setup failed")
 			}
+
+			user := types.UserInfo{
+				Name:    "Maliketh",
+				Email:   "mal@iketh.co",
+				Issuer:  issuer.URI,
+				Subject: "sub0|malikadmin",
+			}
+
+			_, err = userSvc.StoreUserInfo(ctx, user)
+			require.NoError(t, err, "unexpected error creating user")
 
 			return ctx
 		}
