@@ -15,7 +15,7 @@ require (
 	github.com/metal-toolbox/auditevent v0.8.0
 	github.com/oapi-codegen/echo-middleware v1.0.2
 	github.com/oapi-codegen/runtime v1.1.1
-	github.com/ory/fosite v0.46.1
+	github.com/ory/fosite v0.47.0
 	github.com/ory/x v0.0.649
 	github.com/pressly/goose/v3 v3.21.1
 	github.com/spf13/cobra v1.8.1
@@ -41,15 +41,11 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/creasty/defaults v1.7.0 // indirect
 	github.com/cristalhq/jwt/v4 v4.0.2 // indirect
-	github.com/dave/jennifer v1.6.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dgraph-io/ristretto v0.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/ecordell/optgen v0.0.9 // indirect
 	github.com/fatih/color v1.17.0 // indirect
-	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
