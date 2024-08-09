@@ -5,3 +5,5 @@ coverage.out
 audit.log
 .tools/
 identity-api
+!chart/identity-api
+

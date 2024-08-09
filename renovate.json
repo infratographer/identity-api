@@ -6,7 +6,14 @@
     {
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
       "automerge": true
+    },
+    {
+      "matchPackagePrefixes": ["go.opentelemetry.io"],
+      "groupName": "OTEL Packages"
     }
   ],
-  "postUpdateOptions": ["gomodTidy"]
+  "postUpdateOptions": [
+    "gomodTidy",
+    "helmUpdateSubChartArchives"
+  ]
 }
