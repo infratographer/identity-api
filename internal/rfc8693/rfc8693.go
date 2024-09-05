@@ -257,6 +257,14 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 		return errorsx.WithStack(fosite.ErrInvalidRequest.WithHintf("error mapping claims: %s", err))
 	}
 
+	mappedSubjectClaim := *claims
+
+	if sub, ok := mappedClaims.ToMapClaims()["sub"]; ok && sub != nil {
+		if substr, ok := sub.(string); ok {
+			mappedSubjectClaim.Subject = substr
+		}
+	}
+
 	userInfoSvc := s.config.GetUserInfoStrategy(ctx)
 
 	txManager, ok := userInfoSvc.(storage.TransactionManager)
@@ -269,7 +277,7 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 		return errorsx.WithStack(fosite.ErrServerError.WithHint("could not start transaction"))
 	}
 
-	userInfo, err := s.populateUserInfo(dbCtx, claims)
+	userInfo, err := s.populateUserInfo(dbCtx, &mappedSubjectClaim)
 	if err != nil {
 		return errorsx.WithStack(fosite.ErrInvalidRequest.WithHintf("unable to populate user info: %s", err))
 	}
