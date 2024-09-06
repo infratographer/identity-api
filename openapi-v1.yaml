@@ -7,6 +7,18 @@ info:
 
 paths:
   /api/v1/owners/{ownerID}/issuers:
+    get:
+      summary: Gets issuers by owner id
+      operationId: GetOwnerIssuers
+      tags:
+        - Issuers
+      parameters:
+        - $ref: '#/components/parameters/ownerID'
+        - $ref: '#/components/parameters/pageCursor'
+        - $ref: '#/components/parameters/pageLimit'
+      responses:
+        '200':
+          $ref: '#/components/responses/IssuerCollection'
     post:
       tags:
         - Issuers
@@ -339,3 +351,74 @@ components:
           x-go-name: Subject
           type: string
           description: OAuth 2.0 Subject for the user
+
+    Pagination:
+      description: collection response pagination
+      type: object
+      required:
+        - limit
+      properties:
+        limit:
+          type: integer
+          description: the limit used for the collection response
+          example: 10
+          x-order: 1
+        next:
+          type: string
+          description: the cursor for the next page
+          example: aWQ9ZXhhbXBsZS1hZnRlci10aGlzLWlk
+          x-go-type: crdbx.Cursor
+          x-go-type-import:
+            path: go.infratographer.com/identity-api/internal/crdbx
+
+  parameters:
+    ownerID:
+      description: id of a resource owner
+      in: path
+      name: ownerID
+      x-go-name: OwnerID
+      required: true
+      schema:
+        type: string
+        x-go-type: gidx.PrefixedID
+        x-go-type-import:
+          path: go.infratographer.com/x/gidx
+    pageCursor:
+      description: the cursor to the results to return
+      in: query
+      name: cursor
+      required: false
+      schema:
+        type: string
+        x-go-type: crdbx.Cursor
+        x-go-type-import:
+          path: go.infratographer.com/identity-api/internal/crdbx
+      x-oapi-codegen-extra-tags:
+        query: "cursor"
+    pageLimit:
+      description: limits the response collections
+      in: query
+      name: limit
+      required: false
+      schema:
+        type: integer
+      x-oapi-codegen-extra-tags:
+        query: "limit"
+
+  responses:
+    IssuerCollection:
+      description: a collection of issuers
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - issuers
+              - pagination
+            properties:
+              issuers:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Issuer'
+              pagination:
+                $ref: '#/components/schemas/Pagination'

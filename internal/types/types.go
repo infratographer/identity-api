@@ -10,9 +10,29 @@ import (
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.infratographer.com/identity-api/internal/celutils"
+	"go.infratographer.com/identity-api/internal/crdbx"
 	v1 "go.infratographer.com/identity-api/pkg/api/v1"
 	"go.infratographer.com/x/gidx"
 )
+
+// Issuers represents a list of token issuers.
+type Issuers []*Issuer
+
+// ToV1Issuers converts an slice of issuers to a slice of API issuers.
+func (i Issuers) ToV1Issuers() ([]v1.Issuer, error) {
+	issuers := make([]v1.Issuer, len(i))
+
+	for i, iss := range i {
+		v1iss, err := iss.ToV1Issuer()
+		if err != nil {
+			return nil, err
+		}
+
+		issuers[i] = v1iss
+	}
+
+	return issuers, nil
+}
 
 // Issuer represents a token issuer.
 type Issuer struct {
@@ -60,6 +80,7 @@ type IssuerUpdate struct {
 type IssuerService interface {
 	CreateIssuer(ctx context.Context, iss Issuer) (*Issuer, error)
 	GetIssuerByID(ctx context.Context, id gidx.PrefixedID) (*Issuer, error)
+	GetOwnerIssuers(ctx context.Context, id gidx.PrefixedID, pagination crdbx.Paginator) (Issuers, error)
 	GetIssuerByURI(ctx context.Context, uri string) (*Issuer, error)
 	UpdateIssuer(ctx context.Context, id gidx.PrefixedID, update IssuerUpdate) (*Issuer, error)
 	DeleteIssuer(ctx context.Context, id gidx.PrefixedID) error

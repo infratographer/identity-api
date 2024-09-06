@@ -15,6 +15,7 @@ const (
 	actionIssuerUpdate = "iam_issuer_update"
 	actionIssuerDelete = "iam_issuer_delete"
 	actionIssuerGet    = "iam_issuer_get"
+	actionIssuerList   = "iam_issuer_list"
 )
 
 func (h *apiHandler) CreateIssuer(ctx context.Context, req CreateIssuerRequestObject) (CreateIssuerResponseObject, error) {
@@ -94,6 +95,35 @@ func (h *apiHandler) GetIssuerByID(ctx context.Context, req GetIssuerByIDRequest
 	}
 
 	return GetIssuerByID200JSONResponse(out), nil
+}
+
+func (h *apiHandler) GetOwnerIssuers(ctx context.Context, req GetOwnerIssuersRequestObject) (GetOwnerIssuersResponseObject, error) {
+	if err := permissions.CheckAccess(ctx, req.OwnerID, actionIssuerList); err != nil {
+		return nil, permissionsError(err)
+	}
+
+	iss, err := h.engine.GetOwnerIssuers(ctx, req.OwnerID, req.Params)
+	if err != nil {
+		return nil, err
+	}
+
+	issuers, err := iss.ToV1Issuers()
+	if err != nil {
+		return nil, err
+	}
+
+	collection := v1.IssuerCollection{
+		Issuers:    issuers,
+		Pagination: v1.Pagination{},
+	}
+
+	if err := req.Params.SetPagination(&collection); err != nil {
+		return nil, err
+	}
+
+	out := IssuerCollectionJSONResponse(collection)
+
+	return GetOwnerIssuers200JSONResponse{out}, nil
 }
 
 func (h *apiHandler) UpdateIssuer(ctx context.Context, req UpdateIssuerRequestObject) (UpdateIssuerResponseObject, error) {

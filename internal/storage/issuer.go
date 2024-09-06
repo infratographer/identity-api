@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"go.infratographer.com/identity-api/internal/crdbx"
 	"go.infratographer.com/identity-api/internal/types"
 	"go.infratographer.com/x/gidx"
 )
@@ -113,6 +114,38 @@ func (s *issuerService) GetIssuerByID(ctx context.Context, id gidx.PrefixedID) (
 	return s.scanIssuer(row)
 }
 
+// GetOwnerIssuers lists issuers by it's owners ID.
+func (s *issuerService) GetOwnerIssuers(ctx context.Context, id gidx.PrefixedID, pagination crdbx.Paginator) (types.Issuers, error) {
+	paginate := crdbx.Paginate(pagination, "-1m")
+
+	query := fmt.Sprintf("SELECT %s FROM issuers %s WHERE owner_id = $1 %s %s %s", issuerColumnsStr,
+		paginate.AsOfSystemTime(),
+		paginate.AndWhere(2), //nolint:gomnd
+		paginate.OrderClause(),
+		paginate.LimitClause(),
+	)
+
+	rows, err := s.db.QueryContext(ctx, query, paginate.Values(id)...)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var issuers types.Issuers
+
+	for rows.Next() {
+		iss, err := s.scanIssuer(rows)
+		if err != nil {
+			return nil, err
+		}
+
+		issuers = append(issuers, iss)
+	}
+
+	return issuers, nil
+}
+
 // GetIssuerByURI looks up the given issuer by URI, returning the issuer if one exists. This function will
 // use a transaction in the context if one exists.
 func (s *issuerService) GetIssuerByURI(ctx context.Context, uri string) (*types.Issuer, error) {
@@ -187,7 +220,11 @@ func (s *issuerService) DeleteIssuer(ctx context.Context, id gidx.PrefixedID) er
 	return nil
 }
 
-func (s *issuerService) scanIssuer(row *sql.Row) (*types.Issuer, error) {
+type rowScanner interface {
+	Scan(dest ...any) error
+}
+
+func (s *issuerService) scanIssuer(row rowScanner) (*types.Issuer, error) {
 	var iss types.Issuer
 
 	var mapping sql.NullString
