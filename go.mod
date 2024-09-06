@@ -16,7 +16,7 @@ require (
 	github.com/oapi-codegen/echo-middleware v1.0.2
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/ory/fosite v0.47.0
-	github.com/ory/x v0.0.649
+	github.com/ory/x v0.0.655
 	github.com/pressly/goose/v3 v3.22.0
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
