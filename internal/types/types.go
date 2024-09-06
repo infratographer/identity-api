@@ -243,4 +243,5 @@ type OAuthClientManager interface {
 	CreateOAuthClient(ctx context.Context, client OAuthClient) (OAuthClient, error)
 	LookupOAuthClientByID(ctx context.Context, clientID gidx.PrefixedID) (OAuthClient, error)
 	DeleteOAuthClient(ctx context.Context, clientID gidx.PrefixedID) error
+	GetOwnerOAuthClients(ctx context.Context, ownerID gidx.PrefixedID, pagination crdbx.Paginator) (OAuthClients, error)
 }

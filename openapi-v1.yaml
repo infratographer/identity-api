@@ -47,6 +47,18 @@ paths:
                 $ref: '#/components/schemas/Issuer'
 
   /api/v1/owners/{ownerID}/clients:
+    get:
+      summary: Gets oauth clients by owner id
+      operationId: GetOwnerOAuthClients
+      tags:
+        - OAuthClients
+      parameters:
+        - $ref: '#/components/parameters/ownerID'
+        - $ref: '#/components/parameters/pageCursor'
+        - $ref: '#/components/parameters/pageLimit'
+      responses:
+        '200':
+          $ref: '#/components/responses/OAuthClientCollection'
     post:
       tags:
         - OAuthClients
@@ -420,5 +432,21 @@ components:
                 type: array
                 items:
                   $ref: '#/components/schemas/Issuer'
+              pagination:
+                $ref: '#/components/schemas/Pagination'
+    OAuthClientCollection:
+      description: a collection of OAuth Clients
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - clients
+              - pagination
+            properties:
+              clients:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OAuthClient'
               pagination:
                 $ref: '#/components/schemas/Pagination'
