@@ -22,6 +22,9 @@ var (
 
 	// ErrOAuthClientNotFound is returned if the OAuthClient doesn't exist.
 	ErrOAuthClientNotFound = errors.New("oauth client does not exist")
+
+	// ErrGroupNotFound is returned if the group doesn't exist.
+	ErrGroupNotFound = errors.New("group not found")
 )
 
 // ErrorInvalidTokenRequest represents an error where an access token request failed.

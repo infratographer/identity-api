@@ -12,6 +12,7 @@ type engine struct {
 	*issuerService
 	*userInfoService
 	*oauthClientManager
+	*groupService
 	db *sql.DB
 }
 
@@ -52,10 +53,16 @@ func newCRDBEngine(config crdbx.Config, options ...EngineOption) (*engine, error
 		return nil, err
 	}
 
+	groupSvc, err := newGroupService(db)
+	if err != nil {
+		return nil, err
+	}
+
 	out := &engine{
 		issuerService:      issSvc,
 		userInfoService:    userInfoSvc,
 		oauthClientManager: oauthClientManager,
+		groupService:       groupSvc,
 		db:                 db,
 	}
 

@@ -42,6 +42,9 @@ type ServerInterface interface {
 	// Creates an OAuth client.
 	// (POST /api/v1/owners/{ownerID}/clients)
 	CreateOAuthClient(ctx echo.Context, ownerID gidx.PrefixedID) error
+	// Creates a Group
+	// (POST /api/v1/owners/{ownerID}/groups)
+	CreateGroup(ctx echo.Context, ownerID gidx.PrefixedID) error
 	// Gets issuers by owner id
 	// (GET /api/v1/owners/{ownerID}/issuers)
 	ListOwnerIssuers(ctx echo.Context, ownerID OwnerID, params ListOwnerIssuersParams) error
@@ -218,6 +221,22 @@ func (w *ServerInterfaceWrapper) CreateOAuthClient(ctx echo.Context) error {
 	return err
 }
 
+// CreateGroup converts echo context to params.
+func (w *ServerInterfaceWrapper) CreateGroup(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "ownerID" -------------
+	var ownerID gidx.PrefixedID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "ownerID", ctx.Param("ownerID"), &ownerID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter ownerID: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.CreateGroup(ctx, ownerID)
+	return err
+}
+
 // ListOwnerIssuers converts echo context to params.
 func (w *ServerInterfaceWrapper) ListOwnerIssuers(ctx echo.Context) error {
 	var err error
@@ -318,6 +337,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/api/v1/issuers/:id/users", wrapper.GetIssuerUsers)
 	router.GET(baseURL+"/api/v1/owners/:ownerID/clients", wrapper.GetOwnerOAuthClients)
 	router.POST(baseURL+"/api/v1/owners/:ownerID/clients", wrapper.CreateOAuthClient)
+	router.POST(baseURL+"/api/v1/owners/:ownerID/groups", wrapper.CreateGroup)
 	router.GET(baseURL+"/api/v1/owners/:ownerID/issuers", wrapper.ListOwnerIssuers)
 	router.POST(baseURL+"/api/v1/owners/:ownerID/issuers", wrapper.CreateIssuer)
 	router.GET(baseURL+"/api/v1/users/:userID", wrapper.GetUserByID)
@@ -486,6 +506,24 @@ func (response CreateOAuthClient200JSONResponse) VisitCreateOAuthClientResponse(
 	return json.NewEncoder(w).Encode(response)
 }
 
+type CreateGroupRequestObject struct {
+	OwnerID gidx.PrefixedID `json:"ownerID"`
+	Body    *CreateGroupJSONRequestBody
+}
+
+type CreateGroupResponseObject interface {
+	VisitCreateGroupResponse(w http.ResponseWriter) error
+}
+
+type CreateGroup200JSONResponse Group
+
+func (response CreateGroup200JSONResponse) VisitCreateGroupResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type ListOwnerIssuersRequestObject struct {
 	OwnerID OwnerID `json:"ownerID"`
 	Params  ListOwnerIssuersParams
@@ -565,6 +603,9 @@ type StrictServerInterface interface {
 	// Creates an OAuth client.
 	// (POST /api/v1/owners/{ownerID}/clients)
 	CreateOAuthClient(ctx context.Context, request CreateOAuthClientRequestObject) (CreateOAuthClientResponseObject, error)
+	// Creates a Group
+	// (POST /api/v1/owners/{ownerID}/groups)
+	CreateGroup(ctx context.Context, request CreateGroupRequestObject) (CreateGroupResponseObject, error)
 	// Gets issuers by owner id
 	// (GET /api/v1/owners/{ownerID}/issuers)
 	ListOwnerIssuers(ctx context.Context, request ListOwnerIssuersRequestObject) (ListOwnerIssuersResponseObject, error)
@@ -796,6 +837,37 @@ func (sh *strictHandler) CreateOAuthClient(ctx echo.Context, ownerID gidx.Prefix
 		return err
 	} else if validResponse, ok := response.(CreateOAuthClientResponseObject); ok {
 		return validResponse.VisitCreateOAuthClientResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// CreateGroup operation middleware
+func (sh *strictHandler) CreateGroup(ctx echo.Context, ownerID gidx.PrefixedID) error {
+	var request CreateGroupRequestObject
+
+	request.OwnerID = ownerID
+
+	var body CreateGroupJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateGroup(ctx.Request().Context(), request.(CreateGroupRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateGroup")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(CreateGroupResponseObject); ok {
+		return validResponse.VisitCreateGroupResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("unexpected response type: %T", response)
 	}

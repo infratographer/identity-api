@@ -91,6 +91,34 @@ paths:
               schema:
                 $ref: '#/components/schemas/OAuthClient'
 
+  /api/v1/owners/{ownerID}/groups:
+    post:
+      tags:
+        - Groups
+      summary: Creates a Group
+      operationId: createGroup
+      parameters:
+        - in: path
+          name: ownerID
+          required: true
+          description: Owner to provision the group under
+          schema:
+            type: string
+            x-go-type: gidx.PrefixedID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGroup'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+
   /api/v1/clients/{clientID}:
     get:
       tags:
@@ -401,6 +429,62 @@ components:
           x-go-type: crdbx.Cursor
           x-go-type-import:
             path: go.infratographer.com/identity-api/internal/crdbx
+
+    CreateGroup:
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: a name for the group
+        description:
+          type: string
+          description: a description for the group
+
+    Group:
+      required:
+        - id
+        - name
+        - owner
+        - members
+      properties:
+        id:
+          x-go-name: ID
+          type: string
+          x-go-type: gidx.PrefixedID
+          description: ID of the group
+        name:
+          type: string
+          description: a name for the group
+        description:
+          type: string
+          description: a description for the group
+        owner:
+          type: string
+          x-go-type: gidx.PrefixedID
+          description: ID of the owner of the group
+        members:
+          type: array
+          items:
+            type: string
+            x-go-type: gidx.PrefixedID
+          description: IDs of the members of the group
+        created_at:
+          type: string
+          format: date-time
+          description: time the group was created
+        created_by:
+          type: string
+          x-go-type: gidx.PrefixedID
+          description: ID of the user who created the group
+        updated_at:
+          type: string
+          format: date-time
+          description: time the group was last updated
+        updated_by:
+          type: string
+          x-go-type: gidx.PrefixedID
+          description: ID of the user who last updated the group
 
   parameters:
     ownerID:

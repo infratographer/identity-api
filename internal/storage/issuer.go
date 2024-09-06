@@ -203,7 +203,6 @@ func (s *issuerService) DeleteIssuer(ctx context.Context, id gidx.PrefixedID) er
 	}
 
 	result, err := tx.ExecContext(ctx, `DELETE FROM issuers WHERE id = $1;`, id)
-
 	if err != nil {
 		return err
 	}
