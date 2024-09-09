@@ -189,3 +189,23 @@ func (gs *groupService) UpdateGroup(ctx context.Context, id gidx.PrefixedID, upd
 
 	return &incoming, nil
 }
+
+func (gs *groupService) DeleteGroup(ctx context.Context, id gidx.PrefixedID) error {
+	tx, err := getContextTx(ctx)
+	if err != nil {
+		return err
+	}
+
+	if _, err := gs.fetchGroupByID(ctx, id); err != nil {
+		return err
+	}
+
+	q := fmt.Sprintf(
+		"DELETE FROM groups WHERE %s = $1",
+		groupCols.ID,
+	)
+
+	_, err = tx.ExecContext(ctx, q, id)
+
+	return err
+}

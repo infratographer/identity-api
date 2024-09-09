@@ -46,5 +46,5 @@ type GroupService interface {
 	GetGroupByID(ctx context.Context, id gidx.PrefixedID) (*Group, error)
 	ListGroups(ctx context.Context, ownerID gidx.PrefixedID) ([]*Group, error)
 	UpdateGroup(ctx context.Context, id gidx.PrefixedID, update GroupUpdate) (*Group, error)
-	// DeleteGroup(ctx context.Context, id gidx.PrefixedID) error
+	DeleteGroup(ctx context.Context, id gidx.PrefixedID) error
 }

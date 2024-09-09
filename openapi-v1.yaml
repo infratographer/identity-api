@@ -291,6 +291,26 @@ paths:
                 $ref: '#/components/schemas/User'
 
   /api/v1/groups/{groupID}:
+    delete:
+      tags:
+        - Groups
+      summary: Deletes a Group
+      operationId: deleteGroup
+      parameters:
+        - in: path
+          name: groupID
+          required: true
+          description: Group ID
+          schema:
+            type: string
+            x-go-type: gidx.PrefixedID
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
     patch:
       tags:
         - Groups

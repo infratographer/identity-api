@@ -182,3 +182,37 @@ func (h *apiHandler) UpdateGroup(ctx context.Context, req UpdateGroupRequestObje
 
 	return UpdateGroup200JSONResponse(groupResp), nil
 }
+
+// DeleteGroup deletes a group
+func (h *apiHandler) DeleteGroup(ctx context.Context, req DeleteGroupRequestObject) (DeleteGroupResponseObject, error) {
+	gid := req.GroupID
+
+	// if err := permissions.CheckAccess(ctx, gid, actionGroupDelete); err != nil {
+	// 	return nil, permissionsError(err)
+	// }
+
+	if _, err := gidx.Parse(string(gid)); err != nil {
+		err = echo.NewHTTPError(
+			http.StatusBadRequest,
+			fmt.Sprintf("invalid group id: %s", err.Error()),
+		)
+
+		return nil, err
+	}
+
+	err := h.engine.DeleteGroup(ctx, gid)
+	if err != nil {
+		if errors.Is(err, types.ErrGroupNotFound) {
+			err = echo.NewHTTPError(
+				http.StatusNotFound,
+				fmt.Sprintf("group %s not found", gid),
+			)
+
+			return nil, err
+		}
+
+		return nil, err
+	}
+
+	return DeleteGroup200JSONResponse{true}, nil
+}

@@ -24,6 +24,9 @@ type ServerInterface interface {
 	// Gets information about an OAuth 2.0 Client.
 	// (GET /api/v1/clients/{clientID})
 	GetOAuthClient(ctx echo.Context, clientID gidx.PrefixedID) error
+	// Deletes a Group
+	// (DELETE /api/v1/groups/{groupID})
+	DeleteGroup(ctx echo.Context, groupID gidx.PrefixedID) error
 	// Gets information about a Group.
 	// (GET /api/v1/groups/{groupID})
 	GetGroupByID(ctx echo.Context, groupID gidx.PrefixedID) error
@@ -99,6 +102,22 @@ func (w *ServerInterfaceWrapper) GetOAuthClient(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetOAuthClient(ctx, clientID)
+	return err
+}
+
+// DeleteGroup converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteGroup(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "groupID" -------------
+	var groupID gidx.PrefixedID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "groupID", ctx.Param("groupID"), &groupID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupID: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteGroup(ctx, groupID)
 	return err
 }
 
@@ -388,6 +407,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 
 	router.DELETE(baseURL+"/api/v1/clients/:clientID", wrapper.DeleteOAuthClient)
 	router.GET(baseURL+"/api/v1/clients/:clientID", wrapper.GetOAuthClient)
+	router.DELETE(baseURL+"/api/v1/groups/:groupID", wrapper.DeleteGroup)
 	router.GET(baseURL+"/api/v1/groups/:groupID", wrapper.GetGroupByID)
 	router.PATCH(baseURL+"/api/v1/groups/:groupID", wrapper.UpdateGroup)
 	router.DELETE(baseURL+"/api/v1/issuers/:id", wrapper.DeleteIssuer)
@@ -452,6 +472,23 @@ type GetOAuthClientResponseObject interface {
 type GetOAuthClient200JSONResponse OAuthClient
 
 func (response GetOAuthClient200JSONResponse) VisitGetOAuthClientResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteGroupRequestObject struct {
+	GroupID gidx.PrefixedID `json:"groupID"`
+}
+
+type DeleteGroupResponseObject interface {
+	VisitDeleteGroupResponse(w http.ResponseWriter) error
+}
+
+type DeleteGroup200JSONResponse DeleteResponse
+
+func (response DeleteGroup200JSONResponse) VisitDeleteGroupResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
@@ -697,6 +734,9 @@ type StrictServerInterface interface {
 	// Gets information about an OAuth 2.0 Client.
 	// (GET /api/v1/clients/{clientID})
 	GetOAuthClient(ctx context.Context, request GetOAuthClientRequestObject) (GetOAuthClientResponseObject, error)
+	// Deletes a Group
+	// (DELETE /api/v1/groups/{groupID})
+	DeleteGroup(ctx context.Context, request DeleteGroupRequestObject) (DeleteGroupResponseObject, error)
 	// Gets information about a Group.
 	// (GET /api/v1/groups/{groupID})
 	GetGroupByID(ctx context.Context, request GetGroupByIDRequestObject) (GetGroupByIDResponseObject, error)
@@ -794,6 +834,31 @@ func (sh *strictHandler) GetOAuthClient(ctx echo.Context, clientID gidx.Prefixed
 		return err
 	} else if validResponse, ok := response.(GetOAuthClientResponseObject); ok {
 		return validResponse.VisitGetOAuthClientResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// DeleteGroup operation middleware
+func (sh *strictHandler) DeleteGroup(ctx echo.Context, groupID gidx.PrefixedID) error {
+	var request DeleteGroupRequestObject
+
+	request.GroupID = groupID
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteGroup(ctx.Request().Context(), request.(DeleteGroupRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteGroup")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(DeleteGroupResponseObject); ok {
+		return validResponse.VisitDeleteGroupResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("unexpected response type: %T", response)
 	}
