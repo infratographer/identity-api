@@ -199,7 +199,7 @@ func (s userInfoService) LookupUserOwnerID(ctx context.Context, id gidx.Prefixed
 
 // LookupUserInfosByIssuerID lists users for an issuer.
 func (s *userInfoService) LookupUserInfosByIssuerID(ctx context.Context, id gidx.PrefixedID, pagination crdbx.Paginator) (types.UserInfos, error) {
-	paginate := crdbx.Paginate(pagination, "-1m").WithQualifier("user_info")
+	paginate := crdbx.Paginate(pagination, crdbx.ContextAsOfSystemTime(ctx, "-1m")).WithQualifier("user_info")
 
 	selectCols := withQualifier([]string{
 		userInfoCols.ID,

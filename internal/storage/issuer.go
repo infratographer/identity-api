@@ -116,7 +116,7 @@ func (s *issuerService) GetIssuerByID(ctx context.Context, id gidx.PrefixedID) (
 
 // GetOwnerIssuers lists issuers by it's owners ID.
 func (s *issuerService) GetOwnerIssuers(ctx context.Context, id gidx.PrefixedID, pagination crdbx.Paginator) (types.Issuers, error) {
-	paginate := crdbx.Paginate(pagination, "-1m")
+	paginate := crdbx.Paginate(pagination, crdbx.ContextAsOfSystemTime(ctx, "-1m"))
 
 	query := fmt.Sprintf("SELECT %s FROM issuers %s WHERE owner_id = $1 %s %s %s", issuerColumnsStr,
 		paginate.AsOfSystemTime(),

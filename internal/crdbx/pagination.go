@@ -1,6 +1,7 @@
 package crdbx
 
 import (
+	"context"
 	"errors"
 	"slices"
 )
@@ -97,4 +98,23 @@ func Paginate(p Paginator, asOfSystemTime any) FormatValues {
 	}
 
 	return values
+}
+
+type asOfSystemTimeCtx struct{}
+
+var asOfSystemTimeCtxKey asOfSystemTimeCtx
+
+// ContextAsOfSystemTime retrieves the `AS OF SYSTEM TIME` value from the context.
+// If no value is found the default value is returned.
+func ContextAsOfSystemTime(ctx context.Context, defaultTime any) any {
+	if value := ctx.Value(asOfSystemTimeCtxKey); value != nil {
+		return value
+	}
+
+	return defaultTime
+}
+
+// AsOfSystemTime sets the `AS OF SYSTEM TIME` context value to be used.
+func AsOfSystemTime(ctx context.Context, value any) context.Context {
+	return context.WithValue(ctx, asOfSystemTimeCtxKey, value)
 }

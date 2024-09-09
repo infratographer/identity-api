@@ -181,7 +181,7 @@ func (s *oauthClientManager) LookupOAuthClientByID(ctx context.Context, clientID
 
 // GetOwnerOAuthClients lists issuers by it's owners ID.
 func (s *oauthClientManager) GetOwnerOAuthClients(ctx context.Context, id gidx.PrefixedID, pagination crdbx.Paginator) (types.OAuthClients, error) {
-	paginate := crdbx.Paginate(pagination, "-1m")
+	paginate := crdbx.Paginate(pagination, crdbx.ContextAsOfSystemTime(ctx, "-1m"))
 
 	query := fmt.Sprintf("SELECT %s FROM oauth_clients %s WHERE owner_id = $1 %s %s %s", oauthClientColumnsStr,
 		paginate.AsOfSystemTime(),

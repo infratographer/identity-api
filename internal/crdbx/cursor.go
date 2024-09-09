@@ -105,6 +105,16 @@ func NewCursor(kvpairs ...string) (*Cursor, error) {
 	return NewCursorFromValues(values)
 }
 
+// MustNewCursor calls [NewCursor]. If an error is returned panic is called.
+func MustNewCursor(kvpairs ...string) *Cursor {
+	cursor, err := NewCursor(kvpairs...)
+	if err != nil {
+		panic(err)
+	}
+
+	return cursor
+}
+
 // NewCursorFromValues creates a new pagination cursor from url values.
 func NewCursorFromValues(values url.Values) (*Cursor, error) {
 	if values == nil {

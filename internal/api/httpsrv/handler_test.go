@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	pagination "go.infratographer.com/identity-api/internal/crdbx"
 	"go.infratographer.com/identity-api/internal/storage"
 	"go.infratographer.com/identity-api/internal/testingx"
 	"go.infratographer.com/identity-api/internal/types"
@@ -20,6 +21,19 @@ func ctxPermsAllow(ctx context.Context) context.Context {
 	return context.WithValue(ctx, permissions.CheckerCtxKey, permissions.DefaultAllowChecker)
 }
 
+func ptr[T any](v T) *T {
+	return &v
+}
+
+func must[T any](v T, err error) T {
+	if err != nil {
+		panic(err)
+	}
+
+	return v
+}
+
+//nolint:gocyclo
 func TestAPIHandler(t *testing.T) {
 	t.Parallel()
 
@@ -231,6 +245,176 @@ func TestAPIHandler(t *testing.T) {
 			resp, err := handler.GetIssuerByID(ctx, input)
 
 			result := testingx.TestResult[GetIssuerByIDResponseObject]{
+				Success: resp,
+				Err:     err,
+			}
+
+			return result
+		}
+
+		testingx.RunTests(ctxPermsAllow(context.Background()), t, testCases, runFn)
+	})
+
+	t.Run("ListIssuers", func(t *testing.T) {
+		t.Parallel()
+
+		handler := apiHandler{
+			engine: store,
+		}
+
+		var (
+			issOwnerID = gidx.PrefixedID("testten-" + t.Name())
+			iss1       = types.Issuer{
+				OwnerID: issOwnerID,
+				ID:      gidx.PrefixedID("testiss-" + t.Name() + "-1"),
+				Name:    t.Name() + "-1",
+				URI:     "https://" + t.Name() + "-1.example.com/",
+				JWKSURI: "https://" + t.Name() + "-1.example.com/.well-known/jwks.json",
+			}
+			v1iss1 = must(iss1.ToV1Issuer())
+
+			iss2 = types.Issuer{
+				OwnerID: issOwnerID,
+				ID:      gidx.PrefixedID("testiss-" + t.Name() + "-2"),
+				Name:    t.Name() + "-2",
+				URI:     "https://" + t.Name() + "-2.example.com/",
+				JWKSURI: "https://" + t.Name() + "-2.example.com/.well-known/jwks.json",
+			}
+			v1iss2 = must(iss2.ToV1Issuer())
+
+			iss3 = types.Issuer{
+				OwnerID: gidx.MustNewID("testten"),
+				ID:      gidx.PrefixedID("testiss-" + t.Name() + "-3"),
+				Name:    t.Name() + "-3",
+				URI:     "https://" + t.Name() + "-3.example.com/",
+				JWKSURI: "https://" + t.Name() + "-3.example.com/.well-known/jwks.json",
+			}
+		)
+
+		withStoredIssuers(t, store, &iss1, &iss2, &iss3)
+
+		testCases := []testingx.TestCase[GetOwnerIssuersRequestObject, GetOwnerIssuersResponseObject]{
+			{
+				Name: "Success (Default Pagination)",
+				Input: GetOwnerIssuersRequestObject{
+					OwnerID: issOwnerID,
+				},
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[GetOwnerIssuersResponseObject]) {
+					if !assert.NoError(t, result.Err) {
+						return
+					}
+
+					expIssuers := []v1.Issuer{v1iss1, v1iss2}
+
+					expPagination := v1.Pagination{
+						Limit: 10,
+					}
+
+					resp, ok := result.Success.(GetOwnerIssuers200JSONResponse)
+					if !ok {
+						assert.FailNow(t, "unexpected result type for get issuer response")
+					}
+
+					assert.Equal(t, expIssuers, resp.Issuers, "unexpected issuers returned")
+					assert.Equal(t, expPagination, resp.Pagination, "unexpected pagination returned")
+				},
+			},
+			{
+				Name: "Success with limit",
+				Input: GetOwnerIssuersRequestObject{
+					OwnerID: issOwnerID,
+					Params: v1.GetOwnerIssuersParams{
+						Limit: ptr(1),
+					},
+				},
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[GetOwnerIssuersResponseObject]) {
+					if !assert.NoError(t, result.Err) {
+						return
+					}
+
+					expIssuers := []v1.Issuer{v1iss1}
+
+					expPagination := v1.Pagination{
+						Limit: 1,
+						Next:  pagination.MustNewCursor("id", iss1.ID.String()),
+					}
+
+					resp, ok := result.Success.(GetOwnerIssuers200JSONResponse)
+					if !ok {
+						assert.FailNow(t, "unexpected result type for get issuer response")
+					}
+
+					assert.Equal(t, expIssuers, resp.Issuers, "unexpected issuers returned")
+					assert.Equal(t, expPagination, resp.Pagination, "unexpected pagination returned")
+				},
+			},
+			{
+				Name: "Success with cursor",
+				Input: GetOwnerIssuersRequestObject{
+					OwnerID: issOwnerID,
+					Params: v1.GetOwnerIssuersParams{
+						Cursor: pagination.MustNewCursor("id", iss1.ID.String()),
+						Limit:  ptr(1),
+					},
+				},
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[GetOwnerIssuersResponseObject]) {
+					if !assert.NoError(t, result.Err) {
+						return
+					}
+
+					expIssuers := []v1.Issuer{v1iss2}
+
+					expPagination := v1.Pagination{
+						Limit: 1,
+						Next:  pagination.MustNewCursor("id", iss2.ID.String()),
+					}
+
+					resp, ok := result.Success.(GetOwnerIssuers200JSONResponse)
+					if !ok {
+						assert.FailNow(t, "unexpected result type for get issuer response")
+					}
+
+					assert.Equal(t, expIssuers, resp.Issuers, "unexpected issuers returned")
+					assert.Equal(t, expPagination, resp.Pagination, "unexpected pagination returned")
+				},
+			},
+			{
+				Name: "Success with cursor end of results",
+				Input: GetOwnerIssuersRequestObject{
+					OwnerID: issOwnerID,
+					Params: v1.GetOwnerIssuersParams{
+						Cursor: pagination.MustNewCursor("id", v1iss2.ID.String()),
+						Limit:  ptr(1),
+					},
+				},
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[GetOwnerIssuersResponseObject]) {
+					if !assert.NoError(t, result.Err) {
+						return
+					}
+
+					expIssuers := []v1.Issuer{}
+
+					expPagination := v1.Pagination{
+						Limit: 1,
+					}
+
+					resp, ok := result.Success.(GetOwnerIssuers200JSONResponse)
+					if !ok {
+						assert.FailNow(t, "unexpected result type for get issuer response")
+					}
+
+					assert.Equal(t, expIssuers, resp.Issuers, "unexpected issuers returned")
+					assert.Equal(t, expPagination, resp.Pagination, "unexpected pagination returned")
+				},
+			},
+		}
+
+		runFn := func(ctx context.Context, input GetOwnerIssuersRequestObject) testingx.TestResult[GetOwnerIssuersResponseObject] {
+			ctx = pagination.AsOfSystemTime(ctx, "")
+
+			resp, err := handler.GetOwnerIssuers(ctx, input)
+
+			result := testingx.TestResult[GetOwnerIssuersResponseObject]{
 				Success: resp,
 				Err:     err,
 			}
