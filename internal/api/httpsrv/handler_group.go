@@ -8,6 +8,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"go.infratographer.com/identity-api/internal/types"
+	v1 "go.infratographer.com/identity-api/pkg/api/v1"
 	"go.infratographer.com/x/gidx"
 )
 
@@ -99,4 +100,40 @@ func (h *apiHandler) GetGroupByID(ctx context.Context, req GetGroupByIDRequestOb
 	}
 
 	return GetGroupByID200JSONResponse(groupResp), nil
+}
+
+// ListGroups fetches a list of groups from storage
+func (h *apiHandler) ListGroups(ctx context.Context, req ListGroupsRequestObject) (ListGroupsResponseObject, error) {
+	ownerID := req.OwnerID
+
+	// if err := permissions.CheckAccess(ctx, ownerID, actionGroupList); err != nil {
+	// 	return nil, permissionsError(err)
+	// }
+
+	if _, err := gidx.Parse(string(ownerID)); err != nil {
+		err = echo.NewHTTPError(
+			http.StatusBadRequest,
+			fmt.Sprintf("invalid owner id: %s", err.Error()),
+		)
+
+		return nil, err
+	}
+
+	groups, err := h.engine.ListGroups(ctx, ownerID)
+	if err != nil {
+		return nil, err
+	}
+
+	var groupResp []v1.Group
+
+	for _, g := range groups {
+		g, err := g.ToV1Group()
+		if err != nil {
+			return nil, err
+		}
+
+		groupResp = append(groupResp, g)
+	}
+
+	return ListGroups200JSONResponse(groupResp), nil
 }

@@ -128,3 +128,31 @@ func (gs *groupService) scanGroup(row *sql.Row) (*types.Group, error) {
 
 	return &g, nil
 }
+
+func (gs *groupService) ListGroups(ctx context.Context, ownerID gidx.PrefixedID) ([]*types.Group, error) {
+	q := fmt.Sprintf(
+		"SELECT %s FROM groups WHERE %s = $1",
+		groupColsStr, groupCols.OwnerID,
+	)
+
+	rows, err := gs.db.QueryContext(ctx, q, ownerID)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var groups []*types.Group
+
+	for rows.Next() {
+		g := new(types.Group)
+
+		if err := rows.Scan(&g.ID, &g.OwnerID, &g.Name, &g.Description); err != nil {
+			return nil, err
+		}
+
+		groups = append(groups, g)
+	}
+
+	return groups, nil
+}

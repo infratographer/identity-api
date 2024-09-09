@@ -92,6 +92,29 @@ paths:
                 $ref: '#/components/schemas/OAuthClient'
 
   /api/v1/owners/{ownerID}/groups:
+    get:
+      tags:
+        - Groups
+      summary: List all groups for an owner.
+      operationId: listGroups
+      parameters:
+        - in: path
+          name: ownerID
+          required: true
+          description: Owner to list groups for
+          schema:
+            type: string
+            x-go-type: gidx.PrefixedID
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Group'
+
     post:
       tags:
         - Groups
