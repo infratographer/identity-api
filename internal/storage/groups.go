@@ -156,3 +156,36 @@ func (gs *groupService) ListGroups(ctx context.Context, ownerID gidx.PrefixedID)
 
 	return groups, nil
 }
+
+func (gs *groupService) UpdateGroup(ctx context.Context, id gidx.PrefixedID, updates types.GroupUpdate) (*types.Group, error) {
+	tx, err := getContextTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	current, err := gs.fetchGroupByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	incoming := *current
+
+	if updates.Name != nil && *updates.Name != "" {
+		incoming.Name = *updates.Name
+	}
+
+	if updates.Description != nil {
+		incoming.Description = *updates.Description
+	}
+
+	q := fmt.Sprintf(
+		"UPDATE groups SET (%s, %s) = ($1, $2) WHERE %s = $3",
+		groupCols.Name, groupCols.Description, groupCols.ID,
+	)
+
+	if _, err := tx.ExecContext(ctx, q, incoming.Name, incoming.Description, id); err != nil {
+		return nil, err
+	}
+
+	return &incoming, nil
+}

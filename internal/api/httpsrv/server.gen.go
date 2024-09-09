@@ -27,6 +27,9 @@ type ServerInterface interface {
 	// Gets information about a Group.
 	// (GET /api/v1/groups/{groupID})
 	GetGroupByID(ctx echo.Context, groupID gidx.PrefixedID) error
+	// Updates a Group
+	// (PATCH /api/v1/groups/{groupID})
+	UpdateGroup(ctx echo.Context, groupID gidx.PrefixedID) error
 	// Deletes an issuer with the given ID.
 	// (DELETE /api/v1/issuers/{id})
 	DeleteIssuer(ctx echo.Context, id gidx.PrefixedID) error
@@ -112,6 +115,22 @@ func (w *ServerInterfaceWrapper) GetGroupByID(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetGroupByID(ctx, groupID)
+	return err
+}
+
+// UpdateGroup converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdateGroup(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "groupID" -------------
+	var groupID gidx.PrefixedID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "groupID", ctx.Param("groupID"), &groupID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupID: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.UpdateGroup(ctx, groupID)
 	return err
 }
 
@@ -370,6 +389,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.DELETE(baseURL+"/api/v1/clients/:clientID", wrapper.DeleteOAuthClient)
 	router.GET(baseURL+"/api/v1/clients/:clientID", wrapper.GetOAuthClient)
 	router.GET(baseURL+"/api/v1/groups/:groupID", wrapper.GetGroupByID)
+	router.PATCH(baseURL+"/api/v1/groups/:groupID", wrapper.UpdateGroup)
 	router.DELETE(baseURL+"/api/v1/issuers/:id", wrapper.DeleteIssuer)
 	router.GET(baseURL+"/api/v1/issuers/:id", wrapper.GetIssuerByID)
 	router.PATCH(baseURL+"/api/v1/issuers/:id", wrapper.UpdateIssuer)
@@ -449,6 +469,24 @@ type GetGroupByIDResponseObject interface {
 type GetGroupByID200JSONResponse Group
 
 func (response GetGroupByID200JSONResponse) VisitGetGroupByIDResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateGroupRequestObject struct {
+	GroupID gidx.PrefixedID `json:"groupID"`
+	Body    *UpdateGroupJSONRequestBody
+}
+
+type UpdateGroupResponseObject interface {
+	VisitUpdateGroupResponse(w http.ResponseWriter) error
+}
+
+type UpdateGroup200JSONResponse Group
+
+func (response UpdateGroup200JSONResponse) VisitUpdateGroupResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
@@ -662,6 +700,9 @@ type StrictServerInterface interface {
 	// Gets information about a Group.
 	// (GET /api/v1/groups/{groupID})
 	GetGroupByID(ctx context.Context, request GetGroupByIDRequestObject) (GetGroupByIDResponseObject, error)
+	// Updates a Group
+	// (PATCH /api/v1/groups/{groupID})
+	UpdateGroup(ctx context.Context, request UpdateGroupRequestObject) (UpdateGroupResponseObject, error)
 	// Deletes an issuer with the given ID.
 	// (DELETE /api/v1/issuers/{id})
 	DeleteIssuer(ctx context.Context, request DeleteIssuerRequestObject) (DeleteIssuerResponseObject, error)
@@ -778,6 +819,37 @@ func (sh *strictHandler) GetGroupByID(ctx echo.Context, groupID gidx.PrefixedID)
 		return err
 	} else if validResponse, ok := response.(GetGroupByIDResponseObject); ok {
 		return validResponse.VisitGetGroupByIDResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// UpdateGroup operation middleware
+func (sh *strictHandler) UpdateGroup(ctx echo.Context, groupID gidx.PrefixedID) error {
+	var request UpdateGroupRequestObject
+
+	request.GroupID = groupID
+
+	var body UpdateGroupJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateGroup(ctx.Request().Context(), request.(UpdateGroupRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateGroup")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(UpdateGroupResponseObject); ok {
+		return validResponse.VisitUpdateGroupResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("unexpected response type: %T", response)
 	}

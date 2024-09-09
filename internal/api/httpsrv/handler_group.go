@@ -137,3 +137,48 @@ func (h *apiHandler) ListGroups(ctx context.Context, req ListGroupsRequestObject
 
 	return ListGroups200JSONResponse(groupResp), nil
 }
+
+// UpdateGroup updates a group in storage
+func (h *apiHandler) UpdateGroup(ctx context.Context, req UpdateGroupRequestObject) (UpdateGroupResponseObject, error) {
+	gid := req.GroupID
+	reqbody := req.Body
+
+	// if err := permissions.CheckAccess(ctx, gid, actionGroupUpdate); err != nil {
+	// 	return nil, permissionsError(err)
+	// }
+
+	if _, err := gidx.Parse(string(gid)); err != nil {
+		err = echo.NewHTTPError(
+			http.StatusBadRequest,
+			fmt.Sprintf("invalid group id: %s", err.Error()),
+		)
+
+		return nil, err
+	}
+
+	updates := types.GroupUpdate{
+		Name:        reqbody.Name,
+		Description: reqbody.Description,
+	}
+
+	g, err := h.engine.UpdateGroup(ctx, gid, updates)
+	if err != nil {
+		if errors.Is(err, types.ErrGroupNotFound) {
+			err = echo.NewHTTPError(
+				http.StatusNotFound,
+				fmt.Sprintf("group %s not found", gid),
+			)
+
+			return nil, err
+		}
+
+		return nil, err
+	}
+
+	groupResp, err := g.ToV1Group()
+	if err != nil {
+		return nil, err
+	}
+
+	return UpdateGroup200JSONResponse(groupResp), nil
+}

@@ -291,6 +291,32 @@ paths:
                 $ref: '#/components/schemas/User'
 
   /api/v1/groups/{groupID}:
+    patch:
+      tags:
+        - Groups
+      summary: Updates a Group
+      operationId: updateGroup
+      parameters:
+        - in: path
+          name: groupID
+          required: true
+          description: Group ID
+          schema:
+            type: string
+            x-go-type: gidx.PrefixedID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGroup'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
     get:
       tags:
         - Groups
@@ -477,6 +503,15 @@ components:
     CreateGroup:
       required:
         - name
+      properties:
+        name:
+          type: string
+          description: a name for the group
+        description:
+          type: string
+          description: a description for the group
+
+    UpdateGroup:
       properties:
         name:
           type: string
