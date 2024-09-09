@@ -33,6 +33,9 @@ type ServerInterface interface {
 	// Updates an issuer.
 	// (PATCH /api/v1/issuers/{id})
 	UpdateIssuer(ctx echo.Context, id gidx.PrefixedID) error
+	// Gets users by issuer id
+	// (GET /api/v1/issuers/{id}/users)
+	GetIssuerUsers(ctx echo.Context, issuerID IssuerID, params GetIssuerUsersParams) error
 	// Gets oauth clients by owner id
 	// (GET /api/v1/owners/{ownerID}/clients)
 	GetOwnerOAuthClients(ctx echo.Context, ownerID OwnerID, params GetOwnerOAuthClientsParams) error
@@ -132,6 +135,38 @@ func (w *ServerInterfaceWrapper) UpdateIssuer(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.UpdateIssuer(ctx, id)
+	return err
+}
+
+// GetIssuerUsers converts echo context to params.
+func (w *ServerInterfaceWrapper) GetIssuerUsers(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var issuerID IssuerID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &issuerID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetIssuerUsersParams
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cursor", ctx.QueryParams(), &params.Cursor)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cursor: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetIssuerUsers(ctx, issuerID, params)
 	return err
 }
 
@@ -280,6 +315,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.DELETE(baseURL+"/api/v1/issuers/:id", wrapper.DeleteIssuer)
 	router.GET(baseURL+"/api/v1/issuers/:id", wrapper.GetIssuerByID)
 	router.PATCH(baseURL+"/api/v1/issuers/:id", wrapper.UpdateIssuer)
+	router.GET(baseURL+"/api/v1/issuers/:id/users", wrapper.GetIssuerUsers)
 	router.GET(baseURL+"/api/v1/owners/:ownerID/clients", wrapper.GetOwnerOAuthClients)
 	router.POST(baseURL+"/api/v1/owners/:ownerID/clients", wrapper.CreateOAuthClient)
 	router.GET(baseURL+"/api/v1/owners/:ownerID/issuers", wrapper.GetOwnerIssuers)
@@ -300,6 +336,12 @@ type OAuthClientCollectionJSONResponse struct {
 
 	// Pagination collection response pagination
 	Pagination Pagination `json:"pagination"`
+}
+
+type UserCollectionJSONResponse struct {
+	// Pagination collection response pagination
+	Pagination Pagination `json:"pagination"`
+	Users      []User     `json:"users"`
 }
 
 type DeleteOAuthClientRequestObject struct {
@@ -382,6 +424,24 @@ type UpdateIssuerResponseObject interface {
 type UpdateIssuer200JSONResponse Issuer
 
 func (response UpdateIssuer200JSONResponse) VisitUpdateIssuerResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetIssuerUsersRequestObject struct {
+	IssuerID IssuerID `json:"id"`
+	Params   GetIssuerUsersParams
+}
+
+type GetIssuerUsersResponseObject interface {
+	VisitGetIssuerUsersResponse(w http.ResponseWriter) error
+}
+
+type GetIssuerUsers200JSONResponse struct{ UserCollectionJSONResponse }
+
+func (response GetIssuerUsers200JSONResponse) VisitGetIssuerUsersResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
@@ -496,6 +556,9 @@ type StrictServerInterface interface {
 	// Updates an issuer.
 	// (PATCH /api/v1/issuers/{id})
 	UpdateIssuer(ctx context.Context, request UpdateIssuerRequestObject) (UpdateIssuerResponseObject, error)
+	// Gets users by issuer id
+	// (GET /api/v1/issuers/{id}/users)
+	GetIssuerUsers(ctx context.Context, request GetIssuerUsersRequestObject) (GetIssuerUsersResponseObject, error)
 	// Gets oauth clients by owner id
 	// (GET /api/v1/owners/{ownerID}/clients)
 	GetOwnerOAuthClients(ctx context.Context, request GetOwnerOAuthClientsRequestObject) (GetOwnerOAuthClientsResponseObject, error)
@@ -650,6 +713,32 @@ func (sh *strictHandler) UpdateIssuer(ctx echo.Context, id gidx.PrefixedID) erro
 		return err
 	} else if validResponse, ok := response.(UpdateIssuerResponseObject); ok {
 		return validResponse.VisitUpdateIssuerResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetIssuerUsers operation middleware
+func (sh *strictHandler) GetIssuerUsers(ctx echo.Context, issuerID IssuerID, params GetIssuerUsersParams) error {
+	var request GetIssuerUsersRequestObject
+
+	request.IssuerID = issuerID
+	request.Params = params
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetIssuerUsers(ctx.Request().Context(), request.(GetIssuerUsersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetIssuerUsers")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetIssuerUsersResponseObject); ok {
+		return validResponse.VisitGetIssuerUsersResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("unexpected response type: %T", response)
 	}

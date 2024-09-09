@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"strings"
 
+	"go.infratographer.com/identity-api/internal/crdbx"
 	"go.infratographer.com/identity-api/internal/types"
 	"go.infratographer.com/x/gidx"
 )
@@ -194,6 +195,56 @@ func (s userInfoService) LookupUserOwnerID(ctx context.Context, id gidx.Prefixed
 	}
 
 	return ownerID, err
+}
+
+// LookupUserInfosByIssuerID lists users for an issuer.
+func (s *userInfoService) LookupUserInfosByIssuerID(ctx context.Context, id gidx.PrefixedID, pagination crdbx.Paginator) (types.UserInfos, error) {
+	paginate := crdbx.Paginate(pagination, "-1m").WithQualifier("user_info")
+
+	selectCols := withQualifier([]string{
+		userInfoCols.ID,
+		userInfoCols.Name,
+		userInfoCols.Email,
+		userInfoCols.Subject,
+	}, "user_info")
+
+	selectCols = append(selectCols, "issuers."+issuerCols.URI)
+
+	selects := strings.Join(selectCols, ",")
+
+	query := fmt.Sprintf(`
+			SELECT %[1]s
+			FROM user_info, issuers
+			%[4]s
+			WHERE issuers.%[3]s = $1 AND user_info.iss_id = issuers.id %[5]s %[6]s %[7]s
+        `, selects, userInfoCols.IssuerID, issuerCols.ID,
+		paginate.AsOfSystemTime(),
+		paginate.AndWhere(2), //nolint:gomnd
+		paginate.OrderClause(),
+		paginate.LimitClause(),
+	)
+
+	rows, err := s.db.QueryContext(ctx, query, paginate.Values(id)...)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var users types.UserInfos
+
+	for rows.Next() {
+		var model types.UserInfo
+
+		err = rows.Scan(&model.ID, &model.Name, &model.Email, &model.Subject, &model.Issuer)
+		if err != nil {
+			return nil, err
+		}
+
+		users = append(users, model)
+	}
+
+	return users, nil
 }
 
 // StoreUserInfo is used to store user information by issuer and

@@ -183,6 +183,25 @@ func BuildClaimsMappingFromMap(in map[string]*exprpb.CheckedExpr) ClaimsMapping 
 	return out
 }
 
+// UserInfos represents a list of token issuers.
+type UserInfos []UserInfo
+
+// ToV1Users converts an slice of issuers to a slice of API issuers.
+func (i UserInfos) ToV1Users() ([]v1.User, error) {
+	users := make([]v1.User, len(i))
+
+	for i, user := range i {
+		v1user, err := user.ToV1User()
+		if err != nil {
+			return nil, err
+		}
+
+		users[i] = v1user
+	}
+
+	return users, nil
+}
+
 // UserInfo contains information about the user from the source OIDC provider.
 // As defined in https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
 type UserInfo struct {
@@ -230,6 +249,9 @@ type UserInfoService interface {
 
 	// LookupUserOwnerID finds the Owner ID of the Issuer for the given User ID.
 	LookupUserOwnerID(ctx context.Context, id gidx.PrefixedID) (gidx.PrefixedID, error)
+
+	// LookupUserInfosByIssuerID returns the user infos for an STS issuer ID
+	LookupUserInfosByIssuerID(ctx context.Context, id gidx.PrefixedID, paginator crdbx.Paginator) (UserInfos, error)
 
 	// StoreUserInfo stores the userInfo into the storage backend.
 	StoreUserInfo(ctx context.Context, userInfo UserInfo) (UserInfo, error)

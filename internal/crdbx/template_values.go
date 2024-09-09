@@ -11,14 +11,21 @@ const (
 	defaultLimit      = 10
 )
 
-var defaultOrderFields = []string{"id"}
-
+// FormatValues contains the necessary values to extend a query for pagination.
 type FormatValues struct {
 	asOfSystemTime any
 	fields         []string
 	values         []any
 	orderFields    []string
 	limit          int
+	qualifier      string
+}
+
+// WithQualifier sets all field qualifiers for referenced fields.
+func (v FormatValues) WithQualifier(q string) FormatValues {
+	v.qualifier = q
+
+	return v
 }
 
 // AsOfSystemTime if set will be formatted as `AS OF SYSTEM TIME` followed by a value.
@@ -42,10 +49,13 @@ func (v FormatValues) AsOfSystemTime() string {
 		return ""
 	}
 
-	// https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-STRINGS
-	return "AS OF SYSTEM TIME " + `'` + strings.ReplaceAll(value, `'`, `''`) + `'`
+	return "AS OF SYSTEM TIME " + quoteValue(value)
 }
 
+// Where returns the conditions to be added to a where clause.
+// Next provides the offset for defining bind values.
+// If your query includes additional values, this value should be set to the next unused number.
+// For example if you had the query `SELECT * FROM users WHERE country=$1`. The value you should use here is `2`.
 func (v FormatValues) Where(next int) string {
 	if len(v.fields) == 0 {
 		return ""
@@ -53,12 +63,14 @@ func (v FormatValues) Where(next int) string {
 
 	where := make([]string, len(v.fields))
 	for i, field := range v.fields {
-		where[i] = `"` + strings.ReplaceAll(field, `"`, `""`) + `">$` + strconv.Itoa(i+next)
+		where[i] = quoteField(v.qualifier, field) + `>$` + strconv.Itoa(i+next)
 	}
 
 	return "(" + strings.Join(where, " AND ") + ")"
 }
 
+// WhereClause returns a full WHERE clause including the conditions if defined.
+// See [FormatValues.Where] for more details.
 func (v FormatValues) WhereClause(next int) string {
 	where := v.Where(next)
 	if where == "" {
@@ -68,6 +80,8 @@ func (v FormatValues) WhereClause(next int) string {
 	return "WHERE " + where
 }
 
+// AndWhere returns the conditions prefixed by `AND` if conditions have been defined.
+// See [FormatValues.Where] for more details.
 func (v FormatValues) AndWhere(next int) string {
 	where := v.Where(next)
 	if where == "" {
@@ -77,6 +91,8 @@ func (v FormatValues) AndWhere(next int) string {
 	return "AND " + where
 }
 
+// LimitClause returns the `LIMIT` clause.
+// If no limit is setup the default limit of `10` is used.
 func (v FormatValues) LimitClause() string {
 	if v.limit <= 0 {
 		v.limit = defaultLimit
@@ -85,6 +101,8 @@ func (v FormatValues) LimitClause() string {
 	return "LIMIT " + strconv.Itoa(v.limit)
 }
 
+// OrderClause provides the `ORDER BY` clause.
+// Additional fields may be included, see [FormatValues.Order] for more details.
 func (v FormatValues) OrderClause(fields ...string) string {
 	order := v.Order(fields...)
 	if order == "" {
@@ -94,20 +112,21 @@ func (v FormatValues) OrderClause(fields ...string) string {
 	return "ORDER BY " + order
 }
 
+// Order provides the `ORDER BY` clause value.
+// Additional fields may be included to build the final value.
+// Fields are included in addition to configured order field are used as is.
 func (v FormatValues) Order(fields ...string) string {
-	fields = append(fields, v.orderFields...)
+	fields = append(fields, quoteFields(v.qualifier, v.orderFields...)...)
 
 	if len(fields) == 0 {
 		return ""
 	}
 
-	for i, field := range fields {
-		fields[i] = `"` + strings.ReplaceAll(field, `"`, `""`) + `"`
-	}
-
 	return strings.Join(fields, ",")
 }
 
+// Values returns the values to be used in a query.
+// Additional values may be included and will be first in the combined values slice.
 func (v FormatValues) Values(values ...any) []any {
 	values = append(values, v.values...)
 
@@ -121,4 +140,26 @@ func discardTimeZone(t time.Time) time.Time {
 	}
 
 	return t
+}
+
+// https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS:~:text=To%20include%20a%20double%20quote
+func quoteField(q, v string) string {
+	var prefix string
+	if q != "" {
+		prefix = `"` + strings.ReplaceAll(q, `"`, `""`) + `".`
+	}
+
+	return prefix + `"` + strings.ReplaceAll(v, `"`, `""`) + `"`
+}
+func quoteFields(qualifier string, fields ...string) []string {
+	for i, field := range fields {
+		fields[i] = quoteField(qualifier, field)
+	}
+
+	return fields
+}
+
+// https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-STRINGS
+func quoteValue(v string) string {
+	return `'` + strings.ReplaceAll(v, `'`, `''`) + `'`
 }
