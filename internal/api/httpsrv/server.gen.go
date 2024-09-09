@@ -24,6 +24,9 @@ type ServerInterface interface {
 	// Gets information about an OAuth 2.0 Client.
 	// (GET /api/v1/clients/{clientID})
 	GetOAuthClient(ctx echo.Context, clientID gidx.PrefixedID) error
+	// Gets information about a Group.
+	// (GET /api/v1/groups/{groupID})
+	GetGroupByID(ctx echo.Context, groupID gidx.PrefixedID) error
 	// Deletes an issuer with the given ID.
 	// (DELETE /api/v1/issuers/{id})
 	DeleteIssuer(ctx echo.Context, id gidx.PrefixedID) error
@@ -90,6 +93,22 @@ func (w *ServerInterfaceWrapper) GetOAuthClient(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetOAuthClient(ctx, clientID)
+	return err
+}
+
+// GetGroupByID converts echo context to params.
+func (w *ServerInterfaceWrapper) GetGroupByID(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "groupID" -------------
+	var groupID gidx.PrefixedID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "groupID", ctx.Param("groupID"), &groupID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupID: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetGroupByID(ctx, groupID)
 	return err
 }
 
@@ -331,6 +350,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 
 	router.DELETE(baseURL+"/api/v1/clients/:clientID", wrapper.DeleteOAuthClient)
 	router.GET(baseURL+"/api/v1/clients/:clientID", wrapper.GetOAuthClient)
+	router.GET(baseURL+"/api/v1/groups/:groupID", wrapper.GetGroupByID)
 	router.DELETE(baseURL+"/api/v1/issuers/:id", wrapper.DeleteIssuer)
 	router.GET(baseURL+"/api/v1/issuers/:id", wrapper.GetIssuerByID)
 	router.PATCH(baseURL+"/api/v1/issuers/:id", wrapper.UpdateIssuer)
@@ -392,6 +412,23 @@ type GetOAuthClientResponseObject interface {
 type GetOAuthClient200JSONResponse OAuthClient
 
 func (response GetOAuthClient200JSONResponse) VisitGetOAuthClientResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetGroupByIDRequestObject struct {
+	GroupID gidx.PrefixedID `json:"groupID"`
+}
+
+type GetGroupByIDResponseObject interface {
+	VisitGetGroupByIDResponse(w http.ResponseWriter) error
+}
+
+type GetGroupByID200JSONResponse Group
+
+func (response GetGroupByID200JSONResponse) VisitGetGroupByIDResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
@@ -585,6 +622,9 @@ type StrictServerInterface interface {
 	// Gets information about an OAuth 2.0 Client.
 	// (GET /api/v1/clients/{clientID})
 	GetOAuthClient(ctx context.Context, request GetOAuthClientRequestObject) (GetOAuthClientResponseObject, error)
+	// Gets information about a Group.
+	// (GET /api/v1/groups/{groupID})
+	GetGroupByID(ctx context.Context, request GetGroupByIDRequestObject) (GetGroupByIDResponseObject, error)
 	// Deletes an issuer with the given ID.
 	// (DELETE /api/v1/issuers/{id})
 	DeleteIssuer(ctx context.Context, request DeleteIssuerRequestObject) (DeleteIssuerResponseObject, error)
@@ -673,6 +713,31 @@ func (sh *strictHandler) GetOAuthClient(ctx echo.Context, clientID gidx.Prefixed
 		return err
 	} else if validResponse, ok := response.(GetOAuthClientResponseObject); ok {
 		return validResponse.VisitGetOAuthClientResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetGroupByID operation middleware
+func (sh *strictHandler) GetGroupByID(ctx echo.Context, groupID gidx.PrefixedID) error {
+	var request GetGroupByIDRequestObject
+
+	request.GroupID = groupID
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetGroupByID(ctx.Request().Context(), request.(GetGroupByIDRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetGroupByID")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetGroupByIDResponseObject); ok {
+		return validResponse.VisitGetGroupByIDResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("unexpected response type: %T", response)
 	}
