@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	pagination "go.infratographer.com/identity-api/internal/crdbx"
 	"go.infratographer.com/identity-api/internal/storage"
@@ -750,6 +751,177 @@ func TestAPIHandler(t *testing.T) {
 			resp, err := handler.GetOAuthClient(ctx, input)
 
 			result := testingx.TestResult[GetOAuthClientResponseObject]{
+				Success: resp,
+				Err:     err,
+			}
+
+			return result
+		}
+
+		testingx.RunTests(ctxPermsAllow(context.Background()), t, testCases, runFn)
+	})
+
+	t.Run("ListOAuthClients", func(t *testing.T) {
+		t.Parallel()
+
+		handler := apiHandler{
+			engine: store,
+		}
+
+		var (
+			cliOwnerID = gidx.PrefixedID("testten-" + t.Name())
+			cli1       = types.OAuthClient{
+				OwnerID: cliOwnerID,
+				Name:    t.Name() + "-1",
+				Secret:  "abc1234",
+			}
+
+			cli2 = types.OAuthClient{
+				OwnerID: cliOwnerID,
+				Name:    t.Name() + "-2",
+				Secret:  "def4567",
+			}
+
+			cli3 = types.OAuthClient{
+				OwnerID: gidx.MustNewID("testten"),
+				Name:    t.Name() + "-3",
+				Secret:  "ghi7890",
+			}
+		)
+
+		withStoredClients(t, store, &cli1, &cli2, &cli3)
+
+		// fetch the stored clients so we know the order to be able to assert expected results
+		clients, err := store.GetOwnerOAuthClients(pagination.AsOfSystemTime(context.Background(), ""), cliOwnerID, pagination.Pagination{})
+		require.NoError(t, err, "unexpected error fetching clients")
+
+		require.Len(t, clients, 2, "expected two clients to exist")
+
+		cli1, cli2 = clients[0], clients[1]
+		v1cli1, v1cli2 := cli1.ToV1OAuthClient(), cli2.ToV1OAuthClient()
+
+		testCases := []testingx.TestCase[GetOwnerOAuthClientsRequestObject, GetOwnerOAuthClientsResponseObject]{
+			{
+				Name: "Success (Default Pagination)",
+				Input: GetOwnerOAuthClientsRequestObject{
+					OwnerID: cliOwnerID,
+				},
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[GetOwnerOAuthClientsResponseObject]) {
+					if !assert.NoError(t, result.Err) {
+						return
+					}
+
+					expClients := []v1.OAuthClient{v1cli1, v1cli2}
+
+					expPagination := v1.Pagination{
+						Limit: 10,
+					}
+
+					resp, ok := result.Success.(GetOwnerOAuthClients200JSONResponse)
+					if !ok {
+						assert.FailNow(t, "unexpected result type for get OAuth client response")
+					}
+
+					assert.Equal(t, expClients, resp.Clients, "unexpected OAuth clients returned")
+					assert.Equal(t, expPagination, resp.Pagination, "unexpected pagination returned")
+				},
+			},
+			{
+				Name: "Success with limit",
+				Input: GetOwnerOAuthClientsRequestObject{
+					OwnerID: cliOwnerID,
+					Params: v1.GetOwnerOAuthClientsParams{
+						Limit: ptr(1),
+					},
+				},
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[GetOwnerOAuthClientsResponseObject]) {
+					if !assert.NoError(t, result.Err) {
+						return
+					}
+
+					expClients := []v1.OAuthClient{v1cli1}
+
+					expPagination := v1.Pagination{
+						Limit: 1,
+						Next:  pagination.MustNewCursor("id", cli1.ID.String()),
+					}
+
+					resp, ok := result.Success.(GetOwnerOAuthClients200JSONResponse)
+					if !ok {
+						assert.FailNow(t, "unexpected result type for get OAuth client response")
+					}
+
+					assert.Equal(t, expClients, resp.Clients, "unexpected OAuth clients returned")
+					assert.Equal(t, expPagination, resp.Pagination, "unexpected pagination returned")
+				},
+			},
+			{
+				Name: "Success with cursor",
+				Input: GetOwnerOAuthClientsRequestObject{
+					OwnerID: cliOwnerID,
+					Params: v1.GetOwnerOAuthClientsParams{
+						Cursor: pagination.MustNewCursor("id", cli1.ID.String()),
+						Limit:  ptr(1),
+					},
+				},
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[GetOwnerOAuthClientsResponseObject]) {
+					if !assert.NoError(t, result.Err) {
+						return
+					}
+
+					expClients := []v1.OAuthClient{v1cli2}
+
+					expPagination := v1.Pagination{
+						Limit: 1,
+						Next:  pagination.MustNewCursor("id", cli2.ID.String()),
+					}
+
+					resp, ok := result.Success.(GetOwnerOAuthClients200JSONResponse)
+					if !ok {
+						assert.FailNow(t, "unexpected result type for get OAuth client response")
+					}
+
+					assert.Equal(t, expClients, resp.Clients, "unexpected OAuth clients returned")
+					assert.Equal(t, expPagination, resp.Pagination, "unexpected pagination returned")
+				},
+			},
+			{
+				Name: "Success with cursor end of results",
+				Input: GetOwnerOAuthClientsRequestObject{
+					OwnerID: cliOwnerID,
+					Params: v1.GetOwnerOAuthClientsParams{
+						Cursor: pagination.MustNewCursor("id", v1cli2.ID.String()),
+						Limit:  ptr(1),
+					},
+				},
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[GetOwnerOAuthClientsResponseObject]) {
+					if !assert.NoError(t, result.Err) {
+						return
+					}
+
+					expClients := []v1.OAuthClient{}
+
+					expPagination := v1.Pagination{
+						Limit: 1,
+					}
+
+					resp, ok := result.Success.(GetOwnerOAuthClients200JSONResponse)
+					if !ok {
+						assert.FailNow(t, "unexpected result type for get OAuth client response")
+					}
+
+					assert.Equal(t, expClients, resp.Clients, "unexpected OAuth clients returned")
+					assert.Equal(t, expPagination, resp.Pagination, "unexpected pagination returned")
+				},
+			},
+		}
+
+		runFn := func(ctx context.Context, input GetOwnerOAuthClientsRequestObject) testingx.TestResult[GetOwnerOAuthClientsResponseObject] {
+			ctx = pagination.AsOfSystemTime(ctx, "")
+
+			resp, err := handler.GetOwnerOAuthClients(ctx, input)
+
+			result := testingx.TestResult[GetOwnerOAuthClientsResponseObject]{
 				Success: resp,
 				Err:     err,
 			}
