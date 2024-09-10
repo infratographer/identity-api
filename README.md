@@ -76,9 +76,11 @@ If the permissions config has been defined, the actor will need access to the fo
 * iam_issuer_update
 * iam_issuer_delete
 * iam_issuer_get
+* iam_issuer_list
 * iam_oauthclient_create
 * iam_oauthclient_delete
 * iam_oauthclient_get
+* iam_oauthclient_list
 * iam_user_get
 
 [pkcs8]: https://en.wikipedia.org/wiki/PKCS_8
