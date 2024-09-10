@@ -5,6 +5,11 @@ info:
   description: Security Token Service (STS) Management API is an API for managing STS configurations.
   version: 0.0.1
 
+tags:
+  - name: Issuers
+  - name: OAuthClients
+  - name: Users
+
 paths:
   /api/v1/owners/{ownerID}/issuers:
     get:
