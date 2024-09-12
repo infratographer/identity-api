@@ -74,6 +74,7 @@ paths:
         - OAuthClients
       summary: Creates an OAuth client.
       operationId: createOAuthClient
+      description: Creates an OAuth client for the given owner.
       parameters:
         - in: path
           name: ownerID
@@ -101,6 +102,7 @@ paths:
       tags:
         - Groups
       summary: List all groups for an owner.
+      description: List all groups for an owner.
       operationId: listGroups
       parameters:
         - in: path
@@ -124,6 +126,7 @@ paths:
       tags:
         - Groups
       summary: Creates a Group
+      description: Creates a group under the given owner.
       operationId: createGroup
       parameters:
         - in: path
@@ -300,6 +303,7 @@ paths:
       tags:
         - Groups
       summary: Deletes a Group
+      description: Deletes a group by ID.
       operationId: deleteGroup
       parameters:
         - in: path
@@ -320,6 +324,7 @@ paths:
       tags:
         - Groups
       summary: Updates a Group
+      description: Updates a group by ID, only name and description can be updated.
       operationId: updateGroup
       parameters:
         - in: path
@@ -347,6 +352,7 @@ paths:
         - Groups
       summary: Gets information about a Group.
       operationId: getGroupByID
+      description: Gets a group by ID.
       parameters:
         - in: path
           name: groupID
