@@ -9,17 +9,22 @@ import (
 	"github.com/labstack/echo/v4"
 	"go.infratographer.com/identity-api/internal/types"
 	v1 "go.infratographer.com/identity-api/pkg/api/v1"
+	"go.infratographer.com/permissions-api/pkg/permissions"
 	"go.infratographer.com/x/gidx"
+)
+
+const (
+	actionGroupGet    = "iam_group_get"
+	actionGroupList   = "iam_group_list"
+	actionGroupCreate = "iam_group_create"
+	actionGroupUpdate = "iam_group_update"
+	actionGroupDelete = "iam_group_delete"
 )
 
 // CreateGroup creates a group
 func (h *apiHandler) CreateGroup(ctx context.Context, req CreateGroupRequestObject) (CreateGroupResponseObject, error) {
 	reqbody := req.Body
 	ownerID := req.OwnerID
-
-	// if err := permissions.CheckAccess(ctx, ownerID, actionGroupCreate); err != nil {
-	// 	return nil, permissionsError(err)
-	// }
 
 	if _, err := gidx.Parse(string(ownerID)); err != nil {
 		err = echo.NewHTTPError(
@@ -28,6 +33,10 @@ func (h *apiHandler) CreateGroup(ctx context.Context, req CreateGroupRequestObje
 		)
 
 		return nil, err
+	}
+
+	if err := permissions.CheckAccess(ctx, ownerID, actionGroupCreate); err != nil {
+		return nil, permissionsError(err)
 	}
 
 	id, err := gidx.NewID(types.IdentityGroupIDPrefix)
@@ -52,6 +61,13 @@ func (h *apiHandler) CreateGroup(ctx context.Context, req CreateGroupRequestObje
 		Description: description,
 	})
 	if err != nil {
+		if errors.Is(err, types.ErrGroupExists) {
+			err = echo.NewHTTPError(
+				http.StatusConflict,
+				fmt.Sprintf("group \"%s\" already exists", reqbody.Name),
+			)
+		}
+
 		return nil, err
 	}
 
@@ -67,10 +83,6 @@ func (h *apiHandler) CreateGroup(ctx context.Context, req CreateGroupRequestObje
 func (h *apiHandler) GetGroupByID(ctx context.Context, req GetGroupByIDRequestObject) (GetGroupByIDResponseObject, error) {
 	gid := req.GroupID
 
-	// if err := permissions.CheckAccess(ctx, gid, actionGroupRead); err != nil {
-	// 	return nil, permissionsError(err)
-	// }
-
 	if _, err := gidx.Parse(string(gid)); err != nil {
 		err = echo.NewHTTPError(
 			http.StatusBadRequest,
@@ -78,6 +90,10 @@ func (h *apiHandler) GetGroupByID(ctx context.Context, req GetGroupByIDRequestOb
 		)
 
 		return nil, err
+	}
+
+	if err := permissions.CheckAccess(ctx, gid, actionGroupGet); err != nil {
+		return nil, permissionsError(err)
 	}
 
 	g, err := h.engine.GetGroupByID(ctx, gid)
@@ -106,10 +122,6 @@ func (h *apiHandler) GetGroupByID(ctx context.Context, req GetGroupByIDRequestOb
 func (h *apiHandler) ListGroups(ctx context.Context, req ListGroupsRequestObject) (ListGroupsResponseObject, error) {
 	ownerID := req.OwnerID
 
-	// if err := permissions.CheckAccess(ctx, ownerID, actionGroupList); err != nil {
-	// 	return nil, permissionsError(err)
-	// }
-
 	if _, err := gidx.Parse(string(ownerID)); err != nil {
 		err = echo.NewHTTPError(
 			http.StatusBadRequest,
@@ -117,6 +129,10 @@ func (h *apiHandler) ListGroups(ctx context.Context, req ListGroupsRequestObject
 		)
 
 		return nil, err
+	}
+
+	if err := permissions.CheckAccess(ctx, ownerID, actionGroupList); err != nil {
+		return nil, permissionsError(err)
 	}
 
 	groups, err := h.engine.ListGroups(ctx, ownerID)
@@ -143,10 +159,6 @@ func (h *apiHandler) UpdateGroup(ctx context.Context, req UpdateGroupRequestObje
 	gid := req.GroupID
 	reqbody := req.Body
 
-	// if err := permissions.CheckAccess(ctx, gid, actionGroupUpdate); err != nil {
-	// 	return nil, permissionsError(err)
-	// }
-
 	if _, err := gidx.Parse(string(gid)); err != nil {
 		err = echo.NewHTTPError(
 			http.StatusBadRequest,
@@ -154,6 +166,10 @@ func (h *apiHandler) UpdateGroup(ctx context.Context, req UpdateGroupRequestObje
 		)
 
 		return nil, err
+	}
+
+	if err := permissions.CheckAccess(ctx, gid, actionGroupUpdate); err != nil {
+		return nil, permissionsError(err)
 	}
 
 	updates := types.GroupUpdate{
@@ -167,6 +183,15 @@ func (h *apiHandler) UpdateGroup(ctx context.Context, req UpdateGroupRequestObje
 			err = echo.NewHTTPError(
 				http.StatusNotFound,
 				fmt.Sprintf("group %s not found", gid),
+			)
+
+			return nil, err
+		}
+
+		if errors.Is(err, types.ErrGroupExists) {
+			err = echo.NewHTTPError(
+				http.StatusConflict,
+				"group with same name already exists",
 			)
 
 			return nil, err
@@ -187,10 +212,6 @@ func (h *apiHandler) UpdateGroup(ctx context.Context, req UpdateGroupRequestObje
 func (h *apiHandler) DeleteGroup(ctx context.Context, req DeleteGroupRequestObject) (DeleteGroupResponseObject, error) {
 	gid := req.GroupID
 
-	// if err := permissions.CheckAccess(ctx, gid, actionGroupDelete); err != nil {
-	// 	return nil, permissionsError(err)
-	// }
-
 	if _, err := gidx.Parse(string(gid)); err != nil {
 		err = echo.NewHTTPError(
 			http.StatusBadRequest,
@@ -198,6 +219,10 @@ func (h *apiHandler) DeleteGroup(ctx context.Context, req DeleteGroupRequestObje
 		)
 
 		return nil, err
+	}
+
+	if err := permissions.CheckAccess(ctx, gid, actionGroupDelete); err != nil {
+		return nil, permissionsError(err)
 	}
 
 	err := h.engine.DeleteGroup(ctx, gid)
