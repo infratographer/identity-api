@@ -25,6 +25,9 @@ var (
 
 	// ErrGroupNotFound is returned if the group doesn't exist.
 	ErrGroupNotFound = errors.New("group not found")
+
+	// ErrGroupExists is returned if the group already exists.
+	ErrGroupExists = errors.New("group already exists")
 )
 
 // ErrorInvalidTokenRequest represents an error where an access token request failed.

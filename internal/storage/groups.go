@@ -48,6 +48,10 @@ func newGroupService(db *sql.DB, opts ...groupServiceOpt) (*groupService, error)
 
 func (gs *groupService) CreateGroup(ctx context.Context, group types.Group) (*types.Group, error) {
 	if err := gs.insertGroup(ctx, group); err != nil {
+		if isPQDuplicateKeyError(err) {
+			return nil, types.ErrGroupExists
+		}
+
 		return nil, err
 	}
 
@@ -183,7 +187,11 @@ func (gs *groupService) UpdateGroup(ctx context.Context, id gidx.PrefixedID, upd
 		groupCols.Name, groupCols.Description, groupCols.ID,
 	)
 
-	if _, err := tx.ExecContext(ctx, q, incoming.Name, incoming.Description, id); err != nil {
+	if _, err := tx.ExecContext(ctx, q, incoming.Name, incoming.Description, incoming.ID); err != nil {
+		if isPQDuplicateKeyError(err) {
+			return nil, types.ErrGroupExists
+		}
+
 		return nil, err
 	}
 
