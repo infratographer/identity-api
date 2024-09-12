@@ -7,8 +7,13 @@ info:
 
 tags:
   - name: Issuers
+    description: Operations on Issuers
   - name: OAuthClients
+    description: Operations on OAuth Clients
   - name: Users
+    description: Operations on Users
+  - name: Groups
+    description: Operations on Groups
 
 paths:
   /api/v1/owners/{ownerID}/issuers:
