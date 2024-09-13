@@ -569,7 +569,8 @@ components:
         description:
           type: string
           description: a description for the group
-        owner:
+        owner_id:
+          x-go-name: OwnerID
           type: string
           x-go-type: gidx.PrefixedID
           description: ID of the owner of the group
