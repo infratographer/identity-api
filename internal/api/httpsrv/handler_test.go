@@ -294,13 +294,13 @@ func TestAPIHandler(t *testing.T) {
 
 		withStoredIssuers(t, store, &iss1, &iss2, &iss3)
 
-		testCases := []testingx.TestCase[GetOwnerIssuersRequestObject, GetOwnerIssuersResponseObject]{
+		testCases := []testingx.TestCase[ListOwnerIssuersRequestObject, ListOwnerIssuersResponseObject]{
 			{
 				Name: "Success (Default Pagination)",
-				Input: GetOwnerIssuersRequestObject{
+				Input: ListOwnerIssuersRequestObject{
 					OwnerID: issOwnerID,
 				},
-				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[GetOwnerIssuersResponseObject]) {
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[ListOwnerIssuersResponseObject]) {
 					if !assert.NoError(t, result.Err) {
 						return
 					}
@@ -311,7 +311,7 @@ func TestAPIHandler(t *testing.T) {
 						Limit: 10,
 					}
 
-					resp, ok := result.Success.(GetOwnerIssuers200JSONResponse)
+					resp, ok := result.Success.(ListOwnerIssuers200JSONResponse)
 					if !ok {
 						assert.FailNow(t, "unexpected result type for get issuer response")
 					}
@@ -322,13 +322,13 @@ func TestAPIHandler(t *testing.T) {
 			},
 			{
 				Name: "Success with limit",
-				Input: GetOwnerIssuersRequestObject{
+				Input: ListOwnerIssuersRequestObject{
 					OwnerID: issOwnerID,
-					Params: v1.GetOwnerIssuersParams{
+					Params: v1.ListOwnerIssuersParams{
 						Limit: ptr(1),
 					},
 				},
-				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[GetOwnerIssuersResponseObject]) {
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[ListOwnerIssuersResponseObject]) {
 					if !assert.NoError(t, result.Err) {
 						return
 					}
@@ -340,7 +340,7 @@ func TestAPIHandler(t *testing.T) {
 						Next:  pagination.MustNewCursor("id", iss1.ID.String()),
 					}
 
-					resp, ok := result.Success.(GetOwnerIssuers200JSONResponse)
+					resp, ok := result.Success.(ListOwnerIssuers200JSONResponse)
 					if !ok {
 						assert.FailNow(t, "unexpected result type for get issuer response")
 					}
@@ -351,14 +351,14 @@ func TestAPIHandler(t *testing.T) {
 			},
 			{
 				Name: "Success with cursor",
-				Input: GetOwnerIssuersRequestObject{
+				Input: ListOwnerIssuersRequestObject{
 					OwnerID: issOwnerID,
-					Params: v1.GetOwnerIssuersParams{
+					Params: v1.ListOwnerIssuersParams{
 						Cursor: pagination.MustNewCursor("id", iss1.ID.String()),
 						Limit:  ptr(1),
 					},
 				},
-				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[GetOwnerIssuersResponseObject]) {
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[ListOwnerIssuersResponseObject]) {
 					if !assert.NoError(t, result.Err) {
 						return
 					}
@@ -370,7 +370,7 @@ func TestAPIHandler(t *testing.T) {
 						Next:  pagination.MustNewCursor("id", iss2.ID.String()),
 					}
 
-					resp, ok := result.Success.(GetOwnerIssuers200JSONResponse)
+					resp, ok := result.Success.(ListOwnerIssuers200JSONResponse)
 					if !ok {
 						assert.FailNow(t, "unexpected result type for get issuer response")
 					}
@@ -381,14 +381,14 @@ func TestAPIHandler(t *testing.T) {
 			},
 			{
 				Name: "Success with cursor end of results",
-				Input: GetOwnerIssuersRequestObject{
+				Input: ListOwnerIssuersRequestObject{
 					OwnerID: issOwnerID,
-					Params: v1.GetOwnerIssuersParams{
+					Params: v1.ListOwnerIssuersParams{
 						Cursor: pagination.MustNewCursor("id", v1iss2.ID.String()),
 						Limit:  ptr(1),
 					},
 				},
-				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[GetOwnerIssuersResponseObject]) {
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[ListOwnerIssuersResponseObject]) {
 					if !assert.NoError(t, result.Err) {
 						return
 					}
@@ -399,7 +399,7 @@ func TestAPIHandler(t *testing.T) {
 						Limit: 1,
 					}
 
-					resp, ok := result.Success.(GetOwnerIssuers200JSONResponse)
+					resp, ok := result.Success.(ListOwnerIssuers200JSONResponse)
 					if !ok {
 						assert.FailNow(t, "unexpected result type for get issuer response")
 					}
@@ -410,12 +410,12 @@ func TestAPIHandler(t *testing.T) {
 			},
 		}
 
-		runFn := func(ctx context.Context, input GetOwnerIssuersRequestObject) testingx.TestResult[GetOwnerIssuersResponseObject] {
+		runFn := func(ctx context.Context, input ListOwnerIssuersRequestObject) testingx.TestResult[ListOwnerIssuersResponseObject] {
 			ctx = pagination.AsOfSystemTime(ctx, "")
 
-			resp, err := handler.GetOwnerIssuers(ctx, input)
+			resp, err := handler.ListOwnerIssuers(ctx, input)
 
-			result := testingx.TestResult[GetOwnerIssuersResponseObject]{
+			result := testingx.TestResult[ListOwnerIssuersResponseObject]{
 				Success: resp,
 				Err:     err,
 			}

@@ -97,7 +97,7 @@ func (h *apiHandler) GetIssuerByID(ctx context.Context, req GetIssuerByIDRequest
 	return GetIssuerByID200JSONResponse(out), nil
 }
 
-func (h *apiHandler) GetOwnerIssuers(ctx context.Context, req GetOwnerIssuersRequestObject) (GetOwnerIssuersResponseObject, error) {
+func (h *apiHandler) ListOwnerIssuers(ctx context.Context, req ListOwnerIssuersRequestObject) (ListOwnerIssuersResponseObject, error) {
 	if err := permissions.CheckAccess(ctx, req.OwnerID, actionIssuerList); err != nil {
 		return nil, permissionsError(err)
 	}
@@ -123,7 +123,7 @@ func (h *apiHandler) GetOwnerIssuers(ctx context.Context, req GetOwnerIssuersReq
 
 	out := IssuerCollectionJSONResponse(collection)
 
-	return GetOwnerIssuers200JSONResponse{out}, nil
+	return ListOwnerIssuers200JSONResponse{out}, nil
 }
 
 func (h *apiHandler) UpdateIssuer(ctx context.Context, req UpdateIssuerRequestObject) (UpdateIssuerResponseObject, error) {

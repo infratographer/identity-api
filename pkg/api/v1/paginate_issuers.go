@@ -2,15 +2,15 @@ package v1
 
 import "go.infratographer.com/identity-api/internal/crdbx"
 
-var _ crdbx.Paginator = GetOwnerIssuersParams{}
+var _ crdbx.Paginator = ListOwnerIssuersParams{}
 
 // GetCursor implements crdbx.Paginator returning the cursor.
-func (p GetOwnerIssuersParams) GetCursor() *crdbx.Cursor {
+func (p ListOwnerIssuersParams) GetCursor() *crdbx.Cursor {
 	return p.Cursor
 }
 
 // GetLimit implements crdbx.Paginator returning requested limit.
-func (p GetOwnerIssuersParams) GetLimit() int {
+func (p ListOwnerIssuersParams) GetLimit() int {
 	if p.Limit == nil {
 		return 0
 	}
@@ -19,12 +19,12 @@ func (p GetOwnerIssuersParams) GetLimit() int {
 }
 
 // GetOnlyFields implements crdbx.Paginator setting the only permitted field to `id`.
-func (p GetOwnerIssuersParams) GetOnlyFields() []string {
+func (p ListOwnerIssuersParams) GetOnlyFields() []string {
 	return []string{"id"}
 }
 
 // SetPagination sets the pagination on the provided collection.
-func (p GetOwnerIssuersParams) SetPagination(collection *IssuerCollection) error {
+func (p ListOwnerIssuersParams) SetPagination(collection *IssuerCollection) error {
 	collection.Pagination.Limit = crdbx.Limit(p.GetLimit())
 
 	if count := len(collection.Issuers); count != 0 && count == collection.Pagination.Limit {

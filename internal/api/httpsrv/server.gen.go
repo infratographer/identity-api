@@ -44,7 +44,7 @@ type ServerInterface interface {
 	CreateOAuthClient(ctx echo.Context, ownerID gidx.PrefixedID) error
 	// Gets issuers by owner id
 	// (GET /api/v1/owners/{ownerID}/issuers)
-	GetOwnerIssuers(ctx echo.Context, ownerID OwnerID, params GetOwnerIssuersParams) error
+	ListOwnerIssuers(ctx echo.Context, ownerID OwnerID, params ListOwnerIssuersParams) error
 	// Creates an issuer.
 	// (POST /api/v1/owners/{ownerID}/issuers)
 	CreateIssuer(ctx echo.Context, ownerID gidx.PrefixedID) error
@@ -218,8 +218,8 @@ func (w *ServerInterfaceWrapper) CreateOAuthClient(ctx echo.Context) error {
 	return err
 }
 
-// GetOwnerIssuers converts echo context to params.
-func (w *ServerInterfaceWrapper) GetOwnerIssuers(ctx echo.Context) error {
+// ListOwnerIssuers converts echo context to params.
+func (w *ServerInterfaceWrapper) ListOwnerIssuers(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "ownerID" -------------
 	var ownerID OwnerID
@@ -230,7 +230,7 @@ func (w *ServerInterfaceWrapper) GetOwnerIssuers(ctx echo.Context) error {
 	}
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params GetOwnerIssuersParams
+	var params ListOwnerIssuersParams
 	// ------------- Optional query parameter "cursor" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "cursor", ctx.QueryParams(), &params.Cursor)
@@ -246,7 +246,7 @@ func (w *ServerInterfaceWrapper) GetOwnerIssuers(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.GetOwnerIssuers(ctx, ownerID, params)
+	err = w.Handler.ListOwnerIssuers(ctx, ownerID, params)
 	return err
 }
 
@@ -318,7 +318,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/api/v1/issuers/:id/users", wrapper.GetIssuerUsers)
 	router.GET(baseURL+"/api/v1/owners/:ownerID/clients", wrapper.GetOwnerOAuthClients)
 	router.POST(baseURL+"/api/v1/owners/:ownerID/clients", wrapper.CreateOAuthClient)
-	router.GET(baseURL+"/api/v1/owners/:ownerID/issuers", wrapper.GetOwnerIssuers)
+	router.GET(baseURL+"/api/v1/owners/:ownerID/issuers", wrapper.ListOwnerIssuers)
 	router.POST(baseURL+"/api/v1/owners/:ownerID/issuers", wrapper.CreateIssuer)
 	router.GET(baseURL+"/api/v1/users/:userID", wrapper.GetUserByID)
 
@@ -486,18 +486,18 @@ func (response CreateOAuthClient200JSONResponse) VisitCreateOAuthClientResponse(
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetOwnerIssuersRequestObject struct {
+type ListOwnerIssuersRequestObject struct {
 	OwnerID OwnerID `json:"ownerID"`
-	Params  GetOwnerIssuersParams
+	Params  ListOwnerIssuersParams
 }
 
-type GetOwnerIssuersResponseObject interface {
-	VisitGetOwnerIssuersResponse(w http.ResponseWriter) error
+type ListOwnerIssuersResponseObject interface {
+	VisitListOwnerIssuersResponse(w http.ResponseWriter) error
 }
 
-type GetOwnerIssuers200JSONResponse struct{ IssuerCollectionJSONResponse }
+type ListOwnerIssuers200JSONResponse struct{ IssuerCollectionJSONResponse }
 
-func (response GetOwnerIssuers200JSONResponse) VisitGetOwnerIssuersResponse(w http.ResponseWriter) error {
+func (response ListOwnerIssuers200JSONResponse) VisitListOwnerIssuersResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
@@ -567,7 +567,7 @@ type StrictServerInterface interface {
 	CreateOAuthClient(ctx context.Context, request CreateOAuthClientRequestObject) (CreateOAuthClientResponseObject, error)
 	// Gets issuers by owner id
 	// (GET /api/v1/owners/{ownerID}/issuers)
-	GetOwnerIssuers(ctx context.Context, request GetOwnerIssuersRequestObject) (GetOwnerIssuersResponseObject, error)
+	ListOwnerIssuers(ctx context.Context, request ListOwnerIssuersRequestObject) (ListOwnerIssuersResponseObject, error)
 	// Creates an issuer.
 	// (POST /api/v1/owners/{ownerID}/issuers)
 	CreateIssuer(ctx context.Context, request CreateIssuerRequestObject) (CreateIssuerResponseObject, error)
@@ -802,26 +802,26 @@ func (sh *strictHandler) CreateOAuthClient(ctx echo.Context, ownerID gidx.Prefix
 	return nil
 }
 
-// GetOwnerIssuers operation middleware
-func (sh *strictHandler) GetOwnerIssuers(ctx echo.Context, ownerID OwnerID, params GetOwnerIssuersParams) error {
-	var request GetOwnerIssuersRequestObject
+// ListOwnerIssuers operation middleware
+func (sh *strictHandler) ListOwnerIssuers(ctx echo.Context, ownerID OwnerID, params ListOwnerIssuersParams) error {
+	var request ListOwnerIssuersRequestObject
 
 	request.OwnerID = ownerID
 	request.Params = params
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
-		return sh.ssi.GetOwnerIssuers(ctx.Request().Context(), request.(GetOwnerIssuersRequestObject))
+		return sh.ssi.ListOwnerIssuers(ctx.Request().Context(), request.(ListOwnerIssuersRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "GetOwnerIssuers")
+		handler = middleware(handler, "ListOwnerIssuers")
 	}
 
 	response, err := handler(ctx, request)
 
 	if err != nil {
 		return err
-	} else if validResponse, ok := response.(GetOwnerIssuersResponseObject); ok {
-		return validResponse.VisitGetOwnerIssuersResponse(ctx.Response())
+	} else if validResponse, ok := response.(ListOwnerIssuersResponseObject); ok {
+		return validResponse.VisitListOwnerIssuersResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("unexpected response type: %T", response)
 	}

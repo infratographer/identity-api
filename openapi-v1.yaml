@@ -14,7 +14,7 @@ paths:
   /api/v1/owners/{ownerID}/issuers:
     get:
       summary: Gets issuers by owner id
-      operationId: GetOwnerIssuers
+      operationId: ListOwnerIssuers
       tags:
         - Issuers
       parameters:
