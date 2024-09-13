@@ -6,6 +6,20 @@ import (
 	"go.infratographer.com/x/gidx"
 )
 
+// OAuthClients represents a list of token issuers.
+type OAuthClients []OAuthClient
+
+// ToV1OAuthClients converts an slice of issuers to a slice of API issuers.
+func (i OAuthClients) ToV1OAuthClients() ([]v1.OAuthClient, error) {
+	clients := make([]v1.OAuthClient, len(i))
+
+	for i, client := range i {
+		clients[i] = client.ToV1OAuthClient()
+	}
+
+	return clients, nil
+}
+
 // OAuthClient is an OAuth 2.0 Client
 type OAuthClient struct {
 	ID       gidx.PrefixedID

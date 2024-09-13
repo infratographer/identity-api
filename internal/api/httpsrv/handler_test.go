@@ -6,7 +6,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
+	pagination "go.infratographer.com/identity-api/internal/crdbx"
 	"go.infratographer.com/identity-api/internal/storage"
 	"go.infratographer.com/identity-api/internal/testingx"
 	"go.infratographer.com/identity-api/internal/types"
@@ -20,6 +22,19 @@ func ctxPermsAllow(ctx context.Context) context.Context {
 	return context.WithValue(ctx, permissions.CheckerCtxKey, permissions.DefaultAllowChecker)
 }
 
+func ptr[T any](v T) *T {
+	return &v
+}
+
+func must[T any](v T, err error) T {
+	if err != nil {
+		panic(err)
+	}
+
+	return v
+}
+
+//nolint:gocyclo
 func TestAPIHandler(t *testing.T) {
 	t.Parallel()
 
@@ -231,6 +246,176 @@ func TestAPIHandler(t *testing.T) {
 			resp, err := handler.GetIssuerByID(ctx, input)
 
 			result := testingx.TestResult[GetIssuerByIDResponseObject]{
+				Success: resp,
+				Err:     err,
+			}
+
+			return result
+		}
+
+		testingx.RunTests(ctxPermsAllow(context.Background()), t, testCases, runFn)
+	})
+
+	t.Run("ListIssuers", func(t *testing.T) {
+		t.Parallel()
+
+		handler := apiHandler{
+			engine: store,
+		}
+
+		var (
+			issOwnerID = gidx.PrefixedID("testten-" + t.Name())
+			iss1       = types.Issuer{
+				OwnerID: issOwnerID,
+				ID:      gidx.PrefixedID("testiss-" + t.Name() + "-1"),
+				Name:    t.Name() + "-1",
+				URI:     "https://" + t.Name() + "-1.example.com/",
+				JWKSURI: "https://" + t.Name() + "-1.example.com/.well-known/jwks.json",
+			}
+			v1iss1 = must(iss1.ToV1Issuer())
+
+			iss2 = types.Issuer{
+				OwnerID: issOwnerID,
+				ID:      gidx.PrefixedID("testiss-" + t.Name() + "-2"),
+				Name:    t.Name() + "-2",
+				URI:     "https://" + t.Name() + "-2.example.com/",
+				JWKSURI: "https://" + t.Name() + "-2.example.com/.well-known/jwks.json",
+			}
+			v1iss2 = must(iss2.ToV1Issuer())
+
+			iss3 = types.Issuer{
+				OwnerID: gidx.MustNewID("testten"),
+				ID:      gidx.PrefixedID("testiss-" + t.Name() + "-3"),
+				Name:    t.Name() + "-3",
+				URI:     "https://" + t.Name() + "-3.example.com/",
+				JWKSURI: "https://" + t.Name() + "-3.example.com/.well-known/jwks.json",
+			}
+		)
+
+		withStoredIssuers(t, store, &iss1, &iss2, &iss3)
+
+		testCases := []testingx.TestCase[ListOwnerIssuersRequestObject, ListOwnerIssuersResponseObject]{
+			{
+				Name: "Success (Default Pagination)",
+				Input: ListOwnerIssuersRequestObject{
+					OwnerID: issOwnerID,
+				},
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[ListOwnerIssuersResponseObject]) {
+					if !assert.NoError(t, result.Err) {
+						return
+					}
+
+					expIssuers := []v1.Issuer{v1iss1, v1iss2}
+
+					expPagination := v1.Pagination{
+						Limit: 10,
+					}
+
+					resp, ok := result.Success.(ListOwnerIssuers200JSONResponse)
+					if !ok {
+						assert.FailNow(t, "unexpected result type for get issuer response")
+					}
+
+					assert.Equal(t, expIssuers, resp.Issuers, "unexpected issuers returned")
+					assert.Equal(t, expPagination, resp.Pagination, "unexpected pagination returned")
+				},
+			},
+			{
+				Name: "Success with limit",
+				Input: ListOwnerIssuersRequestObject{
+					OwnerID: issOwnerID,
+					Params: v1.ListOwnerIssuersParams{
+						Limit: ptr(1),
+					},
+				},
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[ListOwnerIssuersResponseObject]) {
+					if !assert.NoError(t, result.Err) {
+						return
+					}
+
+					expIssuers := []v1.Issuer{v1iss1}
+
+					expPagination := v1.Pagination{
+						Limit: 1,
+						Next:  pagination.MustNewCursor("id", iss1.ID.String()),
+					}
+
+					resp, ok := result.Success.(ListOwnerIssuers200JSONResponse)
+					if !ok {
+						assert.FailNow(t, "unexpected result type for get issuer response")
+					}
+
+					assert.Equal(t, expIssuers, resp.Issuers, "unexpected issuers returned")
+					assert.Equal(t, expPagination, resp.Pagination, "unexpected pagination returned")
+				},
+			},
+			{
+				Name: "Success with cursor",
+				Input: ListOwnerIssuersRequestObject{
+					OwnerID: issOwnerID,
+					Params: v1.ListOwnerIssuersParams{
+						Cursor: pagination.MustNewCursor("id", iss1.ID.String()),
+						Limit:  ptr(1),
+					},
+				},
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[ListOwnerIssuersResponseObject]) {
+					if !assert.NoError(t, result.Err) {
+						return
+					}
+
+					expIssuers := []v1.Issuer{v1iss2}
+
+					expPagination := v1.Pagination{
+						Limit: 1,
+						Next:  pagination.MustNewCursor("id", iss2.ID.String()),
+					}
+
+					resp, ok := result.Success.(ListOwnerIssuers200JSONResponse)
+					if !ok {
+						assert.FailNow(t, "unexpected result type for get issuer response")
+					}
+
+					assert.Equal(t, expIssuers, resp.Issuers, "unexpected issuers returned")
+					assert.Equal(t, expPagination, resp.Pagination, "unexpected pagination returned")
+				},
+			},
+			{
+				Name: "Success with cursor end of results",
+				Input: ListOwnerIssuersRequestObject{
+					OwnerID: issOwnerID,
+					Params: v1.ListOwnerIssuersParams{
+						Cursor: pagination.MustNewCursor("id", v1iss2.ID.String()),
+						Limit:  ptr(1),
+					},
+				},
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[ListOwnerIssuersResponseObject]) {
+					if !assert.NoError(t, result.Err) {
+						return
+					}
+
+					expIssuers := []v1.Issuer{}
+
+					expPagination := v1.Pagination{
+						Limit: 1,
+					}
+
+					resp, ok := result.Success.(ListOwnerIssuers200JSONResponse)
+					if !ok {
+						assert.FailNow(t, "unexpected result type for get issuer response")
+					}
+
+					assert.Equal(t, expIssuers, resp.Issuers, "unexpected issuers returned")
+					assert.Equal(t, expPagination, resp.Pagination, "unexpected pagination returned")
+				},
+			},
+		}
+
+		runFn := func(ctx context.Context, input ListOwnerIssuersRequestObject) testingx.TestResult[ListOwnerIssuersResponseObject] {
+			ctx = pagination.AsOfSystemTime(ctx, "")
+
+			resp, err := handler.ListOwnerIssuers(ctx, input)
+
+			result := testingx.TestResult[ListOwnerIssuersResponseObject]{
 				Success: resp,
 				Err:     err,
 			}
@@ -576,6 +761,177 @@ func TestAPIHandler(t *testing.T) {
 		testingx.RunTests(ctxPermsAllow(context.Background()), t, testCases, runFn)
 	})
 
+	t.Run("ListOAuthClients", func(t *testing.T) {
+		t.Parallel()
+
+		handler := apiHandler{
+			engine: store,
+		}
+
+		var (
+			cliOwnerID = gidx.PrefixedID("testten-" + t.Name())
+			cli1       = types.OAuthClient{
+				OwnerID: cliOwnerID,
+				Name:    t.Name() + "-1",
+				Secret:  "abc1234",
+			}
+
+			cli2 = types.OAuthClient{
+				OwnerID: cliOwnerID,
+				Name:    t.Name() + "-2",
+				Secret:  "def4567",
+			}
+
+			cli3 = types.OAuthClient{
+				OwnerID: gidx.MustNewID("testten"),
+				Name:    t.Name() + "-3",
+				Secret:  "ghi7890",
+			}
+		)
+
+		withStoredClients(t, store, &cli1, &cli2, &cli3)
+
+		// fetch the stored clients so we know the order to be able to assert expected results
+		clients, err := store.GetOwnerOAuthClients(pagination.AsOfSystemTime(context.Background(), ""), cliOwnerID, pagination.Pagination{})
+		require.NoError(t, err, "unexpected error fetching clients")
+
+		require.Len(t, clients, 2, "expected two clients to exist")
+
+		cli1, cli2 = clients[0], clients[1]
+		v1cli1, v1cli2 := cli1.ToV1OAuthClient(), cli2.ToV1OAuthClient()
+
+		testCases := []testingx.TestCase[GetOwnerOAuthClientsRequestObject, GetOwnerOAuthClientsResponseObject]{
+			{
+				Name: "Success (Default Pagination)",
+				Input: GetOwnerOAuthClientsRequestObject{
+					OwnerID: cliOwnerID,
+				},
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[GetOwnerOAuthClientsResponseObject]) {
+					if !assert.NoError(t, result.Err) {
+						return
+					}
+
+					expClients := []v1.OAuthClient{v1cli1, v1cli2}
+
+					expPagination := v1.Pagination{
+						Limit: 10,
+					}
+
+					resp, ok := result.Success.(GetOwnerOAuthClients200JSONResponse)
+					if !ok {
+						assert.FailNow(t, "unexpected result type for get OAuth client response")
+					}
+
+					assert.Equal(t, expClients, resp.Clients, "unexpected OAuth clients returned")
+					assert.Equal(t, expPagination, resp.Pagination, "unexpected pagination returned")
+				},
+			},
+			{
+				Name: "Success with limit",
+				Input: GetOwnerOAuthClientsRequestObject{
+					OwnerID: cliOwnerID,
+					Params: v1.GetOwnerOAuthClientsParams{
+						Limit: ptr(1),
+					},
+				},
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[GetOwnerOAuthClientsResponseObject]) {
+					if !assert.NoError(t, result.Err) {
+						return
+					}
+
+					expClients := []v1.OAuthClient{v1cli1}
+
+					expPagination := v1.Pagination{
+						Limit: 1,
+						Next:  pagination.MustNewCursor("id", cli1.ID.String()),
+					}
+
+					resp, ok := result.Success.(GetOwnerOAuthClients200JSONResponse)
+					if !ok {
+						assert.FailNow(t, "unexpected result type for get OAuth client response")
+					}
+
+					assert.Equal(t, expClients, resp.Clients, "unexpected OAuth clients returned")
+					assert.Equal(t, expPagination, resp.Pagination, "unexpected pagination returned")
+				},
+			},
+			{
+				Name: "Success with cursor",
+				Input: GetOwnerOAuthClientsRequestObject{
+					OwnerID: cliOwnerID,
+					Params: v1.GetOwnerOAuthClientsParams{
+						Cursor: pagination.MustNewCursor("id", cli1.ID.String()),
+						Limit:  ptr(1),
+					},
+				},
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[GetOwnerOAuthClientsResponseObject]) {
+					if !assert.NoError(t, result.Err) {
+						return
+					}
+
+					expClients := []v1.OAuthClient{v1cli2}
+
+					expPagination := v1.Pagination{
+						Limit: 1,
+						Next:  pagination.MustNewCursor("id", cli2.ID.String()),
+					}
+
+					resp, ok := result.Success.(GetOwnerOAuthClients200JSONResponse)
+					if !ok {
+						assert.FailNow(t, "unexpected result type for get OAuth client response")
+					}
+
+					assert.Equal(t, expClients, resp.Clients, "unexpected OAuth clients returned")
+					assert.Equal(t, expPagination, resp.Pagination, "unexpected pagination returned")
+				},
+			},
+			{
+				Name: "Success with cursor end of results",
+				Input: GetOwnerOAuthClientsRequestObject{
+					OwnerID: cliOwnerID,
+					Params: v1.GetOwnerOAuthClientsParams{
+						Cursor: pagination.MustNewCursor("id", v1cli2.ID.String()),
+						Limit:  ptr(1),
+					},
+				},
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[GetOwnerOAuthClientsResponseObject]) {
+					if !assert.NoError(t, result.Err) {
+						return
+					}
+
+					expClients := []v1.OAuthClient{}
+
+					expPagination := v1.Pagination{
+						Limit: 1,
+					}
+
+					resp, ok := result.Success.(GetOwnerOAuthClients200JSONResponse)
+					if !ok {
+						assert.FailNow(t, "unexpected result type for get OAuth client response")
+					}
+
+					assert.Equal(t, expClients, resp.Clients, "unexpected OAuth clients returned")
+					assert.Equal(t, expPagination, resp.Pagination, "unexpected pagination returned")
+				},
+			},
+		}
+
+		runFn := func(ctx context.Context, input GetOwnerOAuthClientsRequestObject) testingx.TestResult[GetOwnerOAuthClientsResponseObject] {
+			ctx = pagination.AsOfSystemTime(ctx, "")
+
+			resp, err := handler.GetOwnerOAuthClients(ctx, input)
+
+			result := testingx.TestResult[GetOwnerOAuthClientsResponseObject]{
+				Success: resp,
+				Err:     err,
+			}
+
+			return result
+		}
+
+		testingx.RunTests(ctxPermsAllow(context.Background()), t, testCases, runFn)
+	})
+
 	t.Run("DeleteOAuthClient", func(t *testing.T) {
 		t.Parallel()
 
@@ -747,6 +1103,201 @@ func TestAPIHandler(t *testing.T) {
 			resp, err := handler.GetUserByID(ctx, input)
 
 			result := testingx.TestResult[GetUserByIDResponseObject]{
+				Success: resp,
+				Err:     err,
+			}
+
+			return result
+		}
+
+		testingx.RunTests(ctxPermsAllow(context.Background()), t, testCases, runFn)
+	})
+
+	t.Run("ListIssuerUsers", func(t *testing.T) {
+		t.Parallel()
+
+		handler := apiHandler{
+			engine: store,
+		}
+
+		var (
+			issOwnerID = gidx.PrefixedID("testten-" + t.Name())
+
+			iss1dom = t.Name() + "-1.example.com"
+			iss1    = types.Issuer{
+				OwnerID: issOwnerID,
+				ID:      gidx.MustNewID("testiss"),
+				Name:    t.Name() + "-1",
+				URI:     "https://" + iss1dom + "/",
+				JWKSURI: "https://" + iss1dom + "/.well-known/jwks.json",
+			}
+
+			iss2dom = t.Name() + "-2.example.com"
+			iss2    = types.Issuer{
+				OwnerID: issOwnerID,
+				ID:      gidx.MustNewID("testiss"),
+				Name:    t.Name() + "-2",
+				URI:     "https://" + iss2dom + "/",
+				JWKSURI: "https://" + iss2dom + "/.well-known/jwks.json",
+			}
+		)
+
+		withStoredIssuers(t, store, &iss1, &iss2)
+
+		var (
+			usr1 = types.UserInfo{
+				Name:    t.Name() + "-1.1",
+				Email:   t.Name() + "-1.1@" + iss1dom,
+				Issuer:  iss1.URI,
+				Subject: t.Name() + "-1.1 Test",
+			}
+			usr2 = types.UserInfo{
+				Name:    t.Name() + "-1.2",
+				Email:   t.Name() + "-1.2@" + iss1dom,
+				Issuer:  iss1.URI,
+				Subject: t.Name() + "-1.2 Test",
+			}
+			usr3 = types.UserInfo{
+				Name:    t.Name() + "-2.1",
+				Email:   t.Name() + "-2.1@" + iss2dom,
+				Issuer:  iss2.URI,
+				Subject: t.Name() + "-2.1 Test",
+			}
+		)
+
+		withStoredUsers(t, store, &usr1, &usr2, &usr3)
+
+		// fetch the stored users so we know the order to be able to assert expected results
+		users, err := store.LookupUserInfosByIssuerID(pagination.AsOfSystemTime(context.Background(), ""), iss1.ID, pagination.Pagination{})
+		require.NoError(t, err, "unexpected error fetching users")
+
+		require.Len(t, users, 2, "expected two users to exist")
+
+		usr1, usr2 = users[0], users[1]
+		v1usr1, v1usr2 := must(usr1.ToV1User()), must(usr2.ToV1User())
+
+		testCases := []testingx.TestCase[GetIssuerUsersRequestObject, GetIssuerUsersResponseObject]{
+			{
+				Name: "Success (Default Pagination)",
+				Input: GetIssuerUsersRequestObject{
+					IssuerID: iss1.ID,
+				},
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[GetIssuerUsersResponseObject]) {
+					if !assert.NoError(t, result.Err) {
+						return
+					}
+
+					expUsers := []v1.User{v1usr1, v1usr2}
+
+					expPagination := v1.Pagination{
+						Limit: 10,
+					}
+
+					resp, ok := result.Success.(GetIssuerUsers200JSONResponse)
+					if !ok {
+						assert.FailNow(t, "unexpected result type for get users response")
+					}
+
+					assert.Equal(t, expUsers, resp.Users, "unexpected users returned")
+					assert.Equal(t, expPagination, resp.Pagination, "unexpected pagination returned")
+				},
+			},
+			{
+				Name: "Success with limit",
+				Input: GetIssuerUsersRequestObject{
+					IssuerID: iss1.ID,
+					Params: v1.GetIssuerUsersParams{
+						Limit: ptr(1),
+					},
+				},
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[GetIssuerUsersResponseObject]) {
+					if !assert.NoError(t, result.Err) {
+						return
+					}
+
+					expUsers := []v1.User{v1usr1}
+
+					expPagination := v1.Pagination{
+						Limit: 1,
+						Next:  pagination.MustNewCursor("id", usr1.ID.String()),
+					}
+
+					resp, ok := result.Success.(GetIssuerUsers200JSONResponse)
+					if !ok {
+						assert.FailNow(t, "unexpected result type for get users response")
+					}
+
+					assert.Equal(t, expUsers, resp.Users, "unexpected users returned")
+					assert.Equal(t, expPagination, resp.Pagination, "unexpected pagination returned")
+				},
+			},
+			{
+				Name: "Success with cursor",
+				Input: GetIssuerUsersRequestObject{
+					IssuerID: iss1.ID,
+					Params: v1.GetIssuerUsersParams{
+						Cursor: pagination.MustNewCursor("id", usr1.ID.String()),
+						Limit:  ptr(1),
+					},
+				},
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[GetIssuerUsersResponseObject]) {
+					if !assert.NoError(t, result.Err) {
+						return
+					}
+
+					expUsers := []v1.User{v1usr2}
+
+					expPagination := v1.Pagination{
+						Limit: 1,
+						Next:  pagination.MustNewCursor("id", usr2.ID.String()),
+					}
+
+					resp, ok := result.Success.(GetIssuerUsers200JSONResponse)
+					if !ok {
+						assert.FailNow(t, "unexpected result type for get users response")
+					}
+
+					assert.Equal(t, expUsers, resp.Users, "unexpected users returned")
+					assert.Equal(t, expPagination, resp.Pagination, "unexpected pagination returned")
+				},
+			},
+			{
+				Name: "Success with cursor end of results",
+				Input: GetIssuerUsersRequestObject{
+					IssuerID: iss1.ID,
+					Params: v1.GetIssuerUsersParams{
+						Cursor: pagination.MustNewCursor("id", v1usr2.ID.String()),
+						Limit:  ptr(1),
+					},
+				},
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[GetIssuerUsersResponseObject]) {
+					if !assert.NoError(t, result.Err) {
+						return
+					}
+
+					expUsers := []v1.User{}
+
+					expPagination := v1.Pagination{
+						Limit: 1,
+					}
+
+					resp, ok := result.Success.(GetIssuerUsers200JSONResponse)
+					if !ok {
+						assert.FailNow(t, "unexpected result type for get users response")
+					}
+
+					assert.Equal(t, expUsers, resp.Users, "unexpected users returned")
+					assert.Equal(t, expPagination, resp.Pagination, "unexpected pagination returned")
+				},
+			},
+		}
+
+		runFn := func(ctx context.Context, input GetIssuerUsersRequestObject) testingx.TestResult[GetIssuerUsersResponseObject] {
+			ctx = pagination.AsOfSystemTime(ctx, "")
+
+			resp, err := handler.GetIssuerUsers(ctx, input)
+
+			result := testingx.TestResult[GetIssuerUsersResponseObject]{
 				Success: resp,
 				Err:     err,
 			}

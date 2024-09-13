@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ory/fosite"
+	"go.infratographer.com/identity-api/internal/crdbx"
 	"go.infratographer.com/identity-api/internal/types"
 	"go.infratographer.com/x/gidx"
 )
@@ -176,4 +177,49 @@ func (s *oauthClientManager) LookupOAuthClientByID(ctx context.Context, clientID
 	model.Audience = strings.Fields(aud)
 
 	return model, nil
+}
+
+// GetOwnerOAuthClients lists issuers by it's owners ID.
+func (s *oauthClientManager) GetOwnerOAuthClients(ctx context.Context, id gidx.PrefixedID, pagination crdbx.Paginator) (types.OAuthClients, error) {
+	paginate := crdbx.Paginate(pagination, crdbx.ContextAsOfSystemTime(ctx, "-1m"))
+
+	query := fmt.Sprintf("SELECT %s FROM oauth_clients %s WHERE owner_id = $1 %s %s %s", oauthClientColumnsStr,
+		paginate.AsOfSystemTime(),
+		paginate.AndWhere(2), //nolint:gomnd
+		paginate.OrderClause(),
+		paginate.LimitClause(),
+	)
+
+	rows, err := s.db.QueryContext(ctx, query, paginate.Values(id)...)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var clients types.OAuthClients
+
+	for rows.Next() {
+		var (
+			model types.OAuthClient
+			aud   string
+		)
+
+		err = rows.Scan(
+			&model.ID,
+			&model.OwnerID,
+			&model.Name,
+			&model.Secret,
+			&aud,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		model.Audience = strings.Fields(aud)
+
+		clients = append(clients, model)
+	}
+
+	return clients, nil
 }

@@ -10,9 +10,29 @@ import (
 	"google.golang.org/protobuf/encoding/prototext"
 
 	"go.infratographer.com/identity-api/internal/celutils"
+	"go.infratographer.com/identity-api/internal/crdbx"
 	v1 "go.infratographer.com/identity-api/pkg/api/v1"
 	"go.infratographer.com/x/gidx"
 )
+
+// Issuers represents a list of token issuers.
+type Issuers []*Issuer
+
+// ToV1Issuers converts an slice of issuers to a slice of API issuers.
+func (i Issuers) ToV1Issuers() ([]v1.Issuer, error) {
+	issuers := make([]v1.Issuer, len(i))
+
+	for i, iss := range i {
+		v1iss, err := iss.ToV1Issuer()
+		if err != nil {
+			return nil, err
+		}
+
+		issuers[i] = v1iss
+	}
+
+	return issuers, nil
+}
 
 // Issuer represents a token issuer.
 type Issuer struct {
@@ -60,6 +80,7 @@ type IssuerUpdate struct {
 type IssuerService interface {
 	CreateIssuer(ctx context.Context, iss Issuer) (*Issuer, error)
 	GetIssuerByID(ctx context.Context, id gidx.PrefixedID) (*Issuer, error)
+	GetOwnerIssuers(ctx context.Context, id gidx.PrefixedID, pagination crdbx.Paginator) (Issuers, error)
 	GetIssuerByURI(ctx context.Context, uri string) (*Issuer, error)
 	UpdateIssuer(ctx context.Context, id gidx.PrefixedID, update IssuerUpdate) (*Issuer, error)
 	DeleteIssuer(ctx context.Context, id gidx.PrefixedID) error
@@ -162,6 +183,25 @@ func BuildClaimsMappingFromMap(in map[string]*exprpb.CheckedExpr) ClaimsMapping 
 	return out
 }
 
+// UserInfos represents a list of token issuers.
+type UserInfos []UserInfo
+
+// ToV1Users converts an slice of issuers to a slice of API issuers.
+func (i UserInfos) ToV1Users() ([]v1.User, error) {
+	users := make([]v1.User, len(i))
+
+	for i, user := range i {
+		v1user, err := user.ToV1User()
+		if err != nil {
+			return nil, err
+		}
+
+		users[i] = v1user
+	}
+
+	return users, nil
+}
+
 // UserInfo contains information about the user from the source OIDC provider.
 // As defined in https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
 type UserInfo struct {
@@ -210,6 +250,9 @@ type UserInfoService interface {
 	// LookupUserOwnerID finds the Owner ID of the Issuer for the given User ID.
 	LookupUserOwnerID(ctx context.Context, id gidx.PrefixedID) (gidx.PrefixedID, error)
 
+	// LookupUserInfosByIssuerID returns the user infos for an STS issuer ID
+	LookupUserInfosByIssuerID(ctx context.Context, id gidx.PrefixedID, paginator crdbx.Paginator) (UserInfos, error)
+
 	// StoreUserInfo stores the userInfo into the storage backend.
 	StoreUserInfo(ctx context.Context, userInfo UserInfo) (UserInfo, error)
 
@@ -222,4 +265,5 @@ type OAuthClientManager interface {
 	CreateOAuthClient(ctx context.Context, client OAuthClient) (OAuthClient, error)
 	LookupOAuthClientByID(ctx context.Context, clientID gidx.PrefixedID) (OAuthClient, error)
 	DeleteOAuthClient(ctx context.Context, clientID gidx.PrefixedID) error
+	GetOwnerOAuthClients(ctx context.Context, ownerID gidx.PrefixedID, pagination crdbx.Paginator) (OAuthClients, error)
 }

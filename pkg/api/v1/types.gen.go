@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"go.infratographer.com/identity-api/internal/crdbx"
 	"go.infratographer.com/x/gidx"
 )
 
@@ -94,6 +95,15 @@ type OAuthClient struct {
 	Secret *string `json:"secret,omitempty"`
 }
 
+// Pagination collection response pagination
+type Pagination struct {
+	// Limit the limit used for the collection response
+	Limit int `json:"limit"`
+
+	// Next the cursor for the next page
+	Next *crdbx.Cursor `json:"next,omitempty"`
+}
+
 // User defines model for User.
 type User struct {
 	// Email Email of the user
@@ -112,6 +122,68 @@ type User struct {
 	Subject string `json:"sub"`
 }
 
+// IssuerID defines model for issuerID.
+type IssuerID = gidx.PrefixedID
+
+// OwnerID defines model for ownerID.
+type OwnerID = gidx.PrefixedID
+
+// PageCursor defines model for pageCursor.
+type PageCursor = crdbx.Cursor
+
+// PageLimit defines model for pageLimit.
+type PageLimit = int
+
+// IssuerCollection defines model for IssuerCollection.
+type IssuerCollection struct {
+	Issuers []Issuer `json:"issuers"`
+
+	// Pagination collection response pagination
+	Pagination Pagination `json:"pagination"`
+}
+
+// OAuthClientCollection defines model for OAuthClientCollection.
+type OAuthClientCollection struct {
+	Clients []OAuthClient `json:"clients"`
+
+	// Pagination collection response pagination
+	Pagination Pagination `json:"pagination"`
+}
+
+// UserCollection defines model for UserCollection.
+type UserCollection struct {
+	// Pagination collection response pagination
+	Pagination Pagination `json:"pagination"`
+	Users      []User     `json:"users"`
+}
+
+// GetIssuerUsersParams defines parameters for GetIssuerUsers.
+type GetIssuerUsersParams struct {
+	// Cursor the cursor to the results to return
+	Cursor *PageCursor `form:"cursor,omitempty" json:"cursor,omitempty" query:"cursor"`
+
+	// Limit limits the response collections
+	Limit *PageLimit `form:"limit,omitempty" json:"limit,omitempty" query:"limit"`
+}
+
+// GetOwnerOAuthClientsParams defines parameters for GetOwnerOAuthClients.
+type GetOwnerOAuthClientsParams struct {
+	// Cursor the cursor to the results to return
+	Cursor *PageCursor `form:"cursor,omitempty" json:"cursor,omitempty" query:"cursor"`
+
+	// Limit limits the response collections
+	Limit *PageLimit `form:"limit,omitempty" json:"limit,omitempty" query:"limit"`
+}
+
+// ListOwnerIssuersParams defines parameters for ListOwnerIssuers.
+type ListOwnerIssuersParams struct {
+	// Cursor the cursor to the results to return
+	Cursor *PageCursor `form:"cursor,omitempty" json:"cursor,omitempty" query:"cursor"`
+
+	// Limit limits the response collections
+	Limit *PageLimit `form:"limit,omitempty" json:"limit,omitempty" query:"limit"`
+}
+
 // UpdateIssuerJSONRequestBody defines body for UpdateIssuer for application/json ContentType.
 type UpdateIssuerJSONRequestBody = IssuerUpdate
 
@@ -124,26 +196,36 @@ type CreateIssuerJSONRequestBody = CreateIssuer
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"bwAAAP//f8VLflsnAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

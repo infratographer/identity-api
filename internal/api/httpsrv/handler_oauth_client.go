@@ -6,6 +6,7 @@ import (
 
 	"go.infratographer.com/identity-api/internal/crypto"
 	"go.infratographer.com/identity-api/internal/types"
+	v1 "go.infratographer.com/identity-api/pkg/api/v1"
 	"go.infratographer.com/permissions-api/pkg/permissions"
 )
 
@@ -15,6 +16,7 @@ const (
 	actionOAuthClientCreate = "iam_oauthclient_create"
 	actionOAuthClientDelete = "iam_oauthclient_delete"
 	actionOAuthClientGet    = "iam_oauthclient_get"
+	actionOAuthClientList   = "iam_oauthclient_list"
 )
 
 // CreateOAuthClient creates a client for a owner with a set name.
@@ -76,6 +78,35 @@ func (h *apiHandler) GetOAuthClient(ctx context.Context, request GetOAuthClientR
 	apiType := client.ToV1OAuthClient()
 
 	return GetOAuthClient200JSONResponse(apiType), nil
+}
+
+func (h *apiHandler) GetOwnerOAuthClients(ctx context.Context, req GetOwnerOAuthClientsRequestObject) (GetOwnerOAuthClientsResponseObject, error) {
+	if err := permissions.CheckAccess(ctx, req.OwnerID, actionOAuthClientList); err != nil {
+		return nil, permissionsError(err)
+	}
+
+	iss, err := h.engine.GetOwnerOAuthClients(ctx, req.OwnerID, req.Params)
+	if err != nil {
+		return nil, err
+	}
+
+	clients, err := iss.ToV1OAuthClients()
+	if err != nil {
+		return nil, err
+	}
+
+	collection := v1.OAuthClientCollection{
+		Clients:    clients,
+		Pagination: v1.Pagination{},
+	}
+
+	if err := req.Params.SetPagination(&collection); err != nil {
+		return nil, err
+	}
+
+	out := OAuthClientCollectionJSONResponse(collection)
+
+	return GetOwnerOAuthClients200JSONResponse{out}, nil
 }
 
 // DeleteOAuthClient removes the OAuth client.
