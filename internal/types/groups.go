@@ -22,9 +22,9 @@ type Group struct {
 // ToV1Group converts a group to an API group.
 func (g *Group) ToV1Group() (v1.Group, error) {
 	group := v1.Group{
-		ID:    g.ID,
-		Owner: g.OwnerID,
-		Name:  g.Name,
+		ID:      g.ID,
+		Name:    g.Name,
+		OwnerID: &g.OwnerID,
 	}
 
 	if g.Description != "" {
