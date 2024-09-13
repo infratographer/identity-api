@@ -73,6 +73,10 @@ func (gs *groupService) insertGroup(ctx context.Context, group types.Group) erro
 		return err
 	}
 
+	if group.Name == "" {
+		return types.ErrGroupNameEmpty
+	}
+
 	cols := []string{
 		groupCols.ID,
 		groupCols.OwnerID,

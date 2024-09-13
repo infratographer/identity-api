@@ -66,6 +66,8 @@ func (h *apiHandler) CreateGroup(ctx context.Context, req CreateGroupRequestObje
 				http.StatusConflict,
 				fmt.Sprintf("group \"%s\" already exists", reqbody.Name),
 			)
+		} else if errors.Is(err, types.ErrInvalidArgument) {
+			err = echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 
 		return nil, err
@@ -98,7 +100,7 @@ func (h *apiHandler) GetGroupByID(ctx context.Context, req GetGroupByIDRequestOb
 
 	g, err := h.engine.GetGroupByID(ctx, gid)
 	if err != nil {
-		if errors.Is(err, types.ErrGroupNotFound) {
+		if errors.Is(err, types.ErrNotFound) {
 			err = echo.NewHTTPError(
 				http.StatusNotFound,
 				fmt.Sprintf("group %s not found", gid),
@@ -227,13 +229,17 @@ func (h *apiHandler) DeleteGroup(ctx context.Context, req DeleteGroupRequestObje
 
 	err := h.engine.DeleteGroup(ctx, gid)
 	if err != nil {
-		if errors.Is(err, types.ErrGroupNotFound) {
+		if errors.Is(err, types.ErrNotFound) {
 			err = echo.NewHTTPError(
 				http.StatusNotFound,
 				fmt.Sprintf("group %s not found", gid),
 			)
 
 			return nil, err
+		}
+
+		if errors.Is(err, types.ErrInvalidArgument) {
+			return nil, echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 
 		return nil, err
