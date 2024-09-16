@@ -105,22 +105,12 @@ paths:
       description: List all groups for an owner.
       operationId: listGroups
       parameters:
-        - in: path
-          name: ownerID
-          required: true
-          description: Owner to list groups for
-          schema:
-            type: string
-            x-go-type: gidx.PrefixedID
+        - $ref: '#/components/parameters/ownerID'
+        - $ref: '#/components/parameters/pageCursor'
+        - $ref: '#/components/parameters/pageLimit'
       responses:
         '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Group'
+          $ref: '#/components/responses/GroupCollection'
 
     post:
       tags:
@@ -129,13 +119,7 @@ paths:
       description: Creates a group under the given owner.
       operationId: createGroup
       parameters:
-        - in: path
-          name: ownerID
-          required: true
-          description: Owner to provision the group under
-          schema:
-            type: string
-            x-go-type: gidx.PrefixedID
+        - $ref: '#/components/parameters/ownerID'
       requestBody:
         required: true
         content:
@@ -306,13 +290,7 @@ paths:
       description: Deletes a group by ID.
       operationId: deleteGroup
       parameters:
-        - in: path
-          name: groupID
-          required: true
-          description: Group ID
-          schema:
-            type: string
-            x-go-type: gidx.PrefixedID
+        - $ref: '#/components/parameters/groupID'
       responses:
         '200':
           description: Successful Response
@@ -327,13 +305,7 @@ paths:
       description: Updates a group by ID, only name and description can be updated.
       operationId: updateGroup
       parameters:
-        - in: path
-          name: groupID
-          required: true
-          description: Group ID
-          schema:
-            type: string
-            x-go-type: gidx.PrefixedID
+        - $ref: '#/components/parameters/groupID'
       requestBody:
         required: true
         content:
@@ -354,13 +326,7 @@ paths:
       operationId: getGroupByID
       description: Gets a group by ID.
       parameters:
-        - in: path
-          name: groupID
-          required: true
-          description: Group ID
-          schema:
-            type: string
-            x-go-type: gidx.PrefixedID
+        - $ref: '#/components/parameters/groupID'
       responses:
         '200':
           description: Successful Response
@@ -620,6 +586,17 @@ components:
         x-go-type: gidx.PrefixedID
         x-go-type-import:
           path: go.infratographer.com/x/gidx
+    groupID:
+      description: id of a group
+      in: path
+      name: groupID
+      x-go-name: GroupID
+      required: true
+      schema:
+        type: string
+        x-go-type: gidx.PrefixedID
+        x-go-type-import:
+          path: go.infratographer.com/x/gidx
     pageCursor:
       description: the cursor to the results to return
       in: query
@@ -689,5 +666,21 @@ components:
                 type: array
                 items:
                   $ref: '#/components/schemas/User'
+              pagination:
+                $ref: '#/components/schemas/Pagination'
+    GroupCollection:
+      description: a collection of groups
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - groups
+              - pagination
+            properties:
+              groups:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Group'
               pagination:
                 $ref: '#/components/schemas/Pagination'

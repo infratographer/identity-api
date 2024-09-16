@@ -3,6 +3,7 @@ package types
 import (
 	"context"
 
+	"go.infratographer.com/identity-api/internal/crdbx"
 	v1 "go.infratographer.com/identity-api/pkg/api/v1"
 	"go.infratographer.com/x/gidx"
 )
@@ -44,7 +45,26 @@ type GroupUpdate struct {
 type GroupService interface {
 	CreateGroup(ctx context.Context, group Group) (*Group, error)
 	GetGroupByID(ctx context.Context, id gidx.PrefixedID) (*Group, error)
-	ListGroups(ctx context.Context, ownerID gidx.PrefixedID) ([]*Group, error)
+	ListGroups(ctx context.Context, ownerID gidx.PrefixedID, pagination crdbx.Paginator) (Groups, error)
 	UpdateGroup(ctx context.Context, id gidx.PrefixedID, update GroupUpdate) (*Group, error)
 	DeleteGroup(ctx context.Context, id gidx.PrefixedID) error
+}
+
+// Groups represents a list of groups
+type Groups []*Group
+
+// ToV1Groups converts a list of groups to a list of API groups.
+func (g Groups) ToV1Groups() ([]v1.Group, error) {
+	out := make([]v1.Group, len(g))
+
+	for i, group := range g {
+		v1Group, err := group.ToV1Group()
+		if err != nil {
+			return nil, err
+		}
+
+		out[i] = v1Group
+	}
+
+	return out, nil
 }

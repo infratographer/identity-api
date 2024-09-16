@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"go.infratographer.com/identity-api/internal/crdbx"
 	"go.infratographer.com/identity-api/internal/types"
 	"go.infratographer.com/x/gidx"
 )
@@ -137,23 +138,28 @@ func (gs *groupService) scanGroup(row *sql.Row) (*types.Group, error) {
 	return &g, nil
 }
 
-func (gs *groupService) ListGroups(ctx context.Context, ownerID gidx.PrefixedID) ([]*types.Group, error) {
+func (gs *groupService) ListGroups(ctx context.Context, ownerID gidx.PrefixedID, pagination crdbx.Paginator) (types.Groups, error) {
+	paginate := crdbx.Paginate(pagination, crdbx.ContextAsOfSystemTime(ctx, "-1m"))
+
 	q := fmt.Sprintf(
-		"SELECT %s FROM groups WHERE %s = $1",
-		groupColsStr, groupCols.OwnerID,
+		"SELECT %s FROM groups %s WHERE %s = $1 %s %s %s",
+		groupColsStr, paginate.AsOfSystemTime(), groupCols.OwnerID,
+		paginate.AndWhere(2), //nolint:gomnd
+		paginate.OrderClause(),
+		paginate.LimitClause(),
 	)
 
-	rows, err := gs.db.QueryContext(ctx, q, ownerID)
+	rows, err := gs.db.QueryContext(ctx, q, paginate.Values(ownerID)...)
 	if err != nil {
 		return nil, err
 	}
 
 	defer rows.Close()
 
-	var groups []*types.Group
+	var groups types.Groups
 
 	for rows.Next() {
-		g := new(types.Group)
+		g := &types.Group{}
 
 		if err := rows.Scan(&g.ID, &g.OwnerID, &g.Name, &g.Description); err != nil {
 			return nil, err

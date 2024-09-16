@@ -26,13 +26,13 @@ type ServerInterface interface {
 	GetOAuthClient(ctx echo.Context, clientID gidx.PrefixedID) error
 	// Deletes a Group
 	// (DELETE /api/v1/groups/{groupID})
-	DeleteGroup(ctx echo.Context, groupID gidx.PrefixedID) error
+	DeleteGroup(ctx echo.Context, groupID GroupID) error
 	// Gets information about a Group.
 	// (GET /api/v1/groups/{groupID})
-	GetGroupByID(ctx echo.Context, groupID gidx.PrefixedID) error
+	GetGroupByID(ctx echo.Context, groupID GroupID) error
 	// Updates a Group
 	// (PATCH /api/v1/groups/{groupID})
-	UpdateGroup(ctx echo.Context, groupID gidx.PrefixedID) error
+	UpdateGroup(ctx echo.Context, groupID GroupID) error
 	// Deletes an issuer with the given ID.
 	// (DELETE /api/v1/issuers/{id})
 	DeleteIssuer(ctx echo.Context, id gidx.PrefixedID) error
@@ -53,10 +53,10 @@ type ServerInterface interface {
 	CreateOAuthClient(ctx echo.Context, ownerID gidx.PrefixedID) error
 	// List all groups for an owner.
 	// (GET /api/v1/owners/{ownerID}/groups)
-	ListGroups(ctx echo.Context, ownerID gidx.PrefixedID) error
+	ListGroups(ctx echo.Context, ownerID OwnerID, params ListGroupsParams) error
 	// Creates a Group
 	// (POST /api/v1/owners/{ownerID}/groups)
-	CreateGroup(ctx echo.Context, ownerID gidx.PrefixedID) error
+	CreateGroup(ctx echo.Context, ownerID OwnerID) error
 	// Gets issuers by owner id
 	// (GET /api/v1/owners/{ownerID}/issuers)
 	ListOwnerIssuers(ctx echo.Context, ownerID OwnerID, params ListOwnerIssuersParams) error
@@ -109,7 +109,7 @@ func (w *ServerInterfaceWrapper) GetOAuthClient(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) DeleteGroup(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupID" -------------
-	var groupID gidx.PrefixedID
+	var groupID GroupID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupID", ctx.Param("groupID"), &groupID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
@@ -125,7 +125,7 @@ func (w *ServerInterfaceWrapper) DeleteGroup(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) GetGroupByID(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupID" -------------
-	var groupID gidx.PrefixedID
+	var groupID GroupID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupID", ctx.Param("groupID"), &groupID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
@@ -141,7 +141,7 @@ func (w *ServerInterfaceWrapper) GetGroupByID(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) UpdateGroup(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "groupID" -------------
-	var groupID gidx.PrefixedID
+	var groupID GroupID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "groupID", ctx.Param("groupID"), &groupID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
@@ -285,15 +285,31 @@ func (w *ServerInterfaceWrapper) CreateOAuthClient(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) ListGroups(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "ownerID" -------------
-	var ownerID gidx.PrefixedID
+	var ownerID OwnerID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "ownerID", ctx.Param("ownerID"), &ownerID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter ownerID: %s", err))
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListGroupsParams
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cursor", ctx.QueryParams(), &params.Cursor)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cursor: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.ListGroups(ctx, ownerID)
+	err = w.Handler.ListGroups(ctx, ownerID, params)
 	return err
 }
 
@@ -301,7 +317,7 @@ func (w *ServerInterfaceWrapper) ListGroups(ctx echo.Context) error {
 func (w *ServerInterfaceWrapper) CreateGroup(ctx echo.Context) error {
 	var err error
 	// ------------- Path parameter "ownerID" -------------
-	var ownerID gidx.PrefixedID
+	var ownerID OwnerID
 
 	err = runtime.BindStyledParameterWithOptions("simple", "ownerID", ctx.Param("ownerID"), &ownerID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
@@ -424,6 +440,13 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 
 }
 
+type GroupCollectionJSONResponse struct {
+	Groups []Group `json:"groups"`
+
+	// Pagination collection response pagination
+	Pagination Pagination `json:"pagination"`
+}
+
 type IssuerCollectionJSONResponse struct {
 	Issuers []Issuer `json:"issuers"`
 
@@ -479,7 +502,7 @@ func (response GetOAuthClient200JSONResponse) VisitGetOAuthClientResponse(w http
 }
 
 type DeleteGroupRequestObject struct {
-	GroupID gidx.PrefixedID `json:"groupID"`
+	GroupID GroupID `json:"groupID"`
 }
 
 type DeleteGroupResponseObject interface {
@@ -496,7 +519,7 @@ func (response DeleteGroup200JSONResponse) VisitDeleteGroupResponse(w http.Respo
 }
 
 type GetGroupByIDRequestObject struct {
-	GroupID gidx.PrefixedID `json:"groupID"`
+	GroupID GroupID `json:"groupID"`
 }
 
 type GetGroupByIDResponseObject interface {
@@ -513,7 +536,7 @@ func (response GetGroupByID200JSONResponse) VisitGetGroupByIDResponse(w http.Res
 }
 
 type UpdateGroupRequestObject struct {
-	GroupID gidx.PrefixedID `json:"groupID"`
+	GroupID GroupID `json:"groupID"`
 	Body    *UpdateGroupJSONRequestBody
 }
 
@@ -639,14 +662,15 @@ func (response CreateOAuthClient200JSONResponse) VisitCreateOAuthClientResponse(
 }
 
 type ListGroupsRequestObject struct {
-	OwnerID gidx.PrefixedID `json:"ownerID"`
+	OwnerID OwnerID `json:"ownerID"`
+	Params  ListGroupsParams
 }
 
 type ListGroupsResponseObject interface {
 	VisitListGroupsResponse(w http.ResponseWriter) error
 }
 
-type ListGroups200JSONResponse []Group
+type ListGroups200JSONResponse struct{ GroupCollectionJSONResponse }
 
 func (response ListGroups200JSONResponse) VisitListGroupsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -656,7 +680,7 @@ func (response ListGroups200JSONResponse) VisitListGroupsResponse(w http.Respons
 }
 
 type CreateGroupRequestObject struct {
-	OwnerID gidx.PrefixedID `json:"ownerID"`
+	OwnerID OwnerID `json:"ownerID"`
 	Body    *CreateGroupJSONRequestBody
 }
 
@@ -841,7 +865,7 @@ func (sh *strictHandler) GetOAuthClient(ctx echo.Context, clientID gidx.Prefixed
 }
 
 // DeleteGroup operation middleware
-func (sh *strictHandler) DeleteGroup(ctx echo.Context, groupID gidx.PrefixedID) error {
+func (sh *strictHandler) DeleteGroup(ctx echo.Context, groupID GroupID) error {
 	var request DeleteGroupRequestObject
 
 	request.GroupID = groupID
@@ -866,7 +890,7 @@ func (sh *strictHandler) DeleteGroup(ctx echo.Context, groupID gidx.PrefixedID) 
 }
 
 // GetGroupByID operation middleware
-func (sh *strictHandler) GetGroupByID(ctx echo.Context, groupID gidx.PrefixedID) error {
+func (sh *strictHandler) GetGroupByID(ctx echo.Context, groupID GroupID) error {
 	var request GetGroupByIDRequestObject
 
 	request.GroupID = groupID
@@ -891,7 +915,7 @@ func (sh *strictHandler) GetGroupByID(ctx echo.Context, groupID gidx.PrefixedID)
 }
 
 // UpdateGroup operation middleware
-func (sh *strictHandler) UpdateGroup(ctx echo.Context, groupID gidx.PrefixedID) error {
+func (sh *strictHandler) UpdateGroup(ctx echo.Context, groupID GroupID) error {
 	var request UpdateGroupRequestObject
 
 	request.GroupID = groupID
@@ -1086,10 +1110,11 @@ func (sh *strictHandler) CreateOAuthClient(ctx echo.Context, ownerID gidx.Prefix
 }
 
 // ListGroups operation middleware
-func (sh *strictHandler) ListGroups(ctx echo.Context, ownerID gidx.PrefixedID) error {
+func (sh *strictHandler) ListGroups(ctx echo.Context, ownerID OwnerID, params ListGroupsParams) error {
 	var request ListGroupsRequestObject
 
 	request.OwnerID = ownerID
+	request.Params = params
 
 	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
 		return sh.ssi.ListGroups(ctx.Request().Context(), request.(ListGroupsRequestObject))
@@ -1111,7 +1136,7 @@ func (sh *strictHandler) ListGroups(ctx echo.Context, ownerID gidx.PrefixedID) e
 }
 
 // CreateGroup operation middleware
-func (sh *strictHandler) CreateGroup(ctx echo.Context, ownerID gidx.PrefixedID) error {
+func (sh *strictHandler) CreateGroup(ctx echo.Context, ownerID OwnerID) error {
 	var request CreateGroupRequestObject
 
 	request.OwnerID = ownerID

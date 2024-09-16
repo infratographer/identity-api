@@ -137,23 +137,26 @@ func (h *apiHandler) ListGroups(ctx context.Context, req ListGroupsRequestObject
 		return nil, permissionsError(err)
 	}
 
-	groups, err := h.engine.ListGroups(ctx, ownerID)
+	groups, err := h.engine.ListGroups(ctx, ownerID, req.Params)
 	if err != nil {
 		return nil, err
 	}
 
-	var groupResp []v1.Group
-
-	for _, g := range groups {
-		g, err := g.ToV1Group()
-		if err != nil {
-			return nil, err
-		}
-
-		groupResp = append(groupResp, g)
+	groupResp, err := groups.ToV1Groups()
+	if err != nil {
+		return nil, err
 	}
 
-	return ListGroups200JSONResponse(groupResp), nil
+	collection := v1.GroupCollection{
+		Groups:     groupResp,
+		Pagination: v1.Pagination{},
+	}
+
+	if err := req.Params.SetPagination(&collection); err != nil {
+		return nil, err
+	}
+
+	return ListGroups200JSONResponse{GroupCollectionJSONResponse(collection)}, nil
 }
 
 // UpdateGroup updates a group in storage
