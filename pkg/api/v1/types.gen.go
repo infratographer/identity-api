@@ -11,11 +11,21 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"go.infratographer.com/identity-api/internal/crdbx"
 	"go.infratographer.com/x/gidx"
 )
+
+// CreateGroup defines model for CreateGroup.
+type CreateGroup struct {
+	// Description a description for the group
+	Description *string `json:"description,omitempty"`
+
+	// Name a name for the group
+	Name string `json:"name"`
+}
 
 // CreateIssuer defines model for CreateIssuer.
 type CreateIssuer struct {
@@ -45,6 +55,36 @@ type CreateOAuthClient struct {
 type DeleteResponse struct {
 	// Success Always true.
 	Success bool `json:"success"`
+}
+
+// Group defines model for Group.
+type Group struct {
+	// CreatedAt time the group was created
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+
+	// CreatedBy ID of the user who created the group
+	CreatedBy *gidx.PrefixedID `json:"created_by,omitempty"`
+
+	// Description a description for the group
+	Description *string `json:"description,omitempty"`
+
+	// Id ID of the group
+	ID gidx.PrefixedID `json:"id"`
+
+	// Members IDs of the members of the group
+	Members []gidx.PrefixedID `json:"members"`
+
+	// Name a name for the group
+	Name string `json:"name"`
+
+	// OwnerId ID of the owner of the group
+	OwnerID *gidx.PrefixedID `json:"owner_id,omitempty"`
+
+	// UpdatedAt time the group was last updated
+	UpdatedAt *time.Time `json:"updated_at,omitempty"`
+
+	// UpdatedBy ID of the user who last updated the group
+	UpdatedBy *gidx.PrefixedID `json:"updated_by,omitempty"`
 }
 
 // Issuer defines model for Issuer.
@@ -104,6 +144,15 @@ type Pagination struct {
 	Next *crdbx.Cursor `json:"next,omitempty"`
 }
 
+// UpdateGroup defines model for UpdateGroup.
+type UpdateGroup struct {
+	// Description a description for the group
+	Description *string `json:"description,omitempty"`
+
+	// Name a name for the group
+	Name *string `json:"name,omitempty"`
+}
+
 // User defines model for User.
 type User struct {
 	// Email Email of the user
@@ -122,6 +171,9 @@ type User struct {
 	Subject string `json:"sub"`
 }
 
+// GroupID defines model for groupID.
+type GroupID = gidx.PrefixedID
+
 // IssuerID defines model for issuerID.
 type IssuerID = gidx.PrefixedID
 
@@ -133,6 +185,14 @@ type PageCursor = crdbx.Cursor
 
 // PageLimit defines model for pageLimit.
 type PageLimit = int
+
+// GroupCollection defines model for GroupCollection.
+type GroupCollection struct {
+	Groups []Group `json:"groups"`
+
+	// Pagination collection response pagination
+	Pagination Pagination `json:"pagination"`
+}
 
 // IssuerCollection defines model for IssuerCollection.
 type IssuerCollection struct {
@@ -175,6 +235,15 @@ type GetOwnerOAuthClientsParams struct {
 	Limit *PageLimit `form:"limit,omitempty" json:"limit,omitempty" query:"limit"`
 }
 
+// ListGroupsParams defines parameters for ListGroups.
+type ListGroupsParams struct {
+	// Cursor the cursor to the results to return
+	Cursor *PageCursor `form:"cursor,omitempty" json:"cursor,omitempty" query:"cursor"`
+
+	// Limit limits the response collections
+	Limit *PageLimit `form:"limit,omitempty" json:"limit,omitempty" query:"limit"`
+}
+
 // ListOwnerIssuersParams defines parameters for ListOwnerIssuers.
 type ListOwnerIssuersParams struct {
 	// Cursor the cursor to the results to return
@@ -184,11 +253,17 @@ type ListOwnerIssuersParams struct {
 	Limit *PageLimit `form:"limit,omitempty" json:"limit,omitempty" query:"limit"`
 }
 
+// UpdateGroupJSONRequestBody defines body for UpdateGroup for application/json ContentType.
+type UpdateGroupJSONRequestBody = UpdateGroup
+
 // UpdateIssuerJSONRequestBody defines body for UpdateIssuer for application/json ContentType.
 type UpdateIssuerJSONRequestBody = IssuerUpdate
 
 // CreateOAuthClientJSONRequestBody defines body for CreateOAuthClient for application/json ContentType.
 type CreateOAuthClientJSONRequestBody = CreateOAuthClient
+
+// CreateGroupJSONRequestBody defines body for CreateGroup for application/json ContentType.
+type CreateGroupJSONRequestBody = CreateGroup
 
 // CreateIssuerJSONRequestBody defines body for CreateIssuer for application/json ContentType.
 type CreateIssuerJSONRequestBody = CreateIssuer
@@ -196,36 +271,43 @@ type CreateIssuerJSONRequestBody = CreateIssuer
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"bwAAAP//f8VLflsnAAA=",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

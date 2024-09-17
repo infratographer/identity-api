@@ -12,6 +12,7 @@ require (
 	github.com/google/cel-go v0.21.0
 	github.com/labstack/echo-jwt/v4 v4.2.0
 	github.com/labstack/echo/v4 v4.12.0
+	github.com/lib/pq v1.10.9
 	github.com/metal-toolbox/auditevent v0.8.0
 	github.com/oapi-codegen/echo-middleware v1.0.2
 	github.com/oapi-codegen/runtime v1.1.1
@@ -78,7 +79,6 @@ require (
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/labstack/echo-contrib v0.17.1 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect
-	github.com/lib/pq v1.10.9 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect

@@ -6,6 +6,11 @@ import (
 )
 
 var (
+	// ErrNotFound represents an error condition where a resource was not found.
+	ErrNotFound = errors.New("not found")
+	// ErrInvalidArgument represents an error condition where an argument was invalid.
+	ErrInvalidArgument = errors.New("invalid argument")
+
 	// ErrorIssuerNotFound represents an error condition where an issuer was not found.
 	ErrorIssuerNotFound = errors.New("issuer not found")
 
@@ -22,6 +27,15 @@ var (
 
 	// ErrOAuthClientNotFound is returned if the OAuthClient doesn't exist.
 	ErrOAuthClientNotFound = errors.New("oauth client does not exist")
+
+	// ErrGroupNotFound is returned if the group doesn't exist.
+	ErrGroupNotFound = fmt.Errorf("%w: group not found", ErrNotFound)
+
+	// ErrGroupExists is returned if the group already exists.
+	ErrGroupExists = fmt.Errorf("%w: group already exists", ErrInvalidArgument)
+
+	// ErrGroupNameEmpty is returned if the group name is empty.
+	ErrGroupNameEmpty = fmt.Errorf("%w: group name is empty", ErrInvalidArgument)
 )
 
 // ErrorInvalidTokenRequest represents an error where an access token request failed.

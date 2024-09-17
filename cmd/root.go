@@ -62,6 +62,8 @@ func initConfig() {
 	if err != nil {
 		logger.Fatalw("unable to decode app config", "error", err)
 	}
+
+	logger = loggingx.InitLogger(appName, config.Config.Logging)
 }
 
 // Execute executes the root command.

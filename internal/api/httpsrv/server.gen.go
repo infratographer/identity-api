@@ -24,6 +24,15 @@ type ServerInterface interface {
 	// Gets information about an OAuth 2.0 Client.
 	// (GET /api/v1/clients/{clientID})
 	GetOAuthClient(ctx echo.Context, clientID gidx.PrefixedID) error
+	// Deletes a Group
+	// (DELETE /api/v1/groups/{groupID})
+	DeleteGroup(ctx echo.Context, groupID GroupID) error
+	// Gets information about a Group.
+	// (GET /api/v1/groups/{groupID})
+	GetGroupByID(ctx echo.Context, groupID GroupID) error
+	// Updates a Group
+	// (PATCH /api/v1/groups/{groupID})
+	UpdateGroup(ctx echo.Context, groupID GroupID) error
 	// Deletes an issuer with the given ID.
 	// (DELETE /api/v1/issuers/{id})
 	DeleteIssuer(ctx echo.Context, id gidx.PrefixedID) error
@@ -42,6 +51,12 @@ type ServerInterface interface {
 	// Creates an OAuth client.
 	// (POST /api/v1/owners/{ownerID}/clients)
 	CreateOAuthClient(ctx echo.Context, ownerID gidx.PrefixedID) error
+	// List all groups for an owner.
+	// (GET /api/v1/owners/{ownerID}/groups)
+	ListGroups(ctx echo.Context, ownerID OwnerID, params ListGroupsParams) error
+	// Creates a Group
+	// (POST /api/v1/owners/{ownerID}/groups)
+	CreateGroup(ctx echo.Context, ownerID OwnerID) error
 	// Gets issuers by owner id
 	// (GET /api/v1/owners/{ownerID}/issuers)
 	ListOwnerIssuers(ctx echo.Context, ownerID OwnerID, params ListOwnerIssuersParams) error
@@ -87,6 +102,54 @@ func (w *ServerInterfaceWrapper) GetOAuthClient(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetOAuthClient(ctx, clientID)
+	return err
+}
+
+// DeleteGroup converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteGroup(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "groupID" -------------
+	var groupID GroupID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "groupID", ctx.Param("groupID"), &groupID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupID: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteGroup(ctx, groupID)
+	return err
+}
+
+// GetGroupByID converts echo context to params.
+func (w *ServerInterfaceWrapper) GetGroupByID(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "groupID" -------------
+	var groupID GroupID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "groupID", ctx.Param("groupID"), &groupID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupID: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetGroupByID(ctx, groupID)
+	return err
+}
+
+// UpdateGroup converts echo context to params.
+func (w *ServerInterfaceWrapper) UpdateGroup(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "groupID" -------------
+	var groupID GroupID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "groupID", ctx.Param("groupID"), &groupID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupID: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.UpdateGroup(ctx, groupID)
 	return err
 }
 
@@ -218,6 +281,54 @@ func (w *ServerInterfaceWrapper) CreateOAuthClient(ctx echo.Context) error {
 	return err
 }
 
+// ListGroups converts echo context to params.
+func (w *ServerInterfaceWrapper) ListGroups(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "ownerID" -------------
+	var ownerID OwnerID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "ownerID", ctx.Param("ownerID"), &ownerID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter ownerID: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListGroupsParams
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cursor", ctx.QueryParams(), &params.Cursor)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cursor: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.ListGroups(ctx, ownerID, params)
+	return err
+}
+
+// CreateGroup converts echo context to params.
+func (w *ServerInterfaceWrapper) CreateGroup(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "ownerID" -------------
+	var ownerID OwnerID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "ownerID", ctx.Param("ownerID"), &ownerID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter ownerID: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.CreateGroup(ctx, ownerID)
+	return err
+}
+
 // ListOwnerIssuers converts echo context to params.
 func (w *ServerInterfaceWrapper) ListOwnerIssuers(ctx echo.Context) error {
 	var err error
@@ -312,16 +423,28 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 
 	router.DELETE(baseURL+"/api/v1/clients/:clientID", wrapper.DeleteOAuthClient)
 	router.GET(baseURL+"/api/v1/clients/:clientID", wrapper.GetOAuthClient)
+	router.DELETE(baseURL+"/api/v1/groups/:groupID", wrapper.DeleteGroup)
+	router.GET(baseURL+"/api/v1/groups/:groupID", wrapper.GetGroupByID)
+	router.PATCH(baseURL+"/api/v1/groups/:groupID", wrapper.UpdateGroup)
 	router.DELETE(baseURL+"/api/v1/issuers/:id", wrapper.DeleteIssuer)
 	router.GET(baseURL+"/api/v1/issuers/:id", wrapper.GetIssuerByID)
 	router.PATCH(baseURL+"/api/v1/issuers/:id", wrapper.UpdateIssuer)
 	router.GET(baseURL+"/api/v1/issuers/:id/users", wrapper.GetIssuerUsers)
 	router.GET(baseURL+"/api/v1/owners/:ownerID/clients", wrapper.GetOwnerOAuthClients)
 	router.POST(baseURL+"/api/v1/owners/:ownerID/clients", wrapper.CreateOAuthClient)
+	router.GET(baseURL+"/api/v1/owners/:ownerID/groups", wrapper.ListGroups)
+	router.POST(baseURL+"/api/v1/owners/:ownerID/groups", wrapper.CreateGroup)
 	router.GET(baseURL+"/api/v1/owners/:ownerID/issuers", wrapper.ListOwnerIssuers)
 	router.POST(baseURL+"/api/v1/owners/:ownerID/issuers", wrapper.CreateIssuer)
 	router.GET(baseURL+"/api/v1/users/:userID", wrapper.GetUserByID)
 
+}
+
+type GroupCollectionJSONResponse struct {
+	Groups []Group `json:"groups"`
+
+	// Pagination collection response pagination
+	Pagination Pagination `json:"pagination"`
 }
 
 type IssuerCollectionJSONResponse struct {
@@ -372,6 +495,58 @@ type GetOAuthClientResponseObject interface {
 type GetOAuthClient200JSONResponse OAuthClient
 
 func (response GetOAuthClient200JSONResponse) VisitGetOAuthClientResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteGroupRequestObject struct {
+	GroupID GroupID `json:"groupID"`
+}
+
+type DeleteGroupResponseObject interface {
+	VisitDeleteGroupResponse(w http.ResponseWriter) error
+}
+
+type DeleteGroup200JSONResponse DeleteResponse
+
+func (response DeleteGroup200JSONResponse) VisitDeleteGroupResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetGroupByIDRequestObject struct {
+	GroupID GroupID `json:"groupID"`
+}
+
+type GetGroupByIDResponseObject interface {
+	VisitGetGroupByIDResponse(w http.ResponseWriter) error
+}
+
+type GetGroupByID200JSONResponse Group
+
+func (response GetGroupByID200JSONResponse) VisitGetGroupByIDResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateGroupRequestObject struct {
+	GroupID GroupID `json:"groupID"`
+	Body    *UpdateGroupJSONRequestBody
+}
+
+type UpdateGroupResponseObject interface {
+	VisitUpdateGroupResponse(w http.ResponseWriter) error
+}
+
+type UpdateGroup200JSONResponse Group
+
+func (response UpdateGroup200JSONResponse) VisitUpdateGroupResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
@@ -486,6 +661,42 @@ func (response CreateOAuthClient200JSONResponse) VisitCreateOAuthClientResponse(
 	return json.NewEncoder(w).Encode(response)
 }
 
+type ListGroupsRequestObject struct {
+	OwnerID OwnerID `json:"ownerID"`
+	Params  ListGroupsParams
+}
+
+type ListGroupsResponseObject interface {
+	VisitListGroupsResponse(w http.ResponseWriter) error
+}
+
+type ListGroups200JSONResponse struct{ GroupCollectionJSONResponse }
+
+func (response ListGroups200JSONResponse) VisitListGroupsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateGroupRequestObject struct {
+	OwnerID OwnerID `json:"ownerID"`
+	Body    *CreateGroupJSONRequestBody
+}
+
+type CreateGroupResponseObject interface {
+	VisitCreateGroupResponse(w http.ResponseWriter) error
+}
+
+type CreateGroup200JSONResponse Group
+
+func (response CreateGroup200JSONResponse) VisitCreateGroupResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type ListOwnerIssuersRequestObject struct {
 	OwnerID OwnerID `json:"ownerID"`
 	Params  ListOwnerIssuersParams
@@ -547,6 +758,15 @@ type StrictServerInterface interface {
 	// Gets information about an OAuth 2.0 Client.
 	// (GET /api/v1/clients/{clientID})
 	GetOAuthClient(ctx context.Context, request GetOAuthClientRequestObject) (GetOAuthClientResponseObject, error)
+	// Deletes a Group
+	// (DELETE /api/v1/groups/{groupID})
+	DeleteGroup(ctx context.Context, request DeleteGroupRequestObject) (DeleteGroupResponseObject, error)
+	// Gets information about a Group.
+	// (GET /api/v1/groups/{groupID})
+	GetGroupByID(ctx context.Context, request GetGroupByIDRequestObject) (GetGroupByIDResponseObject, error)
+	// Updates a Group
+	// (PATCH /api/v1/groups/{groupID})
+	UpdateGroup(ctx context.Context, request UpdateGroupRequestObject) (UpdateGroupResponseObject, error)
 	// Deletes an issuer with the given ID.
 	// (DELETE /api/v1/issuers/{id})
 	DeleteIssuer(ctx context.Context, request DeleteIssuerRequestObject) (DeleteIssuerResponseObject, error)
@@ -565,6 +785,12 @@ type StrictServerInterface interface {
 	// Creates an OAuth client.
 	// (POST /api/v1/owners/{ownerID}/clients)
 	CreateOAuthClient(ctx context.Context, request CreateOAuthClientRequestObject) (CreateOAuthClientResponseObject, error)
+	// List all groups for an owner.
+	// (GET /api/v1/owners/{ownerID}/groups)
+	ListGroups(ctx context.Context, request ListGroupsRequestObject) (ListGroupsResponseObject, error)
+	// Creates a Group
+	// (POST /api/v1/owners/{ownerID}/groups)
+	CreateGroup(ctx context.Context, request CreateGroupRequestObject) (CreateGroupResponseObject, error)
 	// Gets issuers by owner id
 	// (GET /api/v1/owners/{ownerID}/issuers)
 	ListOwnerIssuers(ctx context.Context, request ListOwnerIssuersRequestObject) (ListOwnerIssuersResponseObject, error)
@@ -632,6 +858,87 @@ func (sh *strictHandler) GetOAuthClient(ctx echo.Context, clientID gidx.Prefixed
 		return err
 	} else if validResponse, ok := response.(GetOAuthClientResponseObject); ok {
 		return validResponse.VisitGetOAuthClientResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// DeleteGroup operation middleware
+func (sh *strictHandler) DeleteGroup(ctx echo.Context, groupID GroupID) error {
+	var request DeleteGroupRequestObject
+
+	request.GroupID = groupID
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteGroup(ctx.Request().Context(), request.(DeleteGroupRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteGroup")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(DeleteGroupResponseObject); ok {
+		return validResponse.VisitDeleteGroupResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetGroupByID operation middleware
+func (sh *strictHandler) GetGroupByID(ctx echo.Context, groupID GroupID) error {
+	var request GetGroupByIDRequestObject
+
+	request.GroupID = groupID
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetGroupByID(ctx.Request().Context(), request.(GetGroupByIDRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetGroupByID")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetGroupByIDResponseObject); ok {
+		return validResponse.VisitGetGroupByIDResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// UpdateGroup operation middleware
+func (sh *strictHandler) UpdateGroup(ctx echo.Context, groupID GroupID) error {
+	var request UpdateGroupRequestObject
+
+	request.GroupID = groupID
+
+	var body UpdateGroupJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateGroup(ctx.Request().Context(), request.(UpdateGroupRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateGroup")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(UpdateGroupResponseObject); ok {
+		return validResponse.VisitUpdateGroupResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("unexpected response type: %T", response)
 	}
@@ -796,6 +1103,63 @@ func (sh *strictHandler) CreateOAuthClient(ctx echo.Context, ownerID gidx.Prefix
 		return err
 	} else if validResponse, ok := response.(CreateOAuthClientResponseObject); ok {
 		return validResponse.VisitCreateOAuthClientResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// ListGroups operation middleware
+func (sh *strictHandler) ListGroups(ctx echo.Context, ownerID OwnerID, params ListGroupsParams) error {
+	var request ListGroupsRequestObject
+
+	request.OwnerID = ownerID
+	request.Params = params
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.ListGroups(ctx.Request().Context(), request.(ListGroupsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListGroups")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(ListGroupsResponseObject); ok {
+		return validResponse.VisitListGroupsResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// CreateGroup operation middleware
+func (sh *strictHandler) CreateGroup(ctx echo.Context, ownerID OwnerID) error {
+	var request CreateGroupRequestObject
+
+	request.OwnerID = ownerID
+
+	var body CreateGroupJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateGroup(ctx.Request().Context(), request.(CreateGroupRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateGroup")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(CreateGroupResponseObject); ok {
+		return validResponse.VisitCreateGroupResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("unexpected response type: %T", response)
 	}

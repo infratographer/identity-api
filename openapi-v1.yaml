@@ -7,8 +7,13 @@ info:
 
 tags:
   - name: Issuers
+    description: Operations on Issuers
   - name: OAuthClients
+    description: Operations on OAuth Clients
   - name: Users
+    description: Operations on Users
+  - name: Groups
+    description: Operations on Groups
 
 paths:
   /api/v1/owners/{ownerID}/issuers:
@@ -69,6 +74,7 @@ paths:
         - OAuthClients
       summary: Creates an OAuth client.
       operationId: createOAuthClient
+      description: Creates an OAuth client for the given owner.
       parameters:
         - in: path
           name: ownerID
@@ -90,6 +96,43 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OAuthClient'
+
+  /api/v1/owners/{ownerID}/groups:
+    get:
+      tags:
+        - Groups
+      summary: List all groups for an owner.
+      description: List all groups for an owner.
+      operationId: listGroups
+      parameters:
+        - $ref: '#/components/parameters/ownerID'
+        - $ref: '#/components/parameters/pageCursor'
+        - $ref: '#/components/parameters/pageLimit'
+      responses:
+        '200':
+          $ref: '#/components/responses/GroupCollection'
+
+    post:
+      tags:
+        - Groups
+      summary: Creates a Group
+      description: Creates a group under the given owner.
+      operationId: createGroup
+      parameters:
+        - $ref: '#/components/parameters/ownerID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGroup'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
 
   /api/v1/clients/{clientID}:
     get:
@@ -239,6 +282,58 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
 
+  /api/v1/groups/{groupID}:
+    delete:
+      tags:
+        - Groups
+      summary: Deletes a Group
+      description: Deletes a group by ID.
+      operationId: deleteGroup
+      parameters:
+        - $ref: '#/components/parameters/groupID'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+    patch:
+      tags:
+        - Groups
+      summary: Updates a Group
+      description: Updates a group by ID, only name and description can be updated.
+      operationId: updateGroup
+      parameters:
+        - $ref: '#/components/parameters/groupID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGroup'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+    get:
+      tags:
+        - Groups
+      summary: Gets information about a Group.
+      operationId: getGroupByID
+      description: Gets a group by ID.
+      parameters:
+        - $ref: '#/components/parameters/groupID'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
 components:
   schemas:
     DeleteResponse:
@@ -402,6 +497,72 @@ components:
           x-go-type-import:
             path: go.infratographer.com/identity-api/internal/crdbx
 
+    CreateGroup:
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: a name for the group
+        description:
+          type: string
+          description: a description for the group
+
+    UpdateGroup:
+      properties:
+        name:
+          type: string
+          description: a name for the group
+        description:
+          type: string
+          description: a description for the group
+
+    Group:
+      required:
+        - id
+        - name
+        - owner
+        - members
+      properties:
+        id:
+          x-go-name: ID
+          type: string
+          x-go-type: gidx.PrefixedID
+          description: ID of the group
+        name:
+          type: string
+          description: a name for the group
+        description:
+          type: string
+          description: a description for the group
+        owner_id:
+          x-go-name: OwnerID
+          type: string
+          x-go-type: gidx.PrefixedID
+          description: ID of the owner of the group
+        members:
+          type: array
+          items:
+            type: string
+            x-go-type: gidx.PrefixedID
+          description: IDs of the members of the group
+        created_at:
+          type: string
+          format: date-time
+          description: time the group was created
+        created_by:
+          type: string
+          x-go-type: gidx.PrefixedID
+          description: ID of the user who created the group
+        updated_at:
+          type: string
+          format: date-time
+          description: time the group was last updated
+        updated_by:
+          type: string
+          x-go-type: gidx.PrefixedID
+          description: ID of the user who last updated the group
+
   parameters:
     ownerID:
       description: id of a resource owner
@@ -419,6 +580,17 @@ components:
       in: path
       name: id
       x-go-name: IssuerID
+      required: true
+      schema:
+        type: string
+        x-go-type: gidx.PrefixedID
+        x-go-type-import:
+          path: go.infratographer.com/x/gidx
+    groupID:
+      description: id of a group
+      in: path
+      name: groupID
+      x-go-name: GroupID
       required: true
       schema:
         type: string
@@ -494,5 +666,21 @@ components:
                 type: array
                 items:
                   $ref: '#/components/schemas/User'
+              pagination:
+                $ref: '#/components/schemas/Pagination'
+    GroupCollection:
+      description: a collection of groups
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - groups
+              - pagination
+            properties:
+              groups:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Group'
               pagination:
                 $ref: '#/components/schemas/Pagination'

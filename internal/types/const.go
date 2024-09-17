@@ -21,4 +21,10 @@ const (
 
 	// IdentityIssuerIDPrefix represents the full identity id prefix for an issuer resource.
 	IdentityIssuerIDPrefix = IdentityService + IdentityIssuerResource
+
+	// IdentityGroupResource represents the group resource type in an ID.
+	IdentityGroupResource = "grp"
+
+	// IdentityGroupIDPrefix represents the full identity id prefix for a group resource.
+	IdentityGroupIDPrefix = IdentityService + IdentityGroupResource
 )
