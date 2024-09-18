@@ -286,9 +286,15 @@ func (s userInfoService) StoreUserInfo(ctx context.Context, userInfo types.UserI
 		userInfoCols.IssuerID,
 	}, ",")
 
-	newID, err := generateSubjectID(types.IdentityUserIDPrefix, userInfo.Issuer, userInfo.Subject)
-	if err != nil {
-		return types.UserInfo{}, err
+	var newID gidx.PrefixedID
+
+	if userInfo.ID.String() == "" {
+		newID, err = generateSubjectID(types.IdentityUserIDPrefix, userInfo.Issuer, userInfo.Subject)
+		if err != nil {
+			return types.UserInfo{}, err
+		}
+	} else {
+		newID = userInfo.ID
 	}
 
 	q := fmt.Sprintf(`INSERT INTO user_info (%[1]s) VALUES (
