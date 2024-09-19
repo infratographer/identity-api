@@ -31,7 +31,7 @@ func (h *apiHandler) AddGroupMembers(ctx context.Context, req AddGroupMembersReq
 		return nil, permissionsError(err)
 	}
 
-	if err := h.engine.AddMembers(ctx, gid, reqbody.MemberIds...); err != nil {
+	if err := h.engine.AddMembers(ctx, gid, reqbody.MemberIDs...); err != nil {
 		if errors.Is(err, types.ErrNotFound) {
 			err = echo.NewHTTPError(http.StatusNotFound, err.Error())
 		}
@@ -117,4 +117,33 @@ func (h *apiHandler) RemoveGroupMember(ctx context.Context, req RemoveGroupMembe
 	}
 
 	return RemoveGroupMember200JSONResponse{true}, nil
+}
+
+// ReplaceGroupMembers replaces the members of a group
+func (h *apiHandler) ReplaceGroupMembers(ctx context.Context, req ReplaceGroupMembersRequestObject) (ReplaceGroupMembersResponseObject, error) {
+	gid := req.GroupID
+	reqbody := req.Body
+
+	if _, err := gidx.Parse(string(gid)); err != nil {
+		err = echo.NewHTTPError(
+			http.StatusBadRequest,
+			fmt.Sprintf("invalid group id: %s", err.Error()),
+		)
+
+		return nil, err
+	}
+
+	if err := permissions.CheckAccess(ctx, gid, actionGroupUpdate); err != nil {
+		return nil, permissionsError(err)
+	}
+
+	if err := h.engine.ReplaceMembers(ctx, gid, reqbody.MemberIDs...); err != nil {
+		if errors.Is(err, types.ErrNotFound) {
+			err = echo.NewHTTPError(http.StatusNotFound, err.Error())
+		}
+
+		return nil, err
+	}
+
+	return ReplaceGroupMembers200JSONResponse{true}, nil
 }

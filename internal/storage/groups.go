@@ -322,3 +322,26 @@ func (gs *groupService) RemoveMember(ctx context.Context, groupID gidx.PrefixedI
 
 	return err
 }
+
+func (gs *groupService) ReplaceMembers(ctx context.Context, groupID gidx.PrefixedID, subjects ...gidx.PrefixedID) error {
+	tx, err := getContextTx(ctx)
+	if err != nil {
+		return err
+	}
+
+	if _, err := gs.fetchGroupByID(ctx, groupID); err != nil {
+		return err
+	}
+
+	delq := fmt.Sprintf(
+		"DELETE FROM group_members WHERE %s = $1",
+		groupMemberCols.GroupID,
+	)
+
+	_, err = tx.ExecContext(ctx, delq, groupID)
+	if err != nil {
+		return err
+	}
+
+	return gs.AddMembers(ctx, groupID, subjects...)
+}

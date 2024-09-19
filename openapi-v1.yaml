@@ -349,6 +349,27 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/GroupMemberCollection'
+    put:
+      tags:
+        - Groups
+      summary: Replaces members of a Group
+      description: Replaces the members of a group by ID.
+      operationId: replaceGroupMembers
+      parameters:
+        - $ref: '#/components/parameters/groupID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddGroupMembers'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddGroupMembersResponse'
     post:
       tags:
         - Groups
@@ -601,6 +622,7 @@ components:
       properties:
         member_ids:
           type: array
+          x-go-name: MemberIDs
           items:
             type: string
             x-go-type: gidx.PrefixedID
