@@ -34,6 +34,17 @@ func (h *apiHandler) AddGroupMembers(ctx context.Context, req AddGroupMembersReq
 		return nil, err
 	}
 
+	for _, mid := range reqbody.MemberIDs {
+		if _, err := gidx.Parse(string(mid)); err != nil {
+			err = echo.NewHTTPError(
+				http.StatusBadRequest,
+				fmt.Sprintf("invalid member id %s: %s", mid, err.Error()),
+			)
+
+			return nil, err
+		}
+	}
+
 	if err := permissions.CheckAccess(ctx, gid, actionGroupMembersAdd); err != nil {
 		return nil, permissionsError(err)
 	}
@@ -107,6 +118,13 @@ func (h *apiHandler) RemoveGroupMember(ctx context.Context, req RemoveGroupMembe
 			http.StatusBadRequest,
 			fmt.Sprintf("invalid member id: %s", err.Error()),
 		)
+	}
+
+	if _, err := gidx.Parse(string(sid)); err != nil {
+		err = echo.NewHTTPError(
+			http.StatusBadRequest,
+			fmt.Sprintf("invalid member id: %s", err.Error()),
+		)
 
 		return nil, err
 	}
@@ -140,6 +158,17 @@ func (h *apiHandler) ReplaceGroupMembers(ctx context.Context, req ReplaceGroupMe
 		return nil, err
 	}
 
+	for _, mid := range reqbody.MemberIDs {
+		if _, err := gidx.Parse(string(mid)); err != nil {
+			err = echo.NewHTTPError(
+				http.StatusBadRequest,
+				fmt.Sprintf("invalid member id %s: %s", mid, err.Error()),
+			)
+
+			return nil, err
+		}
+	}
+
 	if err := permissions.CheckAccess(ctx, gid, actionGroupMembersPut); err != nil {
 		return nil, permissionsError(err)
 	}
@@ -153,4 +182,56 @@ func (h *apiHandler) ReplaceGroupMembers(ctx context.Context, req ReplaceGroupMe
 	}
 
 	return ReplaceGroupMembers200JSONResponse{true}, nil
+}
+
+func (h *apiHandler) ListUserGroups(ctx context.Context, req ListUserGroupsRequestObject) (ListUserGroupsResponseObject, error) {
+	subject := req.UserID
+
+	if _, err := gidx.Parse(string(subject)); err != nil {
+		err = echo.NewHTTPError(
+			http.StatusBadRequest,
+			fmt.Sprintf("invalid subject id: %s", err.Error()),
+		)
+
+		return nil, err
+	}
+
+	// Find the owner the user's issuer is on to check permissions.
+	ownerID, err := h.engine.LookupUserOwnerID(ctx, subject)
+	switch err {
+	case nil:
+	case types.ErrUserInfoNotFound:
+		return nil, echo.NewHTTPError(http.StatusNotFound, err.Error())
+	default:
+		return nil, err
+	}
+
+	if err := permissions.CheckAccess(ctx, ownerID, actionUserGet); err != nil {
+		return nil, permissionsError(err)
+	}
+
+	groups, err := h.engine.ListGroupsBySubject(ctx, subject, req.Params)
+	if err != nil {
+		if errors.Is(err, types.ErrNotFound) {
+			err = echo.NewHTTPError(http.StatusNotFound, err.Error())
+		}
+
+		return nil, err
+	}
+
+	resp, err := groups.ToV1Groups()
+	if err != nil {
+		return nil, err
+	}
+
+	collection := v1.GroupCollection{
+		Groups:     resp,
+		Pagination: v1.Pagination{},
+	}
+
+	if err := req.Params.SetPagination(&collection); err != nil {
+		return nil, err
+	}
+
+	return ListUserGroups200JSONResponse{GroupCollectionJSONResponse(collection)}, nil
 }

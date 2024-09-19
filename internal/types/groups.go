@@ -45,9 +45,11 @@ type GroupUpdate struct {
 type GroupService interface {
 	CreateGroup(ctx context.Context, group Group) (*Group, error)
 	GetGroupByID(ctx context.Context, id gidx.PrefixedID) (*Group, error)
-	ListGroups(ctx context.Context, ownerID gidx.PrefixedID, pagination crdbx.Paginator) (Groups, error)
 	UpdateGroup(ctx context.Context, id gidx.PrefixedID, update GroupUpdate) (*Group, error)
 	DeleteGroup(ctx context.Context, id gidx.PrefixedID) error
+
+	ListGroupsByOwner(ctx context.Context, ownerID gidx.PrefixedID, pagination crdbx.Paginator) (Groups, error)
+	ListGroupsBySubject(ctx context.Context, subject gidx.PrefixedID, pagination crdbx.Paginator) (Groups, error)
 
 	AddMembers(ctx context.Context, groupID gidx.PrefixedID, subjects ...gidx.PrefixedID) error
 	ListMembers(ctx context.Context, groupID gidx.PrefixedID, pagination crdbx.Paginator) ([]gidx.PrefixedID, error)

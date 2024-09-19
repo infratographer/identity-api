@@ -112,18 +112,19 @@ func (gs *groupService) fetchGroupByID(ctx context.Context, id gidx.PrefixedID) 
 		groupColsStr, groupCols.ID,
 	)
 
-	var row *sql.Row
+	var ex func(ctx context.Context, query string, args ...any) *sql.Row
 
 	tx, err := getContextTx(ctx)
-
 	switch err {
 	case nil:
-		row = tx.QueryRowContext(ctx, q, id)
+		ex = tx.QueryRowContext
 	case ErrorMissingContextTx:
-		row = gs.db.QueryRowContext(ctx, q, id)
+		ex = gs.db.QueryRowContext
 	default:
 		return nil, err
 	}
+
+	row := ex(ctx, q, id)
 
 	return gs.scanGroup(row)
 }
@@ -146,7 +147,7 @@ func (gs *groupService) scanGroup(row *sql.Row) (*types.Group, error) {
 	return &g, nil
 }
 
-func (gs *groupService) ListGroups(ctx context.Context, ownerID gidx.PrefixedID, pagination crdbx.Paginator) (types.Groups, error) {
+func (gs *groupService) ListGroupsByOwner(ctx context.Context, ownerID gidx.PrefixedID, pagination crdbx.Paginator) (types.Groups, error) {
 	paginate := crdbx.Paginate(pagination, crdbx.ContextAsOfSystemTime(ctx, "-1m"))
 
 	q := fmt.Sprintf(
@@ -271,7 +272,7 @@ func (gs *groupService) AddMembers(ctx context.Context, groupID gidx.PrefixedID,
 }
 
 func (gs *groupService) ListMembers(ctx context.Context, groupID gidx.PrefixedID, pagination crdbx.Paginator) ([]gidx.PrefixedID, error) {
-	paginate := crdbx.Paginate(pagination, crdbx.ContextAsOfSystemTime(ctx, nil))
+	paginate := crdbx.Paginate(pagination, crdbx.ContextAsOfSystemTime(ctx, "-1m"))
 
 	q := fmt.Sprintf(
 		"SELECT %s FROM group_members %s WHERE %s = $1 %s %s %s",
@@ -344,4 +345,63 @@ func (gs *groupService) ReplaceMembers(ctx context.Context, groupID gidx.Prefixe
 	}
 
 	return gs.AddMembers(ctx, groupID, subjects...)
+}
+
+func (gs *groupService) ListGroupsBySubject(ctx context.Context, subject gidx.PrefixedID, pagination crdbx.Paginator) (types.Groups, error) {
+	paginate := crdbx.Paginate(pagination, crdbx.ContextAsOfSystemTime(ctx, "-1m"))
+
+	const (
+		membersTable = "group_members"
+		groupsTable  = "groups"
+	)
+
+	q := fmt.Sprintf(
+		`SELECT %s FROM %s LEFT JOIN %s ON %s %s WHERE %s = $1 %s %s %s`,
+		// SELECT
+		strings.Join([]string{
+			fmt.Sprintf("DISTINCT(%s.%s)", membersTable, groupMemberCols.GroupID),
+			fmt.Sprintf("%s.%s", groupsTable, groupCols.Name),
+			fmt.Sprintf("%s.%s", groupsTable, groupCols.Description),
+			fmt.Sprintf("%s.%s", groupsTable, groupCols.OwnerID),
+		}, ", "),
+		// FROM
+		membersTable,
+		// LEFT JOIN
+		groupsTable,
+		// ON
+		fmt.Sprintf(
+			"%s.%s = %s.%s",
+			groupsTable, groupCols.ID,
+			membersTable, groupMemberCols.GroupID,
+		),
+		// as of system time
+		paginate.AsOfSystemTime(),
+		// WHERE
+		fmt.Sprintf("%s.%s", membersTable, groupMemberCols.SubjectID),
+		// Pagination
+		paginate.AndWhere(2), //nolint:gomnd
+		paginate.OrderClause(),
+		paginate.LimitClause(),
+	)
+
+	rows, err := gs.db.QueryContext(ctx, q, subject)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var groups types.Groups
+
+	for rows.Next() {
+		g := &types.Group{}
+
+		if err := rows.Scan(&g.ID, &g.Name, &g.Description, &g.OwnerID); err != nil {
+			return nil, err
+		}
+
+		groups = append(groups, g)
+	}
+
+	return groups, nil
 }
