@@ -80,3 +80,41 @@ func (h *apiHandler) ListGroupMembers(ctx context.Context, req ListGroupMembersR
 
 	return ListGroupMembers200JSONResponse{GroupMemberCollectionJSONResponse(collection)}, nil
 }
+
+// RemoveGroupMember removes a member from a group
+func (h *apiHandler) RemoveGroupMember(ctx context.Context, req RemoveGroupMemberRequestObject) (RemoveGroupMemberResponseObject, error) {
+	gid := req.GroupID
+	sid := req.SubjectID
+
+	if _, err := gidx.Parse(string(gid)); err != nil {
+		err = echo.NewHTTPError(
+			http.StatusBadRequest,
+			fmt.Sprintf("invalid group id: %s", err.Error()),
+		)
+
+		return nil, err
+	}
+
+	if _, err := gidx.Parse(string(sid)); err != nil {
+		err = echo.NewHTTPError(
+			http.StatusBadRequest,
+			fmt.Sprintf("invalid member id: %s", err.Error()),
+		)
+
+		return nil, err
+	}
+
+	if err := permissions.CheckAccess(ctx, gid, actionGroupUpdate); err != nil {
+		return nil, permissionsError(err)
+	}
+
+	if err := h.engine.RemoveMember(ctx, gid, sid); err != nil {
+		if errors.Is(err, types.ErrNotFound) {
+			err = echo.NewHTTPError(http.StatusNotFound, err.Error())
+		}
+
+		return nil, err
+	}
+
+	return RemoveGroupMember200JSONResponse{true}, nil
+}

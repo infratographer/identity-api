@@ -303,7 +303,7 @@ func (gs *groupService) ListMembers(ctx context.Context, groupID gidx.PrefixedID
 	return members, nil
 }
 
-func (gs *groupService) RemoveMember(ctx context.Context, groupID gidx.PrefixedID, subjectID gidx.PrefixedID) error {
+func (gs *groupService) RemoveMember(ctx context.Context, groupID gidx.PrefixedID, subject gidx.PrefixedID) error {
 	tx, err := getContextTx(ctx)
 	if err != nil {
 		return err
@@ -318,7 +318,7 @@ func (gs *groupService) RemoveMember(ctx context.Context, groupID gidx.PrefixedI
 		groupMemberCols.GroupID, groupMemberCols.SubjectID,
 	)
 
-	_, err = tx.ExecContext(ctx, q, groupID, subjectID)
+	_, err = tx.ExecContext(ctx, q, groupID, subject)
 
 	return err
 }

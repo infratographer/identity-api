@@ -371,6 +371,24 @@ paths:
               schema:
                 $ref: '#/components/schemas/AddGroupMembersResponse'
 
+  /api/v1/groups/{groupID}/members/{subjectID}:
+    delete:
+      tags:
+        - Groups
+      summary: Removes a member from a Group
+      description: Removes a member from a group by their ID.
+      operationId: removeGroupMember
+      parameters:
+        - $ref: '#/components/parameters/groupID'
+        - $ref: '#/components/parameters/subjectID'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+
 components:
   schemas:
     DeleteResponse:
@@ -624,6 +642,17 @@ components:
       in: path
       name: groupID
       x-go-name: GroupID
+      required: true
+      schema:
+        type: string
+        x-go-type: gidx.PrefixedID
+        x-go-type-import:
+          path: go.infratographer.com/x/gidx
+    subjectID:
+      description: id of a subject
+      in: path
+      name: subjectID
+      x-go-name: SubjectID
       required: true
       schema:
         type: string

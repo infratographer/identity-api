@@ -51,7 +51,7 @@ type GroupService interface {
 
 	AddMembers(ctx context.Context, groupID gidx.PrefixedID, subjects ...gidx.PrefixedID) error
 	ListMembers(ctx context.Context, groupID gidx.PrefixedID, pagination crdbx.Paginator) ([]gidx.PrefixedID, error)
-	// RemoveMember(ctx context.Context, groupID gidx.PrefixedID, subjectID gidx.PrefixedID) error
+	RemoveMember(ctx context.Context, groupID gidx.PrefixedID, subject gidx.PrefixedID) error
 	// ReplaceMembers(ctx context.Context, groupID gidx.PrefixedID, subjects ...gidx.PrefixedID) error
 }
 
