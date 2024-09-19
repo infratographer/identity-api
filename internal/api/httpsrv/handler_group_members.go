@@ -13,6 +13,13 @@ import (
 	"go.infratographer.com/x/gidx"
 )
 
+const (
+	actionGroupMembersList   = "iam_group_members_list"
+	actionGroupMembersAdd    = "iam_group_members_add"
+	actionGroupMembersPut    = "iam_group_members_put"
+	actionGroupMembersRemove = "iam_group_members_remove"
+)
+
 // AddGroupMembers creates a group
 func (h *apiHandler) AddGroupMembers(ctx context.Context, req AddGroupMembersRequestObject) (AddGroupMembersResponseObject, error) {
 	reqbody := req.Body
@@ -27,7 +34,7 @@ func (h *apiHandler) AddGroupMembers(ctx context.Context, req AddGroupMembersReq
 		return nil, err
 	}
 
-	if err := permissions.CheckAccess(ctx, gid, actionGroupUpdate); err != nil {
+	if err := permissions.CheckAccess(ctx, gid, actionGroupMembersAdd); err != nil {
 		return nil, permissionsError(err)
 	}
 
@@ -55,7 +62,7 @@ func (h *apiHandler) ListGroupMembers(ctx context.Context, req ListGroupMembersR
 		return nil, err
 	}
 
-	if err := permissions.CheckAccess(ctx, gid, actionGroupGet); err != nil {
+	if err := permissions.CheckAccess(ctx, gid, actionGroupMembersList); err != nil {
 		return nil, permissionsError(err)
 	}
 
@@ -104,7 +111,7 @@ func (h *apiHandler) RemoveGroupMember(ctx context.Context, req RemoveGroupMembe
 		return nil, err
 	}
 
-	if err := permissions.CheckAccess(ctx, gid, actionGroupUpdate); err != nil {
+	if err := permissions.CheckAccess(ctx, gid, actionGroupMembersRemove); err != nil {
 		return nil, permissionsError(err)
 	}
 
@@ -133,7 +140,7 @@ func (h *apiHandler) ReplaceGroupMembers(ctx context.Context, req ReplaceGroupMe
 		return nil, err
 	}
 
-	if err := permissions.CheckAccess(ctx, gid, actionGroupUpdate); err != nil {
+	if err := permissions.CheckAccess(ctx, gid, actionGroupMembersPut); err != nil {
 		return nil, permissionsError(err)
 	}
 
