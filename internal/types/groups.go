@@ -48,6 +48,11 @@ type GroupService interface {
 	ListGroups(ctx context.Context, ownerID gidx.PrefixedID, pagination crdbx.Paginator) (Groups, error)
 	UpdateGroup(ctx context.Context, id gidx.PrefixedID, update GroupUpdate) (*Group, error)
 	DeleteGroup(ctx context.Context, id gidx.PrefixedID) error
+
+	AddMembers(ctx context.Context, groupID gidx.PrefixedID, subjects ...gidx.PrefixedID) error
+	ListMembers(ctx context.Context, groupID gidx.PrefixedID, pagination crdbx.Paginator) ([]gidx.PrefixedID, error)
+	// RemoveMember(ctx context.Context, groupID gidx.PrefixedID, subjectID gidx.PrefixedID) error
+	// ReplaceMembers(ctx context.Context, groupID gidx.PrefixedID, subjects ...gidx.PrefixedID) error
 }
 
 // Groups represents a list of groups

@@ -11,12 +11,23 @@ import (
 	"net/url"
 	"path"
 	"strings"
-	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"go.infratographer.com/identity-api/internal/crdbx"
 	"go.infratographer.com/x/gidx"
 )
+
+// AddGroupMembers defines model for AddGroupMembers.
+type AddGroupMembers struct {
+	// MemberIds IDs of the members to add to the group
+	MemberIds []gidx.PrefixedID `json:"member_ids"`
+}
+
+// AddGroupMembersResponse defines model for AddGroupMembersResponse.
+type AddGroupMembersResponse struct {
+	// Ok true if the members were added successfully
+	Ok bool `json:"ok"`
+}
 
 // CreateGroup defines model for CreateGroup.
 type CreateGroup struct {
@@ -59,32 +70,17 @@ type DeleteResponse struct {
 
 // Group defines model for Group.
 type Group struct {
-	// CreatedAt time the group was created
-	CreatedAt *time.Time `json:"created_at,omitempty"`
-
-	// CreatedBy ID of the user who created the group
-	CreatedBy *gidx.PrefixedID `json:"created_by,omitempty"`
-
 	// Description a description for the group
 	Description *string `json:"description,omitempty"`
 
 	// Id ID of the group
 	ID gidx.PrefixedID `json:"id"`
 
-	// Members IDs of the members of the group
-	Members []gidx.PrefixedID `json:"members"`
-
 	// Name a name for the group
 	Name string `json:"name"`
 
 	// OwnerId ID of the owner of the group
 	OwnerID *gidx.PrefixedID `json:"owner_id,omitempty"`
-
-	// UpdatedAt time the group was last updated
-	UpdatedAt *time.Time `json:"updated_at,omitempty"`
-
-	// UpdatedBy ID of the user who last updated the group
-	UpdatedBy *gidx.PrefixedID `json:"updated_by,omitempty"`
 }
 
 // Issuer defines model for Issuer.
@@ -194,6 +190,15 @@ type GroupCollection struct {
 	Pagination Pagination `json:"pagination"`
 }
 
+// GroupMemberCollection defines model for GroupMemberCollection.
+type GroupMemberCollection struct {
+	GroupID gidx.PrefixedID   `json:"group_id"`
+	Members []gidx.PrefixedID `json:"members"`
+
+	// Pagination collection response pagination
+	Pagination Pagination `json:"pagination"`
+}
+
 // IssuerCollection defines model for IssuerCollection.
 type IssuerCollection struct {
 	Issuers []Issuer `json:"issuers"`
@@ -215,6 +220,15 @@ type UserCollection struct {
 	// Pagination collection response pagination
 	Pagination Pagination `json:"pagination"`
 	Users      []User     `json:"users"`
+}
+
+// ListGroupMembersParams defines parameters for ListGroupMembers.
+type ListGroupMembersParams struct {
+	// Cursor the cursor to the results to return
+	Cursor *PageCursor `form:"cursor,omitempty" json:"cursor,omitempty" query:"cursor"`
+
+	// Limit limits the response collections
+	Limit *PageLimit `form:"limit,omitempty" json:"limit,omitempty" query:"limit"`
 }
 
 // GetIssuerUsersParams defines parameters for GetIssuerUsers.
@@ -256,6 +270,9 @@ type ListOwnerIssuersParams struct {
 // UpdateGroupJSONRequestBody defines body for UpdateGroup for application/json ContentType.
 type UpdateGroupJSONRequestBody = UpdateGroup
 
+// AddGroupMembersJSONRequestBody defines body for AddGroupMembers for application/json ContentType.
+type AddGroupMembersJSONRequestBody = AddGroupMembers
+
 // UpdateIssuerJSONRequestBody defines body for UpdateIssuer for application/json ContentType.
 type UpdateIssuerJSONRequestBody = IssuerUpdate
 
@@ -271,43 +288,45 @@ type CreateIssuerJSONRequestBody = CreateIssuer
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"HwAA//+Uzk9GJDwAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

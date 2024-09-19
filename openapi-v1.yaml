@@ -334,6 +334,43 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Group'
+
+  /api/v1/groups/{groupID}/members:
+    get:
+      tags:
+        - Groups
+      summary: Gets members of a Group
+      description: Gets the members of a group by ID.
+      operationId: listGroupMembers
+      parameters:
+        - $ref: '#/components/parameters/groupID'
+        - $ref: '#/components/parameters/pageCursor'
+        - $ref: '#/components/parameters/pageLimit'
+      responses:
+        '200':
+          $ref: '#/components/responses/GroupMemberCollection'
+    post:
+      tags:
+        - Groups
+      summary: Adds a member to a Group
+      description: Adds a member to a group by ID.
+      operationId: addGroupMembers
+      parameters:
+        - $ref: '#/components/parameters/groupID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddGroupMembers'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddGroupMembersResponse'
+
 components:
   schemas:
     DeleteResponse:
@@ -522,7 +559,6 @@ components:
         - id
         - name
         - owner
-        - members
       properties:
         id:
           x-go-name: ID
@@ -540,28 +576,25 @@ components:
           type: string
           x-go-type: gidx.PrefixedID
           description: ID of the owner of the group
-        members:
+
+    AddGroupMembers:
+      required:
+        - member_ids
+      properties:
+        member_ids:
           type: array
           items:
             type: string
             x-go-type: gidx.PrefixedID
-          description: IDs of the members of the group
-        created_at:
-          type: string
-          format: date-time
-          description: time the group was created
-        created_by:
-          type: string
-          x-go-type: gidx.PrefixedID
-          description: ID of the user who created the group
-        updated_at:
-          type: string
-          format: date-time
-          description: time the group was last updated
-        updated_by:
-          type: string
-          x-go-type: gidx.PrefixedID
-          description: ID of the user who last updated the group
+          description: IDs of the members to add to the group
+
+    AddGroupMembersResponse:
+      required:
+        - ok
+      properties:
+        ok:
+          type: boolean
+          description: true if the members were added successfully
 
   parameters:
     ownerID:
@@ -682,5 +715,31 @@ components:
                 type: array
                 items:
                   $ref: '#/components/schemas/Group'
+              pagination:
+                $ref: '#/components/schemas/Pagination'
+    GroupMemberCollection:
+      description: a collection of group members
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - members
+              - group_id
+              - pagination
+            properties:
+              group_id:
+                type: string
+                x-go-name: GroupID
+                x-go-type: gidx.PrefixedID
+                x-go-type-import:
+                  path: go.infratographer.com/x/gidx
+              members:
+                type: array
+                items:
+                  type: string
+                  x-go-type: gidx.PrefixedID
+                  x-go-type-import:
+                    path: go.infratographer.com/x/gidx
               pagination:
                 $ref: '#/components/schemas/Pagination'
