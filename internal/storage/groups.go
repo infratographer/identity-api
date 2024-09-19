@@ -252,9 +252,14 @@ func (gs *groupService) AddMembers(ctx context.Context, groupID gidx.PrefixedID,
 	}
 
 	vals := make([]string, 0, len(subjects))
+	params := make([]any, 0, len(subjects)+1)
+	params = append(params, groupID)
 
-	for _, subj := range subjects {
-		vals = append(vals, fmt.Sprintf("('%s', '%s')", groupID, subj))
+	const placeholderOffset = 2
+
+	for i, subj := range subjects {
+		vals = append(vals, fmt.Sprintf("($1, $%d)", i+placeholderOffset))
+		params = append(params, subj)
 	}
 
 	q := fmt.Sprintf(
@@ -263,7 +268,7 @@ func (gs *groupService) AddMembers(ctx context.Context, groupID gidx.PrefixedID,
 		strings.Join(vals, ", "),
 	)
 
-	_, err = tx.ExecContext(ctx, q)
+	_, err = tx.ExecContext(ctx, q, params...)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -384,7 +389,7 @@ func (gs *groupService) ListGroupsBySubject(ctx context.Context, subject gidx.Pr
 		paginate.LimitClause(),
 	)
 
-	rows, err := gs.db.QueryContext(ctx, q, subject)
+	rows, err := gs.db.QueryContext(ctx, q, paginate.Values(subject)...)
 	if err != nil {
 		return nil, err
 	}
