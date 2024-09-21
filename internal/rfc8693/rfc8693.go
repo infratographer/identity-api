@@ -285,7 +285,7 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 		return errorsx.WithStack(fosite.ErrInvalidRequest.WithHintf("unable to populate user info: %s", err))
 	}
 
-	if subOverride, ok := mappedClaims.ToMapClaims()["prefixedid:sub"]; ok && subOverride != nil {
+	if subOverride, ok := mappedClaims.ToMapClaims()["identity-api.infratographer.com/sub"]; ok && subOverride != nil && subOverride.(string) != "" {
 		issHash := sha256.Sum256([]byte(userInfo.Issuer))
 
 		digest := base64.RawURLEncoding.EncodeToString(issHash[:])
@@ -317,7 +317,7 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 	newClaims.Issuer = s.config.GetAccessTokenIssuer(ctx)
 
 	for k, v := range mappedClaims.ToMapClaims() {
-		if k != "prefixedid:sub" {
+		if k != "identity-api.infratographer.com/sub" {
 			newClaims.Add(k, v)
 		}
 	}
