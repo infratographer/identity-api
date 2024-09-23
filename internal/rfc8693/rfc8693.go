@@ -3,6 +3,8 @@ package rfc8693
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/url"
@@ -19,6 +21,7 @@ import (
 	"go.infratographer.com/identity-api/internal/fositex"
 	"go.infratographer.com/identity-api/internal/storage"
 	"go.infratographer.com/identity-api/internal/types"
+	"go.infratographer.com/x/gidx"
 )
 
 const (
@@ -282,6 +285,20 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 		return errorsx.WithStack(fosite.ErrInvalidRequest.WithHintf("unable to populate user info: %s", err))
 	}
 
+	if subOverride, ok := mappedClaims.ToMapClaims()["identity-api.infratographer.com/sub"]; ok && subOverride != nil && subOverride.(string) != "" {
+		issHash := sha256.Sum256([]byte(userInfo.Issuer))
+
+		digest := base64.RawURLEncoding.EncodeToString(issHash[:])
+
+		customPrefixedID, err := gidx.Parse(fmt.Sprintf("%s-%s-%s", types.IdentityUserIDPrefix, digest, subOverride))
+
+		if err != nil {
+			return errorsx.WithStack(fosite.ErrServerError.WithHintf("could not parse overridden subject to prefixed id: %s", err))
+		}
+
+		userInfo.ID = customPrefixedID
+	}
+
 	userInfo, err = userInfoSvc.StoreUserInfo(dbCtx, userInfo)
 
 	if err != nil {
@@ -300,7 +317,9 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 	newClaims.Issuer = s.config.GetAccessTokenIssuer(ctx)
 
 	for k, v := range mappedClaims.ToMapClaims() {
-		newClaims.Add(k, v)
+		if k != "identity-api.infratographer.com/sub" {
+			newClaims.Add(k, v)
+		}
 	}
 
 	expiry := time.Now().Add(s.config.GetAccessTokenLifespan(ctx))

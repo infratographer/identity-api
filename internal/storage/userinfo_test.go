@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"go.infratographer.com/identity-api/internal/celutils"
 	"go.infratographer.com/identity-api/internal/testingx"
 	"go.infratographer.com/identity-api/internal/types"
 	"go.infratographer.com/x/gidx"
@@ -36,6 +37,23 @@ func TestUserInfoStore(t *testing.T) {
 		ClaimMappings: types.ClaimsMapping{},
 	}
 
+	celWithRemappedSubject, err := celutils.ParseCEL("claims.sub")
+	assert.NoError(t, err)
+
+	issuerRemappedSubject := types.Issuer{
+		OwnerID: ownerID,
+		ID:      gidx.MustNewID("testiss"),
+		Name:    "Example Remapped Subject",
+		URI:     "https://example2.com",
+		JWKSURI: "https://example2.com/.well-known/jwks.json",
+		ClaimMappings: types.ClaimsMapping{
+			"prefixedid:sub": celWithRemappedSubject,
+		},
+	}
+
+	issuerRemappedSubjectClaimRepr, err := issuerRemappedSubject.ClaimMappings.Repr()
+	assert.NoError(t, err)
+
 	seedIssuers := []SeedIssuer{
 		{
 			OwnerID:       ownerID,
@@ -44,6 +62,14 @@ func TestUserInfoStore(t *testing.T) {
 			URI:           issuer.URI,
 			JWKSURI:       issuer.JWKSURI,
 			ClaimMappings: map[string]string{},
+		},
+		{
+			OwnerID:       ownerID,
+			ID:            issuerRemappedSubject.ID,
+			Name:          issuerRemappedSubject.Name,
+			URI:           issuerRemappedSubject.URI,
+			JWKSURI:       issuerRemappedSubject.JWKSURI,
+			ClaimMappings: issuerRemappedSubjectClaimRepr,
 		},
 	}
 
@@ -64,12 +90,29 @@ func TestUserInfoStore(t *testing.T) {
 		Subject: "sub0|malikadmin",
 	}
 
+	userRemappedSub := types.UserInfo{
+		Name:    "Ezekiel",
+		Email:   "eze@kiel.co",
+		Issuer:  issuerRemappedSubject.URI,
+		Subject: "32cb2842-4a5d-45cc-b4f3-63cfcdf23e63",
+	}
+
 	// This user ID should be deterministically generated, so we precompute it here rather
 	// than use generateSubjectID
 	expUserInfoID, err := gidx.Parse("idntusr-JJ5-CXOzTNil-ncNcX8UIGzsDYSRGj1Ktc6oI-s9fSs")
 	require.NoError(t, err)
 
+	expUserInfoIDRemappedSub, err := gidx.Parse("idntusr-mqwvsgspnV9ZpGoefig_OV86qUt_3t9j5GLlF2EBVvc-32cb2842-4a5d-45cc-b4f3-63cfcdf23e63")
+	require.NoError(t, err)
+
+	// Ultimately we should test the evaluation of the claim mapping on token exchange, but
+	// for the purposes of this we're just testing the storage of the user info based on
+	// custom PrefixedIDs.
+	userRemappedSub.ID = expUserInfoIDRemappedSub
+
 	var userInfoStored types.UserInfo
+
+	var userInfoRemappedSubStored types.UserInfo
 
 	// seed the DB
 	{
@@ -79,6 +122,11 @@ func TestUserInfoStore(t *testing.T) {
 		}
 
 		userInfoStored, err = svc.StoreUserInfo(ctx, user)
+		if !assert.NoError(t, err) {
+			assert.FailNow(t, "insert user failed")
+		}
+
+		userInfoRemappedSubStored, err = svc.StoreUserInfo(ctx, userRemappedSub)
 		if !assert.NoError(t, err) {
 			assert.FailNow(t, "insert user failed")
 		}
@@ -177,6 +225,16 @@ func TestUserInfoStore(t *testing.T) {
 				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
 					assert.NoError(t, res.Err)
 					assert.Equal(t, userInfoStored, res.Success)
+				},
+				CleanupFn: cleanupFn,
+			},
+			{
+				Name:    "SuccessRemappedSubject",
+				Input:   expUserInfoIDRemappedSub,
+				SetupFn: setupFn,
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[types.UserInfo]) {
+					assert.NoError(t, res.Err)
+					assert.Equal(t, userInfoRemappedSubStored, res.Success)
 				},
 				CleanupFn: cleanupFn,
 			},
