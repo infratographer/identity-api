@@ -219,7 +219,7 @@ func (h *apiHandler) ListUserGroups(ctx context.Context, req ListUserGroupsReque
 		return nil, err
 	}
 
-	resp := groups.ToIDs()
+	resp := groups.ToPrefixedIDs()
 
 	collection := v1.GroupIDCollection{
 		GroupIDs:   resp,
