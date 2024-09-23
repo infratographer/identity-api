@@ -287,6 +287,7 @@ paths:
       tags:
         - Users
       summary: Lists groups by user id
+      description: Lists groups by user id.
       operationId: ListUserGroups
       parameters:
         - in: path
@@ -300,7 +301,7 @@ paths:
         - $ref: '#/components/parameters/pageLimit'
       responses:
         '200':
-          $ref: '#/components/responses/GroupCollection'
+          $ref: '#/components/responses/GroupIDCollection'
 
   /api/v1/groups/{groupID}:
     delete:
@@ -788,6 +789,25 @@ components:
                   $ref: '#/components/schemas/Group'
               pagination:
                 $ref: '#/components/schemas/Pagination'
+    GroupIDCollection:
+      description: a collection of group ids
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - group_ids
+              - pagination
+            properties:
+              group_ids:
+                type: array
+                x-go-name: GroupIDs
+                items:
+                  type: string
+                  x-go-type: gidx.PrefixedID
+                  x-go-type-import:
+              pagination:
+                $ref: '#/components/schemas/Pagination'
     GroupMemberCollection:
       description: a collection of group members
       content:
@@ -795,7 +815,7 @@ components:
           schema:
             type: object
             required:
-              - members
+              - member_ids
               - group_id
               - pagination
             properties:
@@ -805,8 +825,9 @@ components:
                 x-go-type: gidx.PrefixedID
                 x-go-type-import:
                   path: go.infratographer.com/x/gidx
-              members:
+              member_ids:
                 type: array
+                x-go-name: MemberIDs
                 items:
                   type: string
                   x-go-type: gidx.PrefixedID

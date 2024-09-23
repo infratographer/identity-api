@@ -24,11 +24,11 @@ func (p ListUserGroupsParams) GetOnlyFields() []string {
 }
 
 // SetPagination sets the pagination on the provided collection.
-func (p ListUserGroupsParams) SetPagination(collection *GroupCollection) error {
+func (p ListUserGroupsParams) SetPagination(collection *GroupIDCollection) error {
 	collection.Pagination.Limit = crdbx.Limit(p.GetLimit())
 
-	if count := len(collection.Groups); count != 0 && count == collection.Pagination.Limit {
-		cursor, err := crdbx.NewCursor("group_id", collection.Groups[count-1].ID.String())
+	if count := len(collection.GroupIDs); count != 0 && count == collection.Pagination.Limit {
+		cursor, err := crdbx.NewCursor("group_id", collection.GroupIDs[count-1].String())
 		if err != nil {
 			return err
 		}

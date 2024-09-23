@@ -587,9 +587,16 @@ type GroupCollectionJSONResponse struct {
 	Pagination Pagination `json:"pagination"`
 }
 
+type GroupIDCollectionJSONResponse struct {
+	GroupIDs []gidx.PrefixedID `json:"group_ids"`
+
+	// Pagination collection response pagination
+	Pagination Pagination `json:"pagination"`
+}
+
 type GroupMemberCollectionJSONResponse struct {
-	GroupID gidx.PrefixedID   `json:"group_id"`
-	Members []gidx.PrefixedID `json:"members"`
+	GroupID   gidx.PrefixedID   `json:"group_id"`
+	MemberIDs []gidx.PrefixedID `json:"member_ids"`
 
 	// Pagination collection response pagination
 	Pagination Pagination `json:"pagination"`
@@ -981,7 +988,7 @@ type ListUserGroupsResponseObject interface {
 	VisitListUserGroupsResponse(w http.ResponseWriter) error
 }
 
-type ListUserGroups200JSONResponse struct{ GroupCollectionJSONResponse }
+type ListUserGroups200JSONResponse struct{ GroupIDCollectionJSONResponse }
 
 func (response ListUserGroups200JSONResponse) VisitListUserGroupsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")

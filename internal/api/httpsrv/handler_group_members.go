@@ -87,7 +87,7 @@ func (h *apiHandler) ListGroupMembers(ctx context.Context, req ListGroupMembersR
 	}
 
 	collection := v1.GroupMemberCollection{
-		Members:    members,
+		MemberIDs:  members,
 		GroupID:    gid,
 		Pagination: v1.Pagination{},
 	}
@@ -219,13 +219,10 @@ func (h *apiHandler) ListUserGroups(ctx context.Context, req ListUserGroupsReque
 		return nil, err
 	}
 
-	resp, err := groups.ToV1Groups()
-	if err != nil {
-		return nil, err
-	}
+	resp := groups.ToIDs()
 
-	collection := v1.GroupCollection{
-		Groups:     resp,
+	collection := v1.GroupIDCollection{
+		GroupIDs:   resp,
 		Pagination: v1.Pagination{},
 	}
 
@@ -233,5 +230,5 @@ func (h *apiHandler) ListUserGroups(ctx context.Context, req ListUserGroupsReque
 		return nil, err
 	}
 
-	return ListUserGroups200JSONResponse{GroupCollectionJSONResponse(collection)}, nil
+	return ListUserGroups200JSONResponse{GroupIDCollectionJSONResponse(collection)}, nil
 }

@@ -75,3 +75,14 @@ func (g Groups) ToV1Groups() ([]v1.Group, error) {
 
 	return out, nil
 }
+
+// ToIDs converts a list of groups to a list of group IDs.
+func (g Groups) ToIDs() []gidx.PrefixedID {
+	out := make([]gidx.PrefixedID, len(g))
+
+	for i, group := range g {
+		out[i] = group.ID
+	}
+
+	return out
+}

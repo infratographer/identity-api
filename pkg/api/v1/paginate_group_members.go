@@ -27,8 +27,8 @@ func (p ListGroupMembersParams) GetOnlyFields() []string {
 func (p ListGroupMembersParams) SetPagination(collection *GroupMemberCollection) error {
 	collection.Pagination.Limit = crdbx.Limit(p.GetLimit())
 
-	if count := len(collection.Members); count != 0 && count == collection.Pagination.Limit {
-		last := collection.Members[count-1]
+	if count := len(collection.MemberIDs); count != 0 && count == collection.Pagination.Limit {
+		last := collection.MemberIDs[count-1]
 
 		cursor, err := crdbx.NewCursor(
 			"subject_id", last.String(),
