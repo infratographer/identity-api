@@ -279,6 +279,10 @@ func (gs *groupService) AddMembers(ctx context.Context, groupID gidx.PrefixedID,
 func (gs *groupService) ListMembers(ctx context.Context, groupID gidx.PrefixedID, pagination crdbx.Paginator) ([]gidx.PrefixedID, error) {
 	paginate := crdbx.Paginate(pagination, crdbx.ContextAsOfSystemTime(ctx, "-1m"))
 
+	if _, err := gs.fetchGroupByID(ctx, groupID); err != nil {
+		return nil, err
+	}
+
 	q := fmt.Sprintf(
 		"SELECT %s FROM group_members %s WHERE %s = $1 %s %s %s",
 		groupMemberCols.SubjectID, paginate.AsOfSystemTime(), groupMemberCols.GroupID,
@@ -324,7 +328,17 @@ func (gs *groupService) RemoveMember(ctx context.Context, groupID gidx.PrefixedI
 		groupMemberCols.GroupID, groupMemberCols.SubjectID,
 	)
 
-	_, err = tx.ExecContext(ctx, q, groupID, subject)
+	res, err := tx.ExecContext(ctx, q, groupID, subject)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	} else if rowsAffected == 0 {
+		return types.ErrGroupMemberNotFound
+	}
 
 	return err
 }
