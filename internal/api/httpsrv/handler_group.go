@@ -73,7 +73,7 @@ func (h *apiHandler) CreateGroup(ctx context.Context, req CreateGroupRequestObje
 		return nil, err
 	}
 
-	if err := h.eventService.GroupCreate(ctx, ownerID, id); err != nil {
+	if err := h.eventService.CreateGroup(ctx, ownerID, id); err != nil {
 		if err := h.engine.RollbackContext(ctx); err != nil {
 			return nil, echo.NewHTTPError(http.StatusBadGateway, err)
 		}
@@ -241,22 +241,43 @@ func (h *apiHandler) DeleteGroup(ctx context.Context, req DeleteGroupRequestObje
 		return nil, permissionsError(err)
 	}
 
-	err := h.engine.DeleteGroup(ctx, gid)
+	group, err := h.engine.GetGroupByID(ctx, gid)
 	if err != nil {
-		if errors.Is(err, types.ErrNotFound) {
-			err = echo.NewHTTPError(
-				http.StatusNotFound,
-				fmt.Sprintf("group %s not found", gid),
-			)
+		return nil, err
+	}
 
-			return nil, err
-		}
+	mc, err := h.engine.GroupMembersCount(ctx, gid)
+	if err != nil {
+		return nil, err
+	}
 
+	if mc > 0 {
+		err := echo.NewHTTPError(
+			http.StatusBadRequest,
+			fmt.Sprintf("cannot delete group %s: still has members", gid),
+		)
+
+		return nil, err
+	}
+
+	err = h.engine.DeleteGroup(ctx, group.ID)
+	if err != nil {
 		if errors.Is(err, types.ErrInvalidArgument) {
 			return nil, echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 
 		return nil, err
+	}
+
+	if err := h.eventService.DeleteGroup(ctx, group.OwnerID, group.ID); err != nil {
+		if err := h.engine.RollbackContext(ctx); err != nil {
+			return nil, echo.NewHTTPError(http.StatusBadGateway, err)
+		}
+
+		return nil, echo.NewHTTPError(
+			http.StatusBadGateway,
+			"failed to remove group in permissions API",
+		)
 	}
 
 	return DeleteGroup200JSONResponse{true}, nil

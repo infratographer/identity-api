@@ -261,7 +261,7 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 			ctx = context.Background()
 			ctx = pagination.AsOfSystemTime(ctx, "")
 			p := v1.ListGroupMembersParams{}
-			mm, err := store.ListMembers(ctx, input.GroupID, p)
+			mm, err := store.ListGroupMembers(ctx, input.GroupID, p)
 
 			return testingx.TestResult[[]gidx.PrefixedID]{Success: mm, Err: err}
 		}
@@ -373,7 +373,7 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 			ctx = context.Background()
 			ctx = pagination.AsOfSystemTime(ctx, "")
 			p := v1.ListGroupMembersParams{}
-			mm, err := store.ListMembers(ctx, input.GroupID, p)
+			mm, err := store.ListGroupMembers(ctx, input.GroupID, p)
 
 			return testingx.TestResult[[]gidx.PrefixedID]{Success: mm, Err: err}
 		}
@@ -479,7 +479,7 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 			ctx = context.Background()
 			ctx = pagination.AsOfSystemTime(ctx, "")
 			p := v1.ListGroupMembersParams{}
-			mm, err := store.ListMembers(ctx, input.GroupID, p)
+			mm, err := store.ListGroupMembers(ctx, input.GroupID, p)
 
 			return testingx.TestResult[[]gidx.PrefixedID]{Success: mm, Err: err}
 		}
@@ -501,7 +501,7 @@ func withStoredGroupAndMembers(t *testing.T, s storage.Engine, group *types.Grou
 
 	*group = *g
 
-	if err := s.AddMembers(seedCtx, group.ID, m...); !assert.NoError(t, err) {
+	if err := s.AddGroupMembers(seedCtx, group.ID, m...); !assert.NoError(t, err) {
 		assert.FailNow(t, "failed to add members")
 	}
 
