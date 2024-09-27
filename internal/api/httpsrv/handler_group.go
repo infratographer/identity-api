@@ -73,6 +73,17 @@ func (h *apiHandler) CreateGroup(ctx context.Context, req CreateGroupRequestObje
 		return nil, err
 	}
 
+	if err := h.eventService.GroupCreate(ctx, ownerID, id); err != nil {
+		if err := h.engine.RollbackContext(ctx); err != nil {
+			return nil, echo.NewHTTPError(http.StatusBadGateway, err)
+		}
+
+		return nil, echo.NewHTTPError(
+			http.StatusBadGateway,
+			"failed to create group in permissions API",
+		)
+	}
+
 	groupResp, err := g.ToV1Group()
 	if err != nil {
 		return nil, err

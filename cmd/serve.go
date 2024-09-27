@@ -16,6 +16,7 @@ import (
 	"go.infratographer.com/x/crdbx"
 	"go.infratographer.com/x/echojwtx"
 	"go.infratographer.com/x/echox"
+	eventsx "go.infratographer.com/x/events"
 	"go.infratographer.com/x/otelx"
 	"go.infratographer.com/x/versionx"
 	"go.uber.org/zap"
@@ -23,6 +24,7 @@ import (
 	"go.infratographer.com/identity-api/internal/api/httpsrv"
 	"go.infratographer.com/identity-api/internal/auditx"
 	"go.infratographer.com/identity-api/internal/config"
+	"go.infratographer.com/identity-api/internal/events"
 	"go.infratographer.com/identity-api/internal/fositex"
 	"go.infratographer.com/identity-api/internal/jwks"
 	"go.infratographer.com/identity-api/internal/oauth2"
@@ -42,9 +44,7 @@ var serveCmd = &cobra.Command{
 	},
 }
 
-var (
-	defaultListen = ":8080"
-)
+var defaultListen = ":8080"
 
 func init() {
 	rootCmd.AddCommand(serveCmd)
@@ -56,6 +56,7 @@ func init() {
 	echox.MustViperFlags(v, flags, defaultListen)
 	otelx.MustViperFlags(v, flags)
 	auditx.MustViperFlags(v, flags)
+	eventsx.MustViperFlags(v, flags, appName)
 }
 
 func serve(ctx context.Context) {
@@ -73,8 +74,18 @@ func serve(ctx context.Context) {
 		defer auditCloseFn() //nolint:errcheck // Not needed to check returned error.
 	}
 
-	perms, err := permissions.New(config.Config.Permissions,
+	nc, err := eventsx.NewNATSConnection(
+		config.Config.Events.NATS,
+		eventsx.WithNATSLogger(logger),
+	)
+	if err != nil {
+		logger.Fatal("failed to initialize NATS connection", zap.Error(err))
+	}
+
+	perms, err := permissions.New(
+		config.Config.Permissions,
 		permissions.WithLogger(logger),
+		permissions.WithEventsPublisher(nc),
 	)
 	if err != nil {
 		logger.Fatal("failed to initialize permissions", zap.Error(err))
@@ -113,7 +124,9 @@ func serve(ctx context.Context) {
 		oauth2.NewClientCredentialsHandlerFactory,
 	)
 
-	apiHandler, err := httpsrv.NewAPIHandler(storageEngine, auditMiddleware, perms.Middleware())
+	es := events.NewEvents(events.WithLogger(logger.Desugar()))
+
+	apiHandler, err := httpsrv.NewAPIHandler(storageEngine, es, auditMiddleware, perms.Middleware())
 	if err != nil {
 		logger.Fatal("error initializing API server: %s", err)
 	}
