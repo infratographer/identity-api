@@ -1,6 +1,7 @@
 package httpsrv
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -99,4 +100,12 @@ func (h *APIHandler) Routes(rg *echo.Group) {
 	strictHandler := NewStrictHandler(h.handler, nil)
 
 	RegisterHandlers(rg, strictHandler)
+}
+
+func (h *apiHandler) rollbackAndReturnError(ctx context.Context, httpcode int, msg string) *echo.HTTPError {
+	if err := h.engine.RollbackContext(ctx); err != nil {
+		return echo.NewHTTPError(http.StatusBadGateway, err)
+	}
+
+	return echo.NewHTTPError(httpcode, msg)
 }

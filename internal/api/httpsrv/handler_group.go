@@ -74,14 +74,8 @@ func (h *apiHandler) CreateGroup(ctx context.Context, req CreateGroupRequestObje
 	}
 
 	if err := h.eventService.CreateGroup(ctx, ownerID, id); err != nil {
-		if err := h.engine.RollbackContext(ctx); err != nil {
-			return nil, echo.NewHTTPError(http.StatusBadGateway, err)
-		}
-
-		return nil, echo.NewHTTPError(
-			http.StatusBadGateway,
-			"failed to create group in permissions API",
-		)
+		resperr := h.rollbackAndReturnError(ctx, http.StatusBadGateway, "failed to create group in permissions API")
+		return nil, resperr
 	}
 
 	groupResp, err := g.ToV1Group()
@@ -270,14 +264,8 @@ func (h *apiHandler) DeleteGroup(ctx context.Context, req DeleteGroupRequestObje
 	}
 
 	if err := h.eventService.DeleteGroup(ctx, group.OwnerID, group.ID); err != nil {
-		if err := h.engine.RollbackContext(ctx); err != nil {
-			return nil, echo.NewHTTPError(http.StatusBadGateway, err)
-		}
-
-		return nil, echo.NewHTTPError(
-			http.StatusBadGateway,
-			"failed to remove group in permissions API",
-		)
+		resperr := h.rollbackAndReturnError(ctx, http.StatusBadGateway, "failed to remove group in permissions API")
+		return nil, resperr
 	}
 
 	return DeleteGroup200JSONResponse{true}, nil
