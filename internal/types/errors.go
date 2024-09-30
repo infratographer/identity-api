@@ -36,6 +36,9 @@ var (
 
 	// ErrGroupNameEmpty is returned if the group name is empty.
 	ErrGroupNameEmpty = fmt.Errorf("%w: group name is empty", ErrInvalidArgument)
+
+	// ErrGroupMemberNotFound is returned if the group member doesn't exist.
+	ErrGroupMemberNotFound = fmt.Errorf("%w: group member not found", ErrNotFound)
 )
 
 // ErrorInvalidTokenRequest represents an error where an access token request failed.

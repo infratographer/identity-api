@@ -33,6 +33,18 @@ type ServerInterface interface {
 	// Updates a Group
 	// (PATCH /api/v1/groups/{groupID})
 	UpdateGroup(ctx echo.Context, groupID GroupID) error
+	// Gets members of a Group
+	// (GET /api/v1/groups/{groupID}/members)
+	ListGroupMembers(ctx echo.Context, groupID GroupID, params ListGroupMembersParams) error
+	// Adds a member to a Group
+	// (POST /api/v1/groups/{groupID}/members)
+	AddGroupMembers(ctx echo.Context, groupID GroupID) error
+	// Replaces members of a Group
+	// (PUT /api/v1/groups/{groupID}/members)
+	ReplaceGroupMembers(ctx echo.Context, groupID GroupID) error
+	// Removes a member from a Group
+	// (DELETE /api/v1/groups/{groupID}/members/{subjectID})
+	RemoveGroupMember(ctx echo.Context, groupID GroupID, subjectID SubjectID) error
 	// Deletes an issuer with the given ID.
 	// (DELETE /api/v1/issuers/{id})
 	DeleteIssuer(ctx echo.Context, id gidx.PrefixedID) error
@@ -66,6 +78,9 @@ type ServerInterface interface {
 	// Gets information about a User.
 	// (GET /api/v1/users/{userID})
 	GetUserByID(ctx echo.Context, userID gidx.PrefixedID) error
+	// Lists groups by user id
+	// (GET /api/v1/users/{userID}/groups)
+	ListUserGroups(ctx echo.Context, userID gidx.PrefixedID, params ListUserGroupsParams) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -150,6 +165,94 @@ func (w *ServerInterfaceWrapper) UpdateGroup(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.UpdateGroup(ctx, groupID)
+	return err
+}
+
+// ListGroupMembers converts echo context to params.
+func (w *ServerInterfaceWrapper) ListGroupMembers(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "groupID" -------------
+	var groupID GroupID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "groupID", ctx.Param("groupID"), &groupID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupID: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListGroupMembersParams
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cursor", ctx.QueryParams(), &params.Cursor)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cursor: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.ListGroupMembers(ctx, groupID, params)
+	return err
+}
+
+// AddGroupMembers converts echo context to params.
+func (w *ServerInterfaceWrapper) AddGroupMembers(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "groupID" -------------
+	var groupID GroupID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "groupID", ctx.Param("groupID"), &groupID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupID: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.AddGroupMembers(ctx, groupID)
+	return err
+}
+
+// ReplaceGroupMembers converts echo context to params.
+func (w *ServerInterfaceWrapper) ReplaceGroupMembers(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "groupID" -------------
+	var groupID GroupID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "groupID", ctx.Param("groupID"), &groupID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupID: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.ReplaceGroupMembers(ctx, groupID)
+	return err
+}
+
+// RemoveGroupMember converts echo context to params.
+func (w *ServerInterfaceWrapper) RemoveGroupMember(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "groupID" -------------
+	var groupID GroupID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "groupID", ctx.Param("groupID"), &groupID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter groupID: %s", err))
+	}
+
+	// ------------- Path parameter "subjectID" -------------
+	var subjectID SubjectID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "subjectID", ctx.Param("subjectID"), &subjectID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter subjectID: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.RemoveGroupMember(ctx, groupID, subjectID)
 	return err
 }
 
@@ -393,6 +496,38 @@ func (w *ServerInterfaceWrapper) GetUserByID(ctx echo.Context) error {
 	return err
 }
 
+// ListUserGroups converts echo context to params.
+func (w *ServerInterfaceWrapper) ListUserGroups(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "userID" -------------
+	var userID gidx.PrefixedID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "userID", ctx.Param("userID"), &userID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter userID: %s", err))
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListUserGroupsParams
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "cursor", ctx.QueryParams(), &params.Cursor)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter cursor: %s", err))
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", ctx.QueryParams(), &params.Limit)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter limit: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.ListUserGroups(ctx, userID, params)
+	return err
+}
+
 // This is a simple interface which specifies echo.Route addition functions which
 // are present on both echo.Echo and echo.Group, since we want to allow using
 // either of them for path registration
@@ -426,6 +561,10 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.DELETE(baseURL+"/api/v1/groups/:groupID", wrapper.DeleteGroup)
 	router.GET(baseURL+"/api/v1/groups/:groupID", wrapper.GetGroupByID)
 	router.PATCH(baseURL+"/api/v1/groups/:groupID", wrapper.UpdateGroup)
+	router.GET(baseURL+"/api/v1/groups/:groupID/members", wrapper.ListGroupMembers)
+	router.POST(baseURL+"/api/v1/groups/:groupID/members", wrapper.AddGroupMembers)
+	router.PUT(baseURL+"/api/v1/groups/:groupID/members", wrapper.ReplaceGroupMembers)
+	router.DELETE(baseURL+"/api/v1/groups/:groupID/members/:subjectID", wrapper.RemoveGroupMember)
 	router.DELETE(baseURL+"/api/v1/issuers/:id", wrapper.DeleteIssuer)
 	router.GET(baseURL+"/api/v1/issuers/:id", wrapper.GetIssuerByID)
 	router.PATCH(baseURL+"/api/v1/issuers/:id", wrapper.UpdateIssuer)
@@ -437,11 +576,27 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/api/v1/owners/:ownerID/issuers", wrapper.ListOwnerIssuers)
 	router.POST(baseURL+"/api/v1/owners/:ownerID/issuers", wrapper.CreateIssuer)
 	router.GET(baseURL+"/api/v1/users/:userID", wrapper.GetUserByID)
+	router.GET(baseURL+"/api/v1/users/:userID/groups", wrapper.ListUserGroups)
 
 }
 
 type GroupCollectionJSONResponse struct {
 	Groups []Group `json:"groups"`
+
+	// Pagination collection response pagination
+	Pagination Pagination `json:"pagination"`
+}
+
+type GroupIDCollectionJSONResponse struct {
+	GroupIDs []gidx.PrefixedID `json:"group_ids"`
+
+	// Pagination collection response pagination
+	Pagination Pagination `json:"pagination"`
+}
+
+type GroupMemberCollectionJSONResponse struct {
+	GroupID   gidx.PrefixedID   `json:"group_id"`
+	MemberIDs []gidx.PrefixedID `json:"member_ids"`
 
 	// Pagination collection response pagination
 	Pagination Pagination `json:"pagination"`
@@ -547,6 +702,80 @@ type UpdateGroupResponseObject interface {
 type UpdateGroup200JSONResponse Group
 
 func (response UpdateGroup200JSONResponse) VisitUpdateGroupResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListGroupMembersRequestObject struct {
+	GroupID GroupID `json:"groupID"`
+	Params  ListGroupMembersParams
+}
+
+type ListGroupMembersResponseObject interface {
+	VisitListGroupMembersResponse(w http.ResponseWriter) error
+}
+
+type ListGroupMembers200JSONResponse struct {
+	GroupMemberCollectionJSONResponse
+}
+
+func (response ListGroupMembers200JSONResponse) VisitListGroupMembersResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AddGroupMembersRequestObject struct {
+	GroupID GroupID `json:"groupID"`
+	Body    *AddGroupMembersJSONRequestBody
+}
+
+type AddGroupMembersResponseObject interface {
+	VisitAddGroupMembersResponse(w http.ResponseWriter) error
+}
+
+type AddGroupMembers200JSONResponse AddGroupMembersResponse
+
+func (response AddGroupMembers200JSONResponse) VisitAddGroupMembersResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ReplaceGroupMembersRequestObject struct {
+	GroupID GroupID `json:"groupID"`
+	Body    *ReplaceGroupMembersJSONRequestBody
+}
+
+type ReplaceGroupMembersResponseObject interface {
+	VisitReplaceGroupMembersResponse(w http.ResponseWriter) error
+}
+
+type ReplaceGroupMembers200JSONResponse AddGroupMembersResponse
+
+func (response ReplaceGroupMembers200JSONResponse) VisitReplaceGroupMembersResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type RemoveGroupMemberRequestObject struct {
+	GroupID   GroupID   `json:"groupID"`
+	SubjectID SubjectID `json:"subjectID"`
+}
+
+type RemoveGroupMemberResponseObject interface {
+	VisitRemoveGroupMemberResponse(w http.ResponseWriter) error
+}
+
+type RemoveGroupMember200JSONResponse DeleteResponse
+
+func (response RemoveGroupMember200JSONResponse) VisitRemoveGroupMemberResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
@@ -750,6 +979,24 @@ func (response GetUserByID200JSONResponse) VisitGetUserByIDResponse(w http.Respo
 	return json.NewEncoder(w).Encode(response)
 }
 
+type ListUserGroupsRequestObject struct {
+	UserID gidx.PrefixedID `json:"userID"`
+	Params ListUserGroupsParams
+}
+
+type ListUserGroupsResponseObject interface {
+	VisitListUserGroupsResponse(w http.ResponseWriter) error
+}
+
+type ListUserGroups200JSONResponse struct{ GroupIDCollectionJSONResponse }
+
+func (response ListUserGroups200JSONResponse) VisitListUserGroupsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// Deletes an OAuth Client
@@ -767,6 +1014,18 @@ type StrictServerInterface interface {
 	// Updates a Group
 	// (PATCH /api/v1/groups/{groupID})
 	UpdateGroup(ctx context.Context, request UpdateGroupRequestObject) (UpdateGroupResponseObject, error)
+	// Gets members of a Group
+	// (GET /api/v1/groups/{groupID}/members)
+	ListGroupMembers(ctx context.Context, request ListGroupMembersRequestObject) (ListGroupMembersResponseObject, error)
+	// Adds a member to a Group
+	// (POST /api/v1/groups/{groupID}/members)
+	AddGroupMembers(ctx context.Context, request AddGroupMembersRequestObject) (AddGroupMembersResponseObject, error)
+	// Replaces members of a Group
+	// (PUT /api/v1/groups/{groupID}/members)
+	ReplaceGroupMembers(ctx context.Context, request ReplaceGroupMembersRequestObject) (ReplaceGroupMembersResponseObject, error)
+	// Removes a member from a Group
+	// (DELETE /api/v1/groups/{groupID}/members/{subjectID})
+	RemoveGroupMember(ctx context.Context, request RemoveGroupMemberRequestObject) (RemoveGroupMemberResponseObject, error)
 	// Deletes an issuer with the given ID.
 	// (DELETE /api/v1/issuers/{id})
 	DeleteIssuer(ctx context.Context, request DeleteIssuerRequestObject) (DeleteIssuerResponseObject, error)
@@ -800,6 +1059,9 @@ type StrictServerInterface interface {
 	// Gets information about a User.
 	// (GET /api/v1/users/{userID})
 	GetUserByID(ctx context.Context, request GetUserByIDRequestObject) (GetUserByIDResponseObject, error)
+	// Lists groups by user id
+	// (GET /api/v1/users/{userID}/groups)
+	ListUserGroups(ctx context.Context, request ListUserGroupsRequestObject) (ListUserGroupsResponseObject, error)
 }
 
 type StrictHandlerFunc = strictecho.StrictEchoHandlerFunc
@@ -939,6 +1201,120 @@ func (sh *strictHandler) UpdateGroup(ctx echo.Context, groupID GroupID) error {
 		return err
 	} else if validResponse, ok := response.(UpdateGroupResponseObject); ok {
 		return validResponse.VisitUpdateGroupResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// ListGroupMembers operation middleware
+func (sh *strictHandler) ListGroupMembers(ctx echo.Context, groupID GroupID, params ListGroupMembersParams) error {
+	var request ListGroupMembersRequestObject
+
+	request.GroupID = groupID
+	request.Params = params
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.ListGroupMembers(ctx.Request().Context(), request.(ListGroupMembersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListGroupMembers")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(ListGroupMembersResponseObject); ok {
+		return validResponse.VisitListGroupMembersResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// AddGroupMembers operation middleware
+func (sh *strictHandler) AddGroupMembers(ctx echo.Context, groupID GroupID) error {
+	var request AddGroupMembersRequestObject
+
+	request.GroupID = groupID
+
+	var body AddGroupMembersJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.AddGroupMembers(ctx.Request().Context(), request.(AddGroupMembersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AddGroupMembers")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(AddGroupMembersResponseObject); ok {
+		return validResponse.VisitAddGroupMembersResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// ReplaceGroupMembers operation middleware
+func (sh *strictHandler) ReplaceGroupMembers(ctx echo.Context, groupID GroupID) error {
+	var request ReplaceGroupMembersRequestObject
+
+	request.GroupID = groupID
+
+	var body ReplaceGroupMembersJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.ReplaceGroupMembers(ctx.Request().Context(), request.(ReplaceGroupMembersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReplaceGroupMembers")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(ReplaceGroupMembersResponseObject); ok {
+		return validResponse.VisitReplaceGroupMembersResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// RemoveGroupMember operation middleware
+func (sh *strictHandler) RemoveGroupMember(ctx echo.Context, groupID GroupID, subjectID SubjectID) error {
+	var request RemoveGroupMemberRequestObject
+
+	request.GroupID = groupID
+	request.SubjectID = subjectID
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveGroupMember(ctx.Request().Context(), request.(RemoveGroupMemberRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveGroupMember")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(RemoveGroupMemberResponseObject); ok {
+		return validResponse.VisitRemoveGroupMemberResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("unexpected response type: %T", response)
 	}
@@ -1242,6 +1618,32 @@ func (sh *strictHandler) GetUserByID(ctx echo.Context, userID gidx.PrefixedID) e
 		return err
 	} else if validResponse, ok := response.(GetUserByIDResponseObject); ok {
 		return validResponse.VisitGetUserByIDResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// ListUserGroups operation middleware
+func (sh *strictHandler) ListUserGroups(ctx echo.Context, userID gidx.PrefixedID, params ListUserGroupsParams) error {
+	var request ListUserGroupsRequestObject
+
+	request.UserID = userID
+	request.Params = params
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.ListUserGroups(ctx.Request().Context(), request.(ListUserGroupsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListUserGroups")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(ListUserGroupsResponseObject); ok {
+		return validResponse.VisitListUserGroupsResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("unexpected response type: %T", response)
 	}

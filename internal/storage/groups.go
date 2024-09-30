@@ -24,6 +24,14 @@ var groupCols = struct {
 	Description: "description",
 }
 
+var groupMemberCols = struct {
+	GroupID   string
+	SubjectID string
+}{
+	GroupID:   "group_id",
+	SubjectID: "subject_id",
+}
+
 var groupColsStr = strings.Join([]string{
 	groupCols.ID, groupCols.OwnerID,
 	groupCols.Name, groupCols.Description,
@@ -104,18 +112,19 @@ func (gs *groupService) fetchGroupByID(ctx context.Context, id gidx.PrefixedID) 
 		groupColsStr, groupCols.ID,
 	)
 
-	var row *sql.Row
+	var ex func(ctx context.Context, query string, args ...any) *sql.Row
 
 	tx, err := getContextTx(ctx)
-
 	switch err {
 	case nil:
-		row = tx.QueryRowContext(ctx, q, id)
+		ex = tx.QueryRowContext
 	case ErrorMissingContextTx:
-		row = gs.db.QueryRowContext(ctx, q, id)
+		ex = gs.db.QueryRowContext
 	default:
 		return nil, err
 	}
+
+	row := ex(ctx, q, id)
 
 	return gs.scanGroup(row)
 }
@@ -138,7 +147,7 @@ func (gs *groupService) scanGroup(row *sql.Row) (*types.Group, error) {
 	return &g, nil
 }
 
-func (gs *groupService) ListGroups(ctx context.Context, ownerID gidx.PrefixedID, pagination crdbx.Paginator) (types.Groups, error) {
+func (gs *groupService) ListGroupsByOwner(ctx context.Context, ownerID gidx.PrefixedID, pagination crdbx.Paginator) (types.Groups, error) {
 	paginate := crdbx.Paginate(pagination, crdbx.ContextAsOfSystemTime(ctx, "-1m"))
 
 	q := fmt.Sprintf(
@@ -226,4 +235,192 @@ func (gs *groupService) DeleteGroup(ctx context.Context, id gidx.PrefixedID) err
 	_, err = tx.ExecContext(ctx, q, id)
 
 	return err
+}
+
+func (gs *groupService) AddMembers(ctx context.Context, groupID gidx.PrefixedID, subjects ...gidx.PrefixedID) error {
+	if len(subjects) == 0 {
+		return nil
+	}
+
+	tx, err := getContextTx(ctx)
+	if err != nil {
+		return err
+	}
+
+	if _, err := gs.fetchGroupByID(ctx, groupID); err != nil {
+		return err
+	}
+
+	vals := make([]string, 0, len(subjects))
+	params := make([]any, 0, len(subjects)+1)
+	params = append(params, groupID)
+
+	const placeholderOffset = 2
+
+	for i, subj := range subjects {
+		vals = append(vals, fmt.Sprintf("($1, $%d)", i+placeholderOffset))
+		params = append(params, subj)
+	}
+
+	q := fmt.Sprintf(
+		"UPSERT INTO group_members (%s, %s) VALUES %s",
+		groupMemberCols.GroupID, groupMemberCols.SubjectID,
+		strings.Join(vals, ", "),
+	)
+
+	_, err = tx.ExecContext(ctx, q, params...)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	return err
+}
+
+func (gs *groupService) ListMembers(ctx context.Context, groupID gidx.PrefixedID, pagination crdbx.Paginator) ([]gidx.PrefixedID, error) {
+	paginate := crdbx.Paginate(pagination, crdbx.ContextAsOfSystemTime(ctx, "-1m"))
+
+	if _, err := gs.fetchGroupByID(ctx, groupID); err != nil {
+		return nil, err
+	}
+
+	q := fmt.Sprintf(
+		"SELECT %s FROM group_members %s WHERE %s = $1 %s %s %s",
+		groupMemberCols.SubjectID, paginate.AsOfSystemTime(), groupMemberCols.GroupID,
+		paginate.AndWhere(2), //nolint:gomnd
+		paginate.OrderClause(),
+		paginate.LimitClause(),
+	)
+
+	rows, err := gs.db.QueryContext(ctx, q, paginate.Values(groupID)...)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var members []gidx.PrefixedID
+
+	for rows.Next() {
+		var member gidx.PrefixedID
+
+		if err := rows.Scan(&member); err != nil {
+			return nil, err
+		}
+
+		members = append(members, member)
+	}
+
+	return members, nil
+}
+
+func (gs *groupService) RemoveMember(ctx context.Context, groupID gidx.PrefixedID, subject gidx.PrefixedID) error {
+	tx, err := getContextTx(ctx)
+	if err != nil {
+		return err
+	}
+
+	if _, err := gs.fetchGroupByID(ctx, groupID); err != nil {
+		return err
+	}
+
+	q := fmt.Sprintf(
+		"DELETE FROM group_members WHERE %s = $1 AND %s = $2",
+		groupMemberCols.GroupID, groupMemberCols.SubjectID,
+	)
+
+	res, err := tx.ExecContext(ctx, q, groupID, subject)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	} else if rowsAffected == 0 {
+		return types.ErrGroupMemberNotFound
+	}
+
+	return err
+}
+
+func (gs *groupService) ReplaceMembers(ctx context.Context, groupID gidx.PrefixedID, subjects ...gidx.PrefixedID) error {
+	tx, err := getContextTx(ctx)
+	if err != nil {
+		return err
+	}
+
+	if _, err := gs.fetchGroupByID(ctx, groupID); err != nil {
+		return err
+	}
+
+	delq := fmt.Sprintf(
+		"DELETE FROM group_members WHERE %s = $1",
+		groupMemberCols.GroupID,
+	)
+
+	_, err = tx.ExecContext(ctx, delq, groupID)
+	if err != nil {
+		return err
+	}
+
+	return gs.AddMembers(ctx, groupID, subjects...)
+}
+
+func (gs *groupService) ListGroupsBySubject(ctx context.Context, subject gidx.PrefixedID, pagination crdbx.Paginator) (types.Groups, error) {
+	paginate := crdbx.Paginate(pagination, crdbx.ContextAsOfSystemTime(ctx, "-1m"))
+
+	const (
+		membersTable = "group_members"
+		groupsTable  = "groups"
+	)
+
+	q := fmt.Sprintf(
+		`SELECT %s FROM %s LEFT JOIN %s ON %s %s WHERE %s = $1 %s %s %s`,
+		// SELECT
+		strings.Join([]string{
+			fmt.Sprintf("DISTINCT(%s.%s)", membersTable, groupMemberCols.GroupID),
+			fmt.Sprintf("%s.%s", groupsTable, groupCols.Name),
+			fmt.Sprintf("%s.%s", groupsTable, groupCols.Description),
+			fmt.Sprintf("%s.%s", groupsTable, groupCols.OwnerID),
+		}, ", "),
+		// FROM
+		membersTable,
+		// LEFT JOIN
+		groupsTable,
+		// ON
+		fmt.Sprintf(
+			"%s.%s = %s.%s",
+			groupsTable, groupCols.ID,
+			membersTable, groupMemberCols.GroupID,
+		),
+		// as of system time
+		paginate.AsOfSystemTime(),
+		// WHERE
+		fmt.Sprintf("%s.%s", membersTable, groupMemberCols.SubjectID),
+		// Pagination
+		paginate.AndWhere(2), //nolint:gomnd
+		paginate.OrderClause(),
+		paginate.LimitClause(),
+	)
+
+	rows, err := gs.db.QueryContext(ctx, q, paginate.Values(subject)...)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var groups types.Groups
+
+	for rows.Next() {
+		g := &types.Group{}
+
+		if err := rows.Scan(&g.ID, &g.Name, &g.Description, &g.OwnerID); err != nil {
+			return nil, err
+		}
+
+		groups = append(groups, g)
+	}
+
+	return groups, nil
 }

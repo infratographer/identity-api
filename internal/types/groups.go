@@ -43,11 +43,28 @@ type GroupUpdate struct {
 
 // GroupService represents a service for managing groups.
 type GroupService interface {
+	// CreateGroup creates a new group.
 	CreateGroup(ctx context.Context, group Group) (*Group, error)
+	// GetGroupByID retrieves a group by its ID.
 	GetGroupByID(ctx context.Context, id gidx.PrefixedID) (*Group, error)
-	ListGroups(ctx context.Context, ownerID gidx.PrefixedID, pagination crdbx.Paginator) (Groups, error)
+	// UpdateGroup updates a group.
 	UpdateGroup(ctx context.Context, id gidx.PrefixedID, update GroupUpdate) (*Group, error)
+	// DeleteGroup deletes a group.
 	DeleteGroup(ctx context.Context, id gidx.PrefixedID) error
+
+	// ListGroupsByOwner retrieves a list of groups owned by an OU.
+	ListGroupsByOwner(ctx context.Context, ownerID gidx.PrefixedID, pagination crdbx.Paginator) (Groups, error)
+	// ListGroupsBySubject retrieves a list of groups that a subject is a member of.
+	ListGroupsBySubject(ctx context.Context, subject gidx.PrefixedID, pagination crdbx.Paginator) (Groups, error)
+
+	// AddMembers adds subjects to a group.
+	AddMembers(ctx context.Context, groupID gidx.PrefixedID, subjects ...gidx.PrefixedID) error
+	// ListMembers retrieves a list of subjects in a group.
+	ListMembers(ctx context.Context, groupID gidx.PrefixedID, pagination crdbx.Paginator) ([]gidx.PrefixedID, error)
+	// RemoveMember removes a subject from a group.
+	RemoveMember(ctx context.Context, groupID gidx.PrefixedID, subject gidx.PrefixedID) error
+	// ReplaceMembers replaces the members of a group with a new set of subjects.
+	ReplaceMembers(ctx context.Context, groupID gidx.PrefixedID, subjects ...gidx.PrefixedID) error
 }
 
 // Groups represents a list of groups
@@ -67,4 +84,15 @@ func (g Groups) ToV1Groups() ([]v1.Group, error) {
 	}
 
 	return out, nil
+}
+
+// ToPrefixedIDs converts a list of groups to a list of group IDs.
+func (g Groups) ToPrefixedIDs() []gidx.PrefixedID {
+	out := make([]gidx.PrefixedID, len(g))
+
+	for i, group := range g {
+		out[i] = group.ID
+	}
+
+	return out
 }

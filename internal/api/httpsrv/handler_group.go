@@ -137,7 +137,7 @@ func (h *apiHandler) ListGroups(ctx context.Context, req ListGroupsRequestObject
 		return nil, permissionsError(err)
 	}
 
-	groups, err := h.engine.ListGroups(ctx, ownerID, req.Params)
+	groups, err := h.engine.ListGroupsByOwner(ctx, ownerID, req.Params)
 	if err != nil {
 		return nil, err
 	}
