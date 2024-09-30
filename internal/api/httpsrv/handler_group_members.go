@@ -57,7 +57,7 @@ func (h *apiHandler) AddGroupMembers(ctx context.Context, req AddGroupMembersReq
 		return nil, err
 	}
 
-	return AddGroupMembers200JSONResponse{Ok: true}, nil
+	return AddGroupMembers200JSONResponse{Success: true}, nil
 }
 
 // ListGroupMembers lists the members of a group

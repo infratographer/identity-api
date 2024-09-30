@@ -651,9 +651,9 @@ components:
 
     AddGroupMembersResponse:
       required:
-        - ok
+        - success 
       properties:
-        ok:
+        success:
           type: boolean
           description: true if the members were added successfully
 
