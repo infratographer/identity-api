@@ -18,7 +18,7 @@ func (p ListGroupMembersParams) GetLimit() int {
 	return *p.Limit
 }
 
-// GetOnlyFields implements crdbx.Paginator setting the only permitted field to `id`.
+// GetOnlyFields implements crdbx.Paginator setting the only permitted field to `subject_id`.
 func (p ListGroupMembersParams) GetOnlyFields() []string {
 	return []string{"subject_id"}
 }
