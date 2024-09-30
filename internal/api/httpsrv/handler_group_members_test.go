@@ -2,12 +2,14 @@ package httpsrv
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"testing"
 
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	pagination "go.infratographer.com/identity-api/internal/crdbx"
+	"go.infratographer.com/identity-api/internal/events"
 	"go.infratographer.com/identity-api/internal/storage"
 	"go.infratographer.com/identity-api/internal/testingx"
 	"go.infratographer.com/identity-api/internal/types"
@@ -44,13 +46,22 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 		assert.FailNow(t, "initialization failed")
 	}
 
-	setupFn := func(ctx context.Context) context.Context {
-		ctx, err := store.BeginContext(ctx)
+	events := events.NewEvents()
+
+	beginTx := func(ctx context.Context) context.Context {
+		tx, err := store.BeginContext(ctx)
 		if !assert.NoError(t, err) {
 			assert.FailNow(t, "setup failed")
 		}
 
-		return ctx
+		return tx
+	}
+
+	setupFn := func(ctx context.Context) context.Context {
+		pub := testingx.NewTestPublisher()
+		ctxp := pub.ContextWithPublisher(ctx)
+
+		return beginTx(ctxp)
 	}
 
 	cleanupFn := func(ctx context.Context) {
@@ -61,7 +72,10 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 	t.Run("ListGroupMembers", func(t *testing.T) {
 		t.Parallel()
 
-		handler := apiHandler{engine: store}
+		handler := apiHandler{
+			engine:       store,
+			eventService: events,
+		}
 
 		testGroup := &types.Group{
 			ID:      gidx.MustNewID(types.IdentityGroupIDPrefix),
@@ -149,12 +163,21 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 	t.Run("AddGroupMembers", func(t *testing.T) {
 		t.Parallel()
 
-		handler := apiHandler{engine: store}
+		handler := apiHandler{
+			engine:       store,
+			eventService: events,
+		}
 
-		testGroupWithNoMembers := &types.Group{
+		testGroupWithNoMember := &types.Group{
 			ID:      gidx.MustNewID(types.IdentityGroupIDPrefix),
 			OwnerID: ownerID,
-			Name:    "test-add-group-members",
+			Name:    "test-add-group-member",
+		}
+
+		theOtherTestGroupWithNoMember := &types.Group{
+			ID:      gidx.MustNewID(types.IdentityGroupIDPrefix),
+			OwnerID: ownerID,
+			Name:    "test-add-group-member-1",
 		}
 
 		testGroupWithSomeMembers := &types.Group{
@@ -169,7 +192,8 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 			gidx.MustNewID(types.IdentityUserIDPrefix),
 		}
 
-		withStoredGroupAndMembers(t, store, testGroupWithNoMembers)
+		withStoredGroupAndMembers(t, store, testGroupWithNoMember)
+		withStoredGroupAndMembers(t, store, theOtherTestGroupWithNoMember)
 		withStoredGroupAndMembers(t, store, testGroupWithSomeMembers, someMembers...)
 
 		tc := []testingx.TestCase[AddGroupMembersRequestObject, []gidx.PrefixedID]{
@@ -194,41 +218,82 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 				},
 				SetupFn:   setupFn,
 				CleanupFn: cleanupFn,
-				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
 					assert.Nil(t, res.Success)
 					assert.IsType(t, &echo.HTTPError{}, res.Err)
 					assert.Equal(t, http.StatusNotFound, res.Err.(*echo.HTTPError).Code)
+
+					pub, ok := testingx.GetPublisherFromContext(ctx)
+					assert.Equal(t, true, ok)
+					assert.Empty(t, pub.CalledWith())
 				},
 			},
 			{
 				Name: "Invalid member id",
 				Input: AddGroupMembersRequestObject{
-					GroupID: testGroupWithNoMembers.ID,
+					GroupID: testGroupWithNoMember.ID,
 					Body: &v1.AddGroupMembersJSONRequestBody{
 						MemberIDs: []gidx.PrefixedID{"definitely not a valid member id"},
 					},
 				},
 				SetupFn:   setupFn,
 				CleanupFn: cleanupFn,
-				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
 					assert.Nil(t, res.Success)
 					assert.IsType(t, &echo.HTTPError{}, res.Err)
 					assert.Equal(t, http.StatusBadRequest, res.Err.(*echo.HTTPError).Code)
+
+					pub, ok := testingx.GetPublisherFromContext(ctx)
+					assert.Equal(t, true, ok)
+					assert.Empty(t, pub.CalledWith())
+				},
+			},
+			{
+				Name: "Failed to publish event",
+				Input: AddGroupMembersRequestObject{
+					GroupID: theOtherTestGroupWithNoMember.ID,
+					Body: &v1.AddGroupMembersJSONRequestBody{
+						MemberIDs: []gidx.PrefixedID{gidx.MustNewID(types.IdentityUserIDPrefix)},
+					},
+				},
+				SetupFn: func(ctx context.Context) context.Context {
+					pub := testingx.NewTestPublisher(testingx.TestPublisherWithError(fmt.Errorf("you bad bad"))) // nolint: goerr113
+					ctxp := pub.ContextWithPublisher(ctx)
+
+					return beginTx(ctxp)
+				},
+				CleanupFn: func(_ context.Context) {},
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
+					assert.Error(t, res.Err)
+					assert.ErrorContains(t, res.Err, "failed to add group members in permissions API")
+
+					// ensure no members were added
+					mc, err := store.GroupMembersCount(context.Background(), theOtherTestGroupWithNoMember.ID)
+					assert.NoError(t, err)
+					assert.Equal(t, 0, mc)
 				},
 			},
 			{
 				Name: "Success",
 				Input: AddGroupMembersRequestObject{
-					GroupID: testGroupWithNoMembers.ID,
+					GroupID: testGroupWithNoMember.ID,
 					Body: &v1.AddGroupMembersJSONRequestBody{
 						MemberIDs: []gidx.PrefixedID{gidx.MustNewID(types.IdentityUserIDPrefix)},
 					},
 				},
 				SetupFn:   setupFn,
 				CleanupFn: func(_ context.Context) {},
-				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
 					assert.Nil(t, res.Err)
 					assert.Len(t, res.Success, 1)
+
+					pub, ok := testingx.GetPublisherFromContext(ctx)
+					assert.Equal(t, true, ok)
+					assert.Len(t, pub.CalledWith(), 1)
+
+					cw := pub.CalledWith()[0]
+					assert.Equal(t, testingx.TestPublisherMethodCreate, cw.Method)
+					assert.Len(t, cw.Relations, len(res.Success))
 				},
 			},
 			{
@@ -241,9 +306,17 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 				},
 				SetupFn:   setupFn,
 				CleanupFn: func(_ context.Context) {},
-				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
 					assert.Nil(t, res.Err)
 					assert.Len(t, res.Success, len(someMembers))
+
+					pub, ok := testingx.GetPublisherFromContext(ctx)
+					assert.Equal(t, true, ok)
+					assert.Len(t, pub.CalledWith(), 1)
+
+					cw := pub.CalledWith()[0]
+					assert.Equal(t, testingx.TestPublisherMethodCreate, cw.Method)
+					assert.Len(t, cw.Relations, 1)
 				},
 			},
 		}
@@ -259,25 +332,33 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 			}
 
 			ctx = context.Background()
-			ctx = pagination.AsOfSystemTime(ctx, "")
-			p := v1.ListGroupMembersParams{}
-			mm, err := store.ListGroupMembers(ctx, input.GroupID, p)
+			mm, err := store.ListGroupMembers(ctx, input.GroupID, nil)
 
 			return testingx.TestResult[[]gidx.PrefixedID]{Success: mm, Err: err}
 		}
 
-		testingx.RunTests(ctxPermsAllow(context.Background()), t, tc, runFn)
+		ctx := testingx.NewTestPublisher().ContextWithPublisher(ctxPermsAllow(context.Background()))
+		testingx.RunTests(ctx, t, tc, runFn)
 	})
 
 	t.Run("RemoveGroupMember", func(t *testing.T) {
 		t.Parallel()
 
-		handler := apiHandler{engine: store}
+		handler := apiHandler{
+			engine:       store,
+			eventService: events,
+		}
 
 		testGroup := &types.Group{
 			ID:      gidx.MustNewID(types.IdentityGroupIDPrefix),
 			OwnerID: ownerID,
 			Name:    "test-remove-group-member",
+		}
+
+		theOtherTestGroup := &types.Group{
+			ID:      gidx.MustNewID(types.IdentityGroupIDPrefix),
+			OwnerID: ownerID,
+			Name:    "test-remove-group-member-1",
 		}
 
 		someMembers := []gidx.PrefixedID{
@@ -287,6 +368,7 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 		}
 
 		withStoredGroupAndMembers(t, store, testGroup, someMembers...)
+		withStoredGroupAndMembers(t, store, theOtherTestGroup, someMembers...)
 
 		tc := []testingx.TestCase[RemoveGroupMemberRequestObject, []gidx.PrefixedID]{
 			{
@@ -297,10 +379,14 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 				},
 				SetupFn:   setupFn,
 				CleanupFn: cleanupFn,
-				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
 					assert.Nil(t, res.Success)
 					assert.IsType(t, &echo.HTTPError{}, res.Err)
 					assert.Equal(t, http.StatusBadRequest, res.Err.(*echo.HTTPError).Code)
+
+					pub, ok := testingx.GetPublisherFromContext(ctx)
+					assert.Equal(t, true, ok)
+					assert.Empty(t, pub.CalledWith())
 				},
 			},
 			{
@@ -311,10 +397,14 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 				},
 				SetupFn:   setupFn,
 				CleanupFn: cleanupFn,
-				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
 					assert.Nil(t, res.Success)
 					assert.IsType(t, &echo.HTTPError{}, res.Err)
 					assert.Equal(t, http.StatusBadRequest, res.Err.(*echo.HTTPError).Code)
+
+					pub, ok := testingx.GetPublisherFromContext(ctx)
+					assert.Equal(t, true, ok)
+					assert.Empty(t, pub.CalledWith())
 				},
 			},
 			{
@@ -325,10 +415,14 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 				},
 				SetupFn:   setupFn,
 				CleanupFn: cleanupFn,
-				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
 					assert.Nil(t, res.Success)
 					assert.IsType(t, &echo.HTTPError{}, res.Err)
 					assert.Equal(t, http.StatusNotFound, res.Err.(*echo.HTTPError).Code)
+
+					pub, ok := testingx.GetPublisherFromContext(ctx)
+					assert.Equal(t, true, ok)
+					assert.Empty(t, pub.CalledWith())
 				},
 			},
 			{
@@ -339,10 +433,36 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 				},
 				SetupFn:   setupFn,
 				CleanupFn: cleanupFn,
-				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
 					assert.Nil(t, res.Success)
 					assert.IsType(t, &echo.HTTPError{}, res.Err)
 					assert.Equal(t, http.StatusNotFound, res.Err.(*echo.HTTPError).Code)
+
+					pub, ok := testingx.GetPublisherFromContext(ctx)
+					assert.Equal(t, true, ok)
+					assert.Empty(t, pub.CalledWith())
+				},
+			},
+			{
+				Name: "Failed to publish event",
+				Input: RemoveGroupMemberRequestObject{
+					GroupID:   theOtherTestGroup.ID,
+					SubjectID: someMembers[0],
+				},
+				SetupFn: func(ctx context.Context) context.Context {
+					pub := testingx.NewTestPublisher(testingx.TestPublisherWithError(fmt.Errorf("you bad bad"))) // nolint: goerr113
+					ctxp := pub.ContextWithPublisher(ctx)
+
+					return beginTx(ctxp)
+				},
+				CleanupFn: func(_ context.Context) {},
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
+					assert.Error(t, res.Err)
+
+					// ensure the member is still in the group
+					mc, err := store.GroupMembersCount(context.Background(), theOtherTestGroup.ID)
+					assert.NoError(t, err)
+					assert.Len(t, someMembers, mc)
 				},
 			},
 			{
@@ -353,9 +473,19 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 				},
 				SetupFn:   setupFn,
 				CleanupFn: func(_ context.Context) {},
-				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
 					assert.Nil(t, res.Err)
 					assert.Len(t, res.Success, len(someMembers)-1)
+
+					pub, ok := testingx.GetPublisherFromContext(ctx)
+					assert.Equal(t, true, ok)
+					assert.Len(t, pub.CalledWith(), 1)
+
+					cw := pub.CalledWith()[0]
+					assert.Equal(t, testingx.TestPublisherMethodDelete, cw.Method)
+					assert.Equal(t, cw.ResourceID, testGroup.ID)
+					assert.Len(t, cw.Relations, 1)
+					assert.Equal(t, someMembers[0], cw.Relations[0].SubjectID)
 				},
 			},
 		}
@@ -371,9 +501,7 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 			}
 
 			ctx = context.Background()
-			ctx = pagination.AsOfSystemTime(ctx, "")
-			p := v1.ListGroupMembersParams{}
-			mm, err := store.ListGroupMembers(ctx, input.GroupID, p)
+			mm, err := store.ListGroupMembers(ctx, input.GroupID, nil)
 
 			return testingx.TestResult[[]gidx.PrefixedID]{Success: mm, Err: err}
 		}
@@ -384,12 +512,21 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 	t.Run("PutGroupMembers", func(t *testing.T) {
 		t.Parallel()
 
-		handler := apiHandler{engine: store}
+		handler := apiHandler{
+			engine:       store,
+			eventService: events,
+		}
 
 		testGroup := &types.Group{
 			ID:      gidx.MustNewID(types.IdentityGroupIDPrefix),
 			OwnerID: ownerID,
 			Name:    "test-put-group-members",
+		}
+
+		theOtherTestGroup := &types.Group{
+			ID:      gidx.MustNewID(types.IdentityGroupIDPrefix),
+			OwnerID: ownerID,
+			Name:    "test-put-group-members-1",
 		}
 
 		someMembers := []gidx.PrefixedID{
@@ -399,6 +536,7 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 		}
 
 		withStoredGroupAndMembers(t, store, testGroup, someMembers...)
+		withStoredGroupAndMembers(t, store, theOtherTestGroup, someMembers...)
 
 		tc := []testingx.TestCase[ReplaceGroupMembersRequestObject, []gidx.PrefixedID]{
 			{
@@ -411,10 +549,14 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 				},
 				SetupFn:   setupFn,
 				CleanupFn: cleanupFn,
-				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
 					assert.Nil(t, res.Success)
 					assert.IsType(t, &echo.HTTPError{}, res.Err)
 					assert.Equal(t, http.StatusBadRequest, res.Err.(*echo.HTTPError).Code)
+
+					pub, ok := testingx.GetPublisherFromContext(ctx)
+					assert.Equal(t, true, ok)
+					assert.Empty(t, pub.CalledWith())
 				},
 			},
 			{
@@ -427,10 +569,14 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 				},
 				SetupFn:   setupFn,
 				CleanupFn: cleanupFn,
-				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
 					assert.Nil(t, res.Success)
 					assert.IsType(t, &echo.HTTPError{}, res.Err)
 					assert.Equal(t, http.StatusBadRequest, res.Err.(*echo.HTTPError).Code)
+
+					pub, ok := testingx.GetPublisherFromContext(ctx)
+					assert.Equal(t, true, ok)
+					assert.Empty(t, pub.CalledWith())
 				},
 			},
 			{
@@ -443,10 +589,39 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 				},
 				SetupFn:   setupFn,
 				CleanupFn: cleanupFn,
-				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
 					assert.Nil(t, res.Success)
 					assert.IsType(t, &echo.HTTPError{}, res.Err)
 					assert.Equal(t, http.StatusNotFound, res.Err.(*echo.HTTPError).Code)
+
+					pub, ok := testingx.GetPublisherFromContext(ctx)
+					assert.Equal(t, true, ok)
+					assert.Empty(t, pub.CalledWith())
+				},
+			},
+			{
+				Name: "Failed to publish event",
+				Input: ReplaceGroupMembersRequestObject{
+					GroupID: theOtherTestGroup.ID,
+					Body: &v1.ReplaceGroupMembersJSONRequestBody{
+						MemberIDs: []gidx.PrefixedID{gidx.MustNewID(types.IdentityUserIDPrefix)},
+					},
+				},
+				SetupFn: func(ctx context.Context) context.Context {
+					pub := testingx.NewTestPublisher(testingx.TestPublisherWithError(fmt.Errorf("you bad bad"))) // nolint: goerr113
+					ctxp := pub.ContextWithPublisher(ctx)
+
+					return beginTx(ctxp)
+				},
+				CleanupFn: func(_ context.Context) {},
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
+					assert.Error(t, res.Err)
+					assert.ErrorContains(t, res.Err, "failed to replace group members in permissions API")
+
+					// ensure no members were added
+					mc, err := store.GroupMembersCount(context.Background(), theOtherTestGroup.ID)
+					assert.NoError(t, err)
+					assert.Equal(t, len(someMembers), mc)
 				},
 			},
 			{
@@ -459,9 +634,23 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 				},
 				SetupFn:   setupFn,
 				CleanupFn: func(_ context.Context) {},
-				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
+				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[[]gidx.PrefixedID]) {
 					assert.Nil(t, res.Err)
 					assert.Len(t, res.Success, 1)
+
+					pub, ok := testingx.GetPublisherFromContext(ctx)
+					assert.Equal(t, true, ok)
+					assert.Len(t, pub.CalledWith(), 2)
+
+					for _, cw := range pub.CalledWith() {
+						assert.Equal(t, testGroup.ID, cw.ResourceID)
+
+						if cw.Method == testingx.TestPublisherMethodCreate {
+							assert.Len(t, cw.Relations, 1)
+						} else if cw.Method == testingx.TestPublisherMethodDelete {
+							assert.Len(t, cw.Relations, len(someMembers))
+						}
+					}
 				},
 			},
 		}
@@ -477,14 +666,13 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 			}
 
 			ctx = context.Background()
-			ctx = pagination.AsOfSystemTime(ctx, "")
-			p := v1.ListGroupMembersParams{}
-			mm, err := store.ListGroupMembers(ctx, input.GroupID, p)
+			mm, err := store.ListGroupMembers(ctx, input.GroupID, nil)
 
 			return testingx.TestResult[[]gidx.PrefixedID]{Success: mm, Err: err}
 		}
 
-		testingx.RunTests(ctxPermsAllow(context.Background()), t, tc, runFn)
+		ctx := testingx.NewTestPublisher().ContextWithPublisher(ctxPermsAllow(context.Background()))
+		testingx.RunTests(ctx, t, tc, runFn)
 	})
 }
 

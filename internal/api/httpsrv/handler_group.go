@@ -237,6 +237,15 @@ func (h *apiHandler) DeleteGroup(ctx context.Context, req DeleteGroupRequestObje
 
 	group, err := h.engine.GetGroupByID(ctx, gid)
 	if err != nil {
+		if errors.Is(err, types.ErrNotFound) {
+			err = echo.NewHTTPError(
+				http.StatusNotFound,
+				fmt.Sprintf("group %s not found", gid),
+			)
+
+			return nil, err
+		}
+
 		return nil, err
 	}
 
