@@ -74,7 +74,7 @@ func (h *apiHandler) CreateGroup(ctx context.Context, req CreateGroupRequestObje
 	}
 
 	if err := h.eventService.CreateGroup(ctx, ownerID, id); err != nil {
-		resperr := h.rollbackAndReturnError(ctx, http.StatusBadGateway, "failed to create group in permissions API")
+		resperr := h.rollbackAndReturnError(ctx, http.StatusInternalServerError, "failed to create group in permissions API")
 		return nil, resperr
 	}
 
@@ -273,7 +273,7 @@ func (h *apiHandler) DeleteGroup(ctx context.Context, req DeleteGroupRequestObje
 	}
 
 	if err := h.eventService.DeleteGroup(ctx, group.OwnerID, group.ID); err != nil {
-		resperr := h.rollbackAndReturnError(ctx, http.StatusBadGateway, "failed to remove group in permissions API")
+		resperr := h.rollbackAndReturnError(ctx, http.StatusInternalServerError, "failed to remove group in permissions API")
 		return nil, resperr
 	}
 

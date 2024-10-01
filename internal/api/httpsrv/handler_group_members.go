@@ -58,7 +58,7 @@ func (h *apiHandler) AddGroupMembers(ctx context.Context, req AddGroupMembersReq
 	}
 
 	if err := h.eventService.AddGroupMembers(ctx, gid, reqbody.MemberIDs...); err != nil {
-		resperr := h.rollbackAndReturnError(ctx, http.StatusBadGateway, "failed to add group members in permissions API")
+		resperr := h.rollbackAndReturnError(ctx, http.StatusInternalServerError, "failed to add group members in permissions API")
 		return nil, resperr
 	}
 
@@ -147,7 +147,7 @@ func (h *apiHandler) RemoveGroupMember(ctx context.Context, req RemoveGroupMembe
 	}
 
 	if err := h.eventService.RemoveGroupMembers(ctx, gid, sid); err != nil {
-		resperr := h.rollbackAndReturnError(ctx, http.StatusBadGateway, "failed to remove group member in permissions API")
+		resperr := h.rollbackAndReturnError(ctx, http.StatusInternalServerError, "failed to remove group member in permissions API")
 		return nil, resperr
 	}
 
@@ -183,7 +183,7 @@ func (h *apiHandler) ReplaceGroupMembers(ctx context.Context, req ReplaceGroupMe
 		return nil, permissionsError(err)
 	}
 
-	current, err := h.engine.ListGroupMembers(ctx, gid, nil)
+	add, rm, err := h.engine.ReplaceGroupMembers(ctx, gid, reqbody.MemberIDs...)
 	if err != nil {
 		if errors.Is(err, types.ErrNotFound) {
 			err = echo.NewHTTPError(http.StatusNotFound, err.Error())
@@ -192,17 +192,13 @@ func (h *apiHandler) ReplaceGroupMembers(ctx context.Context, req ReplaceGroupMe
 		return nil, err
 	}
 
-	if err := h.engine.ReplaceGroupMembers(ctx, gid, reqbody.MemberIDs...); err != nil {
-		return nil, err
-	}
-
-	if err := h.eventService.RemoveGroupMembers(ctx, gid, current...); err != nil {
-		resperr := h.rollbackAndReturnError(ctx, http.StatusBadGateway, "failed to replace group members in permissions API")
+	if err := h.eventService.RemoveGroupMembers(ctx, gid, rm...); err != nil {
+		resperr := h.rollbackAndReturnError(ctx, http.StatusInternalServerError, "failed to replace group members in permissions API")
 		return nil, resperr
 	}
 
-	if err := h.eventService.AddGroupMembers(ctx, gid, reqbody.MemberIDs...); err != nil {
-		resperr := h.rollbackAndReturnError(ctx, http.StatusBadGateway, "failed to replace group members in permissions API")
+	if err := h.eventService.AddGroupMembers(ctx, gid, add...); err != nil {
+		resperr := h.rollbackAndReturnError(ctx, http.StatusInternalServerError, "failed to replace group members in permissions API")
 		return nil, resperr
 	}
 

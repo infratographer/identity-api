@@ -8,6 +8,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	pagination "go.infratographer.com/identity-api/internal/crdbx"
@@ -16,7 +17,9 @@ import (
 	"go.infratographer.com/identity-api/internal/testingx"
 	"go.infratographer.com/identity-api/internal/types"
 	v1 "go.infratographer.com/identity-api/pkg/api/v1"
+	"go.infratographer.com/permissions-api/pkg/permissions/mockpermissions"
 	"go.infratographer.com/x/crdbx"
+	eventsx "go.infratographer.com/x/events"
 	"go.infratographer.com/x/gidx"
 )
 
@@ -38,6 +41,7 @@ func TestGroupAPIHandler(t *testing.T) {
 	})
 
 	ownerID := gidx.MustNewID("testten")
+	ownerIDFailure := gidx.MustNewID("testten")
 
 	config := crdbx.Config{
 		URI: testServer.PGURL().String(),
@@ -142,6 +146,8 @@ func TestGroupAPIHandler(t *testing.T) {
 			eventService: es,
 		}
 
+		successOwnerID := gidx.MustNewID("testten")
+
 		createGroupTestGroup := &types.Group{
 			ID:          gidx.MustNewID(types.IdentityGroupIDPrefix),
 			OwnerID:     ownerID,
@@ -151,20 +157,19 @@ func TestGroupAPIHandler(t *testing.T) {
 
 		withStoredGroups(t, store, createGroupTestGroup)
 
-		beginTx := func(ctx context.Context) context.Context {
+		m := &mockpermissions.MockPermissions{}
+		m.On("CreateAuthRelationships").Return(nil)
+		m.On("DeleteAuthRelationships").Return(nil)
+
+		setupFn := func(ctx context.Context) context.Context {
+			ctx = m.ContextWithHandler(ctx)
 			tx, err := store.BeginContext(ctx)
+
 			if !assert.NoError(t, err) {
 				assert.FailNow(t, "setup failed")
 			}
 
 			return tx
-		}
-
-		setupFn := func(ctx context.Context) context.Context {
-			pub := testingx.NewTestPublisher()
-			ctxp := pub.ContextWithPublisher(ctx)
-
-			return beginTx(ctxp)
 		}
 
 		cleanupFn := func(ctx context.Context) {
@@ -186,14 +191,16 @@ func TestGroupAPIHandler(t *testing.T) {
 				},
 				SetupFn:   setupFn,
 				CleanupFn: cleanupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[CreateGroupResponseObject]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[CreateGroupResponseObject]) {
 					assert.Error(t, res.Err)
 					assert.IsType(t, &echo.HTTPError{}, res.Err)
 					assert.Equal(t, http.StatusBadRequest, res.Err.(*echo.HTTPError).Code)
-
-					pub, ok := testingx.GetPublisherFromContext(ctx)
-					assert.Equal(t, true, ok)
-					assert.Empty(t, pub.CalledWith())
+					m.AssertNotCalled(
+						t, "CreateAuthRelationships", events.GroupTopic, mock.Anything,
+						eventsx.AuthRelationshipRelation{
+							Relation:  events.GroupParentRelationship,
+							SubjectID: ownerID,
+						})
 				},
 			},
 			{
@@ -206,14 +213,17 @@ func TestGroupAPIHandler(t *testing.T) {
 				},
 				SetupFn:   setupFn,
 				CleanupFn: cleanupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[CreateGroupResponseObject]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[CreateGroupResponseObject]) {
 					assert.Error(t, res.Err)
 					assert.IsType(t, &echo.HTTPError{}, res.Err)
 					assert.Equal(t, http.StatusBadRequest, res.Err.(*echo.HTTPError).Code)
-
-					pub, ok := testingx.GetPublisherFromContext(ctx)
-					assert.Equal(t, true, ok)
-					assert.Empty(t, pub.CalledWith())
+					m.AssertNotCalled(
+						t, "CreateAuthRelationships", events.GroupTopic, mock.Anything,
+						eventsx.AuthRelationshipRelation{
+							Relation:  events.GroupParentRelationship,
+							SubjectID: ownerID,
+						},
+					)
 				},
 			},
 			{
@@ -226,20 +236,23 @@ func TestGroupAPIHandler(t *testing.T) {
 				},
 				SetupFn:   setupFn,
 				CleanupFn: cleanupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[CreateGroupResponseObject]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[CreateGroupResponseObject]) {
 					assert.Error(t, res.Err)
 					assert.IsType(t, &echo.HTTPError{}, res.Err, "unexpected error type", res.Err.Error())
 					assert.Equal(t, http.StatusConflict, res.Err.(*echo.HTTPError).Code)
-
-					pub, ok := testingx.GetPublisherFromContext(ctx)
-					assert.Equal(t, true, ok)
-					assert.Empty(t, pub.CalledWith())
+					m.AssertNotCalled(
+						t, "CreateAuthRelationships", events.GroupTopic, mock.Anything,
+						eventsx.AuthRelationshipRelation{
+							Relation:  events.GroupParentRelationship,
+							SubjectID: ownerID,
+						},
+					)
 				},
 			},
 			{
 				Name: "Fail to publish group relationship",
 				Input: CreateGroupRequestObject{
-					OwnerID: ownerID,
+					OwnerID: ownerIDFailure,
 					Body: &v1.CreateGroupJSONRequestBody{
 						Name:        "test-creategroup-1",
 						Description: ptr("it's a group for testing create group"),
@@ -247,24 +260,33 @@ func TestGroupAPIHandler(t *testing.T) {
 				},
 				CleanupFn: func(_ context.Context) {},
 				SetupFn: func(ctx context.Context) context.Context {
-					p := testingx.NewTestPublisher(testingx.TestPublisherWithError(fmt.Errorf("you bad bad"))) // nolint: goerr113
-					ctxp := p.ContextWithPublisher(ctx)
+					m.On(
+						"CreateAuthRelationships",
+						events.GroupTopic,
+						mock.Anything,
+						eventsx.AuthRelationshipRelation{
+							Relation:  events.GroupParentRelationship,
+							SubjectID: ownerIDFailure,
+						},
+					).Return(fmt.Errorf("you bad bad")) // nolint: goerr113
 
-					return beginTx(ctxp)
+					return setupFn(ctx)
 				},
 				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[CreateGroupResponseObject]) {
 					assert.NotNil(t, res.Err)
 					assert.Nil(t, res.Success)
 
+					m.AssertCalled(t, "CreateAuthRelationships", events.GroupTopic, mock.Anything, mock.Anything)
+
 					// ensure group will not be created
 					ctx := context.Background()
 					ctx = pagination.AsOfSystemTime(ctx, "")
 					p := v1.ListGroupsParams{}
-					g, err := store.ListGroupsByOwner(ctx, ownerID, p)
+					g, err := store.ListGroupsByOwner(ctx, ownerIDFailure, p)
 					assert.NoError(t, err)
 
 					for _, gg := range g {
-						if gg.OwnerID == ownerID {
+						if gg.OwnerID == ownerIDFailure {
 							assert.NotEqual(t, "test-creategroup-1", gg.Name)
 						}
 					}
@@ -273,13 +295,25 @@ func TestGroupAPIHandler(t *testing.T) {
 			{
 				Name: "Success",
 				Input: CreateGroupRequestObject{
-					OwnerID: ownerID,
+					OwnerID: successOwnerID,
 					Body: &v1.CreateGroupJSONRequestBody{
 						Name:        "test-creategroup-2",
 						Description: ptr("new group description"),
 					},
 				},
-				SetupFn:   setupFn,
+				SetupFn: func(ctx context.Context) context.Context {
+					m.On(
+						"CreateAuthRelationships",
+						events.GroupTopic,
+						mock.Anything,
+						eventsx.AuthRelationshipRelation{
+							Relation:  events.GroupParentRelationship,
+							SubjectID: successOwnerID,
+						},
+					).Return(nil)
+
+					return setupFn(ctx)
+				},
 				CleanupFn: cleanupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[CreateGroupResponseObject]) {
 					assert.NoError(t, res.Err)
@@ -295,15 +329,14 @@ func TestGroupAPIHandler(t *testing.T) {
 					assert.Equal(t, item.Name, group.Name)
 					assert.Equal(t, *item.Description, group.Description)
 
-					pub, ok := testingx.GetPublisherFromContext(ctx)
-					assert.Equal(t, true, ok)
-					assert.Len(t, pub.CalledWith(), 1)
-
-					cw := pub.CalledWith()[0]
-					assert.Equal(t, testingx.TestPublisherMethodCreate, cw.Method)
-					assert.Equal(t, events.GroupTopic, cw.Topic)
-					assert.Equal(t, item.ID, cw.ResourceID)
-					assert.Equal(t, *item.OwnerID, cw.Relations[0].SubjectID)
+					m.AssertCalled(
+						t, "CreateAuthRelationships",
+						events.GroupTopic, item.ID,
+						eventsx.AuthRelationshipRelation{
+							Relation:  events.GroupParentRelationship,
+							SubjectID: successOwnerID,
+						},
+					)
 				},
 			},
 		}
@@ -576,6 +609,8 @@ func TestGroupAPIHandler(t *testing.T) {
 			eventService: es,
 		}
 
+		notfoundID := gidx.MustNewID(types.IdentityGroupIDPrefix)
+
 		deleteGroupTestGroup := &types.Group{
 			ID:          gidx.MustNewID(types.IdentityGroupIDPrefix),
 			OwnerID:     ownerID,
@@ -583,12 +618,20 @@ func TestGroupAPIHandler(t *testing.T) {
 			Description: "it's a group for testing delete group",
 		}
 
+		theOtherTestGroup := &types.Group{
+			ID:          gidx.MustNewID(types.IdentityGroupIDPrefix),
+			OwnerID:     ownerID,
+			Name:        "test-deletegroup-2",
+			Description: "it's a group for testing delete group",
+		}
+
 		withStoredGroups(t, store, deleteGroupTestGroup)
+		withStoredGroups(t, store, theOtherTestGroup)
 
 		testGroupWithSomeMembers := &types.Group{
 			ID:          gidx.MustNewID(types.IdentityGroupIDPrefix),
 			OwnerID:     ownerID,
-			Name:        "test-deletegroup-2",
+			Name:        "test-deletegroup-3",
 			Description: "it's a group for testing delete group",
 		}
 
@@ -600,20 +643,19 @@ func TestGroupAPIHandler(t *testing.T) {
 
 		withStoredGroupAndMembers(t, store, testGroupWithSomeMembers, someMembers...)
 
-		beginTx := func(ctx context.Context) context.Context {
+		m := &mockpermissions.MockPermissions{}
+		m.On("CreateAuthRelationships").Return(nil)
+		m.On("DeleteAuthRelationships").Return(nil)
+
+		setupFn := func(ctx context.Context) context.Context {
+			ctx = m.ContextWithHandler(ctx)
 			tx, err := store.BeginContext(ctx)
+
 			if !assert.NoError(t, err) {
 				assert.FailNow(t, "setup failed")
 			}
 
 			return tx
-		}
-
-		setupFn := func(ctx context.Context) context.Context {
-			pub := testingx.NewTestPublisher()
-			ctxp := pub.ContextWithPublisher(ctx)
-
-			return beginTx(ctxp)
 		}
 
 		cleanupFn := func(ctx context.Context) {
@@ -634,31 +676,25 @@ func TestGroupAPIHandler(t *testing.T) {
 				},
 				SetupFn:   setupFn,
 				CleanupFn: cleanupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[DeleteGroupResponseObject]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[DeleteGroupResponseObject]) {
 					assert.Error(t, res.Err)
 					assert.IsType(t, &echo.HTTPError{}, res.Err)
 					assert.Equal(t, http.StatusBadRequest, res.Err.(*echo.HTTPError).Code)
-
-					pub, ok := testingx.GetPublisherFromContext(ctx)
-					assert.Equal(t, true, ok)
-					assert.Empty(t, pub.CalledWith())
+					m.AssertNotCalled(t, "DeleteAuthRelationships", events.GroupTopic, "notavalidid", mock.Anything)
 				},
 			},
 			{
 				Name: "Group not found",
 				Input: DeleteGroupRequestObject{
-					GroupID: gidx.MustNewID(types.IdentityGroupIDPrefix),
+					GroupID: notfoundID,
 				},
 				SetupFn:   setupFn,
 				CleanupFn: cleanupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[DeleteGroupResponseObject]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[DeleteGroupResponseObject]) {
 					assert.Error(t, res.Err)
 					assert.IsType(t, &echo.HTTPError{}, res.Err)
 					assert.Equal(t, http.StatusNotFound, res.Err.(*echo.HTTPError).Code)
-
-					pub, ok := testingx.GetPublisherFromContext(ctx)
-					assert.Equal(t, true, ok)
-					assert.Empty(t, pub.CalledWith())
+					m.AssertNotCalled(t, "DeleteAuthRelationships", events.GroupTopic, notfoundID, mock.Anything)
 				},
 			},
 			{
@@ -668,31 +704,37 @@ func TestGroupAPIHandler(t *testing.T) {
 				},
 				SetupFn:   setupFn,
 				CleanupFn: cleanupFn,
-				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[DeleteGroupResponseObject]) {
+				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[DeleteGroupResponseObject]) {
 					assert.Error(t, res.Err)
 					assert.IsType(t, &echo.HTTPError{}, res.Err)
 					assert.Equal(t, http.StatusBadRequest, res.Err.(*echo.HTTPError).Code)
-
-					pub, ok := testingx.GetPublisherFromContext(ctx)
-					assert.Equal(t, true, ok)
-					assert.Empty(t, pub.CalledWith())
+					m.AssertNotCalled(t, "DeleteAuthRelationships", events.GroupTopic, testGroupWithSomeMembers.ID, mock.Anything)
 				},
 			},
 			{
 				Name: "Fail to publish group relationship",
 				Input: DeleteGroupRequestObject{
-					GroupID: deleteGroupTestGroup.ID,
+					GroupID: theOtherTestGroup.ID,
 				},
 				SetupFn: func(ctx context.Context) context.Context {
-					p := testingx.NewTestPublisher(testingx.TestPublisherWithError(fmt.Errorf("you bad bad"))) // nolint: goerr113
-					ctxp := p.ContextWithPublisher(ctx)
+					m.On(
+						"DeleteAuthRelationships",
+						events.GroupTopic,
+						theOtherTestGroup.ID,
+						mock.Anything,
+					).Return(fmt.Errorf("you bad bad")) // nolint: goerr113
 
-					return beginTx(ctxp)
+					return setupFn(ctx)
 				},
 				CleanupFn: func(_ context.Context) {},
 				CheckFn: func(_ context.Context, t *testing.T, res testingx.TestResult[DeleteGroupResponseObject]) {
 					assert.NotNil(t, res.Err)
 					assert.Nil(t, res.Success)
+
+					m.AssertCalled(
+						t, "DeleteAuthRelationships", events.GroupTopic,
+						theOtherTestGroup.ID, mock.Anything,
+					)
 
 					// ensure group will not be deleted
 					group, err := store.GetGroupByID(context.Background(), deleteGroupTestGroup.ID)
@@ -705,7 +747,16 @@ func TestGroupAPIHandler(t *testing.T) {
 				Input: DeleteGroupRequestObject{
 					GroupID: deleteGroupTestGroup.ID,
 				},
-				SetupFn:   setupFn,
+				SetupFn: func(ctx context.Context) context.Context {
+					m.On(
+						"DeleteAuthRelationships",
+						events.GroupTopic,
+						deleteGroupTestGroup.ID,
+						mock.Anything,
+					).Return(nil) // nolint: goerr113
+
+					return setupFn(ctx)
+				},
 				CleanupFn: cleanupFn,
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[DeleteGroupResponseObject]) {
 					assert.NoError(t, res.Err)
@@ -716,20 +767,19 @@ func TestGroupAPIHandler(t *testing.T) {
 					assert.IsType(t, &echo.HTTPError{}, err)
 					assert.Equal(t, http.StatusNotFound, err.(*echo.HTTPError).Code)
 
-					pub, ok := testingx.GetPublisherFromContext(ctx)
-					assert.Equal(t, true, ok)
-					assert.Len(t, pub.CalledWith(), 1)
-
-					cw := pub.CalledWith()[0]
-					assert.Equal(t, testingx.TestPublisherMethodDelete, cw.Method)
-					assert.Equal(t, events.GroupTopic, cw.Topic)
-					assert.Equal(t, deleteGroupTestGroup.ID, cw.ResourceID)
+					m.AssertCalled(
+						t, "DeleteAuthRelationships",
+						events.GroupTopic, deleteGroupTestGroup.ID,
+						eventsx.AuthRelationshipRelation{
+							Relation:  events.GroupParentRelationship,
+							SubjectID: ownerID,
+						},
+					)
 				},
 			},
 		}
 
-		ctx := testingx.NewTestPublisher().ContextWithPublisher(ctxPermsAllow(context.Background()))
-		testingx.RunTests(ctx, t, tc, runFn)
+		testingx.RunTests(ctxPermsAllow(context.Background()), t, tc, runFn)
 	})
 }
 

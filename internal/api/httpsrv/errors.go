@@ -22,6 +22,9 @@ var (
 		status:  http.StatusNotFound,
 		message: "not found",
 	}
+
+	// ErrDBRollbackFailed is returned when a database rollback fails
+	ErrDBRollbackFailed = errors.New("failed to rollback database transaction")
 )
 
 func permissionsError(err error) error {

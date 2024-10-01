@@ -64,7 +64,7 @@ type GroupService interface {
 	// RemoveGroupMember removes a subject from a group.
 	RemoveGroupMember(ctx context.Context, groupID gidx.PrefixedID, subject gidx.PrefixedID) error
 	// ReplaceGroupMembers replaces the members of a group with a new set of subjects.
-	ReplaceGroupMembers(ctx context.Context, groupID gidx.PrefixedID, subjects ...gidx.PrefixedID) error
+	ReplaceGroupMembers(ctx context.Context, groupID gidx.PrefixedID, subjects ...gidx.PrefixedID) (add, rm []gidx.PrefixedID, err error)
 	// GroupMembersCount retrieves the number of members in a group.
 	GroupMembersCount(ctx context.Context, groupID gidx.PrefixedID) (int, error)
 }
