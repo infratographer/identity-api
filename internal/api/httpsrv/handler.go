@@ -107,8 +107,8 @@ func (h *apiHandler) rollbackAndReturnError(ctx context.Context, httpcode int, m
 	if err := h.engine.RollbackContext(ctx); err != nil {
 		return echo.NewHTTPError(
 			http.StatusInternalServerError,
-			fmt.Errorf("%w: %w", ErrDBRollbackFailed, err),
-		)
+			fmt.Errorf("%s and %w", msg, ErrDBRollbackFailed),
+		).SetInternal(err)
 	}
 
 	return echo.NewHTTPError(httpcode, msg)
