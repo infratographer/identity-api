@@ -5,6 +5,7 @@ import (
 	"go.infratographer.com/permissions-api/pkg/permissions"
 	"go.infratographer.com/x/crdbx"
 	"go.infratographer.com/x/echox"
+	eventsx "go.infratographer.com/x/events"
 	"go.infratographer.com/x/loggingx"
 	"go.infratographer.com/x/otelx"
 
@@ -21,4 +22,5 @@ var Config struct {
 	CRDB        crdbx.Config
 	Audit       auditx.Config
 	Permissions permissions.Config
+	Events      eventsx.Config
 }

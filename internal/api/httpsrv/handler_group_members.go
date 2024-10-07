@@ -49,12 +49,17 @@ func (h *apiHandler) AddGroupMembers(ctx context.Context, req AddGroupMembersReq
 		return nil, permissionsError(err)
 	}
 
-	if err := h.engine.AddMembers(ctx, gid, reqbody.MemberIDs...); err != nil {
+	if err := h.engine.AddGroupMembers(ctx, gid, reqbody.MemberIDs...); err != nil {
 		if errors.Is(err, types.ErrNotFound) {
 			err = echo.NewHTTPError(http.StatusNotFound, err.Error())
 		}
 
 		return nil, err
+	}
+
+	if err := h.eventService.AddGroupMembers(ctx, gid, reqbody.MemberIDs...); err != nil {
+		resperr := h.rollbackAndReturnError(ctx, http.StatusInternalServerError, "failed to add group members in permissions API")
+		return nil, resperr
 	}
 
 	return AddGroupMembers200JSONResponse{Success: true}, nil
@@ -77,7 +82,7 @@ func (h *apiHandler) ListGroupMembers(ctx context.Context, req ListGroupMembersR
 		return nil, permissionsError(err)
 	}
 
-	members, err := h.engine.ListMembers(ctx, gid, req.Params)
+	members, err := h.engine.ListGroupMembers(ctx, gid, req.Params)
 	if err != nil {
 		if errors.Is(err, types.ErrNotFound) {
 			err = echo.NewHTTPError(http.StatusNotFound, err.Error())
@@ -133,12 +138,17 @@ func (h *apiHandler) RemoveGroupMember(ctx context.Context, req RemoveGroupMembe
 		return nil, permissionsError(err)
 	}
 
-	if err := h.engine.RemoveMember(ctx, gid, sid); err != nil {
+	if err := h.engine.RemoveGroupMember(ctx, gid, sid); err != nil {
 		if errors.Is(err, types.ErrNotFound) {
 			err = echo.NewHTTPError(http.StatusNotFound, err.Error())
 		}
 
 		return nil, err
+	}
+
+	if err := h.eventService.RemoveGroupMembers(ctx, gid, sid); err != nil {
+		resperr := h.rollbackAndReturnError(ctx, http.StatusInternalServerError, "failed to remove group member in permissions API")
+		return nil, resperr
 	}
 
 	return RemoveGroupMember200JSONResponse{true}, nil
@@ -173,12 +183,23 @@ func (h *apiHandler) ReplaceGroupMembers(ctx context.Context, req ReplaceGroupMe
 		return nil, permissionsError(err)
 	}
 
-	if err := h.engine.ReplaceMembers(ctx, gid, reqbody.MemberIDs...); err != nil {
+	add, rm, err := h.engine.ReplaceGroupMembers(ctx, gid, reqbody.MemberIDs...)
+	if err != nil {
 		if errors.Is(err, types.ErrNotFound) {
 			err = echo.NewHTTPError(http.StatusNotFound, err.Error())
 		}
 
 		return nil, err
+	}
+
+	if err := h.eventService.RemoveGroupMembers(ctx, gid, rm...); err != nil {
+		resperr := h.rollbackAndReturnError(ctx, http.StatusInternalServerError, "failed to replace group members in permissions API")
+		return nil, resperr
+	}
+
+	if err := h.eventService.AddGroupMembers(ctx, gid, add...); err != nil {
+		resperr := h.rollbackAndReturnError(ctx, http.StatusInternalServerError, "failed to replace group members in permissions API")
+		return nil, resperr
 	}
 
 	return ReplaceGroupMembers200JSONResponse{true}, nil

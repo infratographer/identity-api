@@ -57,14 +57,16 @@ type GroupService interface {
 	// ListGroupsBySubject retrieves a list of groups that a subject is a member of.
 	ListGroupsBySubject(ctx context.Context, subject gidx.PrefixedID, pagination crdbx.Paginator) (Groups, error)
 
-	// AddMembers adds subjects to a group.
-	AddMembers(ctx context.Context, groupID gidx.PrefixedID, subjects ...gidx.PrefixedID) error
-	// ListMembers retrieves a list of subjects in a group.
-	ListMembers(ctx context.Context, groupID gidx.PrefixedID, pagination crdbx.Paginator) ([]gidx.PrefixedID, error)
-	// RemoveMember removes a subject from a group.
-	RemoveMember(ctx context.Context, groupID gidx.PrefixedID, subject gidx.PrefixedID) error
-	// ReplaceMembers replaces the members of a group with a new set of subjects.
-	ReplaceMembers(ctx context.Context, groupID gidx.PrefixedID, subjects ...gidx.PrefixedID) error
+	// AddGroupMembers adds subjects to a group.
+	AddGroupMembers(ctx context.Context, groupID gidx.PrefixedID, subjects ...gidx.PrefixedID) error
+	// ListGroupMembers retrieves a list of subjects in a group.
+	ListGroupMembers(ctx context.Context, groupID gidx.PrefixedID, pagination crdbx.Paginator) ([]gidx.PrefixedID, error)
+	// RemoveGroupMember removes a subject from a group.
+	RemoveGroupMember(ctx context.Context, groupID gidx.PrefixedID, subject gidx.PrefixedID) error
+	// ReplaceGroupMembers replaces the members of a group with a new set of subjects.
+	ReplaceGroupMembers(ctx context.Context, groupID gidx.PrefixedID, subjects ...gidx.PrefixedID) (add, rm []gidx.PrefixedID, err error)
+	// GroupMembersCount retrieves the number of members in a group.
+	GroupMembersCount(ctx context.Context, groupID gidx.PrefixedID) (int, error)
 }
 
 // Groups represents a list of groups

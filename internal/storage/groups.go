@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/lib/pq"
 	"go.infratographer.com/identity-api/internal/crdbx"
 	"go.infratographer.com/identity-api/internal/types"
 	"go.infratographer.com/x/gidx"
@@ -36,6 +37,11 @@ var groupColsStr = strings.Join([]string{
 	groupCols.ID, groupCols.OwnerID,
 	groupCols.Name, groupCols.Description,
 }, ", ")
+
+const (
+	membersTable = "group_members"
+	groupsTable  = "groups"
+)
 
 type groupService struct {
 	db *sql.DB
@@ -237,7 +243,7 @@ func (gs *groupService) DeleteGroup(ctx context.Context, id gidx.PrefixedID) err
 	return err
 }
 
-func (gs *groupService) AddMembers(ctx context.Context, groupID gidx.PrefixedID, subjects ...gidx.PrefixedID) error {
+func (gs *groupService) AddGroupMembers(ctx context.Context, groupID gidx.PrefixedID, subjects ...gidx.PrefixedID) error {
 	if len(subjects) == 0 {
 		return nil
 	}
@@ -276,22 +282,40 @@ func (gs *groupService) AddMembers(ctx context.Context, groupID gidx.PrefixedID,
 	return err
 }
 
-func (gs *groupService) ListMembers(ctx context.Context, groupID gidx.PrefixedID, pagination crdbx.Paginator) ([]gidx.PrefixedID, error) {
-	paginate := crdbx.Paginate(pagination, crdbx.ContextAsOfSystemTime(ctx, "-1m"))
-
+func (gs *groupService) ListGroupMembers(ctx context.Context, groupID gidx.PrefixedID, pagination crdbx.Paginator) ([]gidx.PrefixedID, error) {
 	if _, err := gs.fetchGroupByID(ctx, groupID); err != nil {
 		return nil, err
 	}
 
-	q := fmt.Sprintf(
-		"SELECT %s FROM group_members %s WHERE %s = $1 %s %s %s",
-		groupMemberCols.SubjectID, paginate.AsOfSystemTime(), groupMemberCols.GroupID,
-		paginate.AndWhere(2), //nolint:gomnd
-		paginate.OrderClause(),
-		paginate.LimitClause(),
-	)
+	var ex func() (*sql.Rows, error)
 
-	rows, err := gs.db.QueryContext(ctx, q, paginate.Values(groupID)...)
+	if pagination != nil {
+		paginate := crdbx.Paginate(pagination, crdbx.ContextAsOfSystemTime(ctx, "-1m"))
+
+		q := fmt.Sprintf(
+			"SELECT %s FROM %s %s WHERE %s = $1 %s %s %s",
+			groupMemberCols.SubjectID, membersTable,
+			paginate.AsOfSystemTime(), groupMemberCols.GroupID,
+			paginate.AndWhere(2), //nolint:gomnd
+			paginate.OrderClause(),
+			paginate.LimitClause(),
+		)
+
+		ex = func() (*sql.Rows, error) {
+			return gs.db.QueryContext(ctx, q, paginate.Values(groupID)...)
+		}
+	} else {
+		q := fmt.Sprintf(
+			"SELECT %s FROM %s WHERE %s = $1",
+			groupMemberCols.SubjectID, membersTable, groupMemberCols.GroupID,
+		)
+
+		ex = func() (*sql.Rows, error) {
+			return gs.db.QueryContext(ctx, q, groupID)
+		}
+	}
+
+	rows, err := ex()
 	if err != nil {
 		return nil, err
 	}
@@ -313,7 +337,7 @@ func (gs *groupService) ListMembers(ctx context.Context, groupID gidx.PrefixedID
 	return members, nil
 }
 
-func (gs *groupService) RemoveMember(ctx context.Context, groupID gidx.PrefixedID, subject gidx.PrefixedID) error {
+func (gs *groupService) RemoveGroupMember(ctx context.Context, groupID gidx.PrefixedID, subject gidx.PrefixedID) error {
 	tx, err := getContextTx(ctx)
 	if err != nil {
 		return err
@@ -343,36 +367,42 @@ func (gs *groupService) RemoveMember(ctx context.Context, groupID gidx.PrefixedI
 	return err
 }
 
-func (gs *groupService) ReplaceMembers(ctx context.Context, groupID gidx.PrefixedID, subjects ...gidx.PrefixedID) error {
+func (gs *groupService) ReplaceGroupMembers(
+	ctx context.Context, groupID gidx.PrefixedID, incoming ...gidx.PrefixedID,
+) ([]gidx.PrefixedID, []gidx.PrefixedID, error) {
 	tx, err := getContextTx(ctx)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 
-	if _, err := gs.fetchGroupByID(ctx, groupID); err != nil {
-		return err
+	current, err := gs.ListGroupMembers(ctx, groupID, nil)
+	if err != nil {
+		return nil, nil, err
 	}
+
+	valFn := func(x gidx.PrefixedID) string { return x.String() }
+	add, rm := Diff(current, incoming, valFn)
 
 	delq := fmt.Sprintf(
-		"DELETE FROM group_members WHERE %s = $1",
-		groupMemberCols.GroupID,
+		"DELETE FROM %s WHERE %s = $1 AND %s = ANY($2)",
+		membersTable,
+		groupMemberCols.GroupID, groupMemberCols.SubjectID,
 	)
 
-	_, err = tx.ExecContext(ctx, delq, groupID)
+	_, err = tx.ExecContext(ctx, delq, groupID, pq.Array(rm))
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 
-	return gs.AddMembers(ctx, groupID, subjects...)
+	if err := gs.AddGroupMembers(ctx, groupID, add...); err != nil {
+		return nil, nil, err
+	}
+
+	return add, rm, nil
 }
 
 func (gs *groupService) ListGroupsBySubject(ctx context.Context, subject gidx.PrefixedID, pagination crdbx.Paginator) (types.Groups, error) {
 	paginate := crdbx.Paginate(pagination, crdbx.ContextAsOfSystemTime(ctx, "-1m"))
-
-	const (
-		membersTable = "group_members"
-		groupsTable  = "groups"
-	)
 
 	q := fmt.Sprintf(
 		`SELECT %s FROM %s LEFT JOIN %s ON %s %s WHERE %s = $1 %s %s %s`,
@@ -423,4 +453,21 @@ func (gs *groupService) ListGroupsBySubject(ctx context.Context, subject gidx.Pr
 	}
 
 	return groups, nil
+}
+
+func (gs *groupService) GroupMembersCount(ctx context.Context, groupID gidx.PrefixedID) (int, error) {
+	q := fmt.Sprintf(
+		"SELECT COUNT(*) FROM %s WHERE %s = $1",
+		membersTable, groupMemberCols.GroupID,
+	)
+
+	row := gs.db.QueryRowContext(ctx, q, groupID)
+
+	var count int
+
+	if err := row.Scan(&count); err != nil {
+		return -1, err
+	}
+
+	return count, nil
 }
