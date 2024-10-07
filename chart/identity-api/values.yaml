@@ -31,6 +31,25 @@ config:
     # - "1.2.3.4/32"
     # - "1.2.3.0/24"
 
+  events:
+    nats:
+      # url is the event server connection url
+      url: ""
+      # source defines the source of the events (defaults to application name)
+      source: ""
+      # publishPrefix is the prefix to add to all published events
+      publishPrefix: ""
+      # connectTimeout is event connection timeout
+      connectTimeout: "10s"
+      # shutdownTimeout is the shutdown grace period
+      shutdownTimeout: "5s"
+      # tokenSecretName is the secret to load the auth token
+      tokenSecretName: ""
+      # credsSecretName is the secret to load the creds auth file from
+      credsSecretName: ""
+      # credsFile is the location to read the creds file from
+      credsFile: "/nats/creds"
+
   otel:
     enabled: false
     provider: stdout

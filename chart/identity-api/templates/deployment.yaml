@@ -113,6 +113,9 @@ spec:
             - name: crdb-ca
               mountPath: "{{ .Values.config.storage.crdb.certMountPath }}"
           {{- end }}
+          {{- if .Values.config.events.nats.credsSecretName }}
+            - name: nats-creds
+              mountPath: /nats
           {{- if .Values.config.audit.enabled }}
             - name: audit-logs
               mountPath: /app-audit
@@ -167,6 +170,10 @@ spec:
           secret:
             secretName: "{{ . }}"
         {{- end }}
+        {{- with .Values.config.events.nats.credsSecretName}}
+        - name: nats-creds
+          secret:
+            secretName: "{{ . }}"
         {{- if .Values.config.audit.enabled }}
         - name: audit-logs
           emptyDir: {}
