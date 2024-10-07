@@ -43,4 +43,13 @@ data:
       enabled: {{ .audit.enabled }}
       path: /app-audit/audit.log
       component: {{ .audit.component }}
+    events:
+      nats:
+        url: {{ .events.nats.url | quote }}
+        source: {{ .events.nats.source | quote }}
+        publishPrefix: {{ .events.nats.publishPrefix | quote }}
+        connectTimeout: {{ .events.nats.connectTimeout }}
+        shutdownTimeout: {{ .events.nats.shutdownTimeout }}
+        credsFile: {{ .events.nats.credsFile | quote }}
+
   {{- end }}
