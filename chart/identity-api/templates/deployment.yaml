@@ -94,6 +94,14 @@ spec:
         {{- end }}
       containers:
         - name: {{ include "common.names.name" . }}
+          {{- if .Values.config.events.nats.tokenSecretName }}
+          env:
+            - name: IDENTITYAPI_EVENTS_NATS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.config.events.nats.tokenSecretName }}"
+                  key: token
+          {{- end }}
           envFrom:
             - secretRef:
                 name: "{{ .Values.config.oauth.secretName }}"
@@ -116,6 +124,7 @@ spec:
           {{- if .Values.config.events.nats.credsSecretName }}
             - name: nats-creds
               mountPath: /nats
+          {{- end }}
           {{- if .Values.config.audit.enabled }}
             - name: audit-logs
               mountPath: /app-audit
@@ -174,6 +183,7 @@ spec:
         - name: nats-creds
           secret:
             secretName: "{{ . }}"
+        {{- end }}
         {{- if .Values.config.audit.enabled }}
         - name: audit-logs
           emptyDir: {}
