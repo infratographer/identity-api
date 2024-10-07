@@ -94,6 +94,14 @@ spec:
         {{- end }}
       containers:
         - name: {{ include "common.names.name" . }}
+          {{- if .Values.config.events.nats.tokenSecretName }}
+          env:
+            - name: IDENTITYAPI_EVENTS_NATS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.config.events.nats.tokenSecretName }}"
+                  key: token
+          {{- end }}
           envFrom:
             - secretRef:
                 name: "{{ .Values.config.oauth.secretName }}"
@@ -112,6 +120,10 @@ spec:
           {{- if .Values.config.storage.crdb.caSecretName }}
             - name: crdb-ca
               mountPath: "{{ .Values.config.storage.crdb.certMountPath }}"
+          {{- end }}
+          {{- if .Values.config.events.nats.credsSecretName }}
+            - name: nats-creds
+              mountPath: /nats
           {{- end }}
           {{- if .Values.config.audit.enabled }}
             - name: audit-logs
@@ -164,6 +176,11 @@ spec:
             name: {{ include "common.names.name" . }}-app-config
         {{- with .Values.config.storage.crdb.caSecretName }}
         - name: crdb-ca
+          secret:
+            secretName: "{{ . }}"
+        {{- end }}
+        {{- with .Values.config.events.nats.credsSecretName}}
+        - name: nats-creds
           secret:
             secretName: "{{ . }}"
         {{- end }}
