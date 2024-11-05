@@ -38,6 +38,10 @@ func (e *Events) AddGroupMembers(ctx context.Context, gid gidx.PrefixedID, subjI
 		)
 	}
 
+	if len(rels) == 0 {
+		return nil
+	}
+
 	return permissions.CreateAuthRelationships(ctx, GroupTopic, gid, rels...)
 }
 
@@ -56,6 +60,10 @@ func (e *Events) RemoveGroupMembers(ctx context.Context, gid gidx.PrefixedID, su
 				SubjectID: subj,
 			},
 		)
+	}
+
+	if len(rels) == 0 {
+		return nil
 	}
 
 	return permissions.DeleteAuthRelationships(ctx, GroupTopic, gid, rels...)
