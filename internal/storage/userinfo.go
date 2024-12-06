@@ -219,7 +219,7 @@ func (s *userInfoService) LookupUserInfosByIssuerID(ctx context.Context, id gidx
 			WHERE issuers.%[3]s = $1 AND user_info.iss_id = issuers.id %[5]s %[6]s %[7]s
         `, selects, userInfoCols.IssuerID, issuerCols.ID,
 		paginate.AsOfSystemTime(),
-		paginate.AndWhere(2), //nolint:gomnd
+		paginate.AndWhere(2), //nolint:mnd
 		paginate.OrderClause(),
 		paginate.LimitClause(),
 	)

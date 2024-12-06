@@ -120,7 +120,7 @@ func (s *issuerService) GetOwnerIssuers(ctx context.Context, id gidx.PrefixedID,
 
 	query := fmt.Sprintf("SELECT %s FROM issuers %s WHERE owner_id = $1 %s %s %s", issuerColumnsStr,
 		paginate.AsOfSystemTime(),
-		paginate.AndWhere(2), //nolint:gomnd
+		paginate.AndWhere(2), //nolint:mnd
 		paginate.OrderClause(),
 		paginate.LimitClause(),
 	)

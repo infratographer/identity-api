@@ -185,7 +185,7 @@ func (s *oauthClientManager) GetOwnerOAuthClients(ctx context.Context, id gidx.P
 
 	query := fmt.Sprintf("SELECT %s FROM oauth_clients %s WHERE owner_id = $1 %s %s %s", oauthClientColumnsStr,
 		paginate.AsOfSystemTime(),
-		paginate.AndWhere(2), //nolint:gomnd
+		paginate.AndWhere(2), //nolint:mnd
 		paginate.OrderClause(),
 		paginate.LimitClause(),
 	)
