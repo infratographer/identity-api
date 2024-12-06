@@ -30,13 +30,13 @@ COCKROACH_VERSION_FILE = cockroach-$(COCKROACH_VERSION).$(OS_VERSION)-$(ARCH)
 COCKROACH_RELEASE_URL = https://binaries.cockroachdb.com/$(COCKROACH_VERSION_FILE).tgz
 
 GCI_REPO = github.com/daixiang0/gci
-GCI_VERSION = v0.10.1
+GCI_VERSION = v0.13.5
 
 OAPI_CODEGEN_REPO = github.com/deepmap/oapi-codegen/v2
 OAPI_CODEGEN_VERSION = v2.1.0
 
 GOLANGCI_LINT_REPO = github.com/golangci/golangci-lint
-GOLANGCI_LINT_VERSION = v1.56.2
+GOLANGCI_LINT_VERSION = v1.62.2
 
 # go files to be checked
 GO_FILES=$(shell git ls-files '*.go')

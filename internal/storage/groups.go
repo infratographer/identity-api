@@ -159,7 +159,7 @@ func (gs *groupService) ListGroupsByOwner(ctx context.Context, ownerID gidx.Pref
 	q := fmt.Sprintf(
 		"SELECT %s FROM groups %s WHERE %s = $1 %s %s %s",
 		groupColsStr, paginate.AsOfSystemTime(), groupCols.OwnerID,
-		paginate.AndWhere(2), //nolint:gomnd
+		paginate.AndWhere(2), //nolint:mnd
 		paginate.OrderClause(),
 		paginate.LimitClause(),
 	)
@@ -296,7 +296,7 @@ func (gs *groupService) ListGroupMembers(ctx context.Context, groupID gidx.Prefi
 			"SELECT %s FROM %s %s WHERE %s = $1 %s %s %s",
 			groupMemberCols.SubjectID, membersTable,
 			paginate.AsOfSystemTime(), groupMemberCols.GroupID,
-			paginate.AndWhere(2), //nolint:gomnd
+			paginate.AndWhere(2), //nolint:mnd
 			paginate.OrderClause(),
 			paginate.LimitClause(),
 		)
@@ -428,7 +428,7 @@ func (gs *groupService) ListGroupsBySubject(ctx context.Context, subject gidx.Pr
 		// WHERE
 		fmt.Sprintf("%s.%s", membersTable, groupMemberCols.SubjectID),
 		// Pagination
-		paginate.AndWhere(2), //nolint:gomnd
+		paginate.AndWhere(2), //nolint:mnd
 		paginate.OrderClause(),
 		paginate.LimitClause(),
 	)
