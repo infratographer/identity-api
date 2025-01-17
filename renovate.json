@@ -1,15 +1,22 @@
 {
   "extends": [
-    "config:base"
+    "config:recommended"
   ],
   "packageRules": [
     {
-      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "pin",
+        "digest"
+      ],
       "automerge": true
     },
     {
-      "matchPackagePrefixes": ["go.opentelemetry.io"],
-      "groupName": "OTEL Packages"
+      "groupName": "OTEL Packages",
+      "matchPackageNames": [
+        "go.opentelemetry.io{/,}**"
+      ]
     }
   ],
   "postUpdateOptions": [
