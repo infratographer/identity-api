@@ -5,7 +5,7 @@ go 1.23
 toolchain go1.23.5
 
 require (
-	github.com/MicahParks/keyfunc/v3 v3.3.3
+	github.com/MicahParks/keyfunc/v3 v3.3.10
 	github.com/cockroachdb/cockroach-go/v2 v2.3.8
 	github.com/getkin/kin-openapi v0.128.0
 	github.com/go-jose/go-jose/v3 v3.0.3
@@ -35,7 +35,7 @@ require (
 
 require (
 	cel.dev/expr v0.18.0 // indirect
-	github.com/MicahParks/jwkset v0.6.0 // indirect
+	github.com/MicahParks/jwkset v0.8.0 // indirect
 	github.com/XSAM/otelsql v0.32.0 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
