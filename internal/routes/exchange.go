@@ -64,7 +64,7 @@ func (h *tokenHandler) Handle(c echo.Context) error {
 		setContextFromError(c, err)
 
 		h.logger.Errorf("Error occurred in NewAccessRequest: %+v", err)
-		h.provider.WriteAccessError(ctx, c.Response().Writer, accessRequest, err)
+		h.provider.WriteAccessError(ctx, c.Response(), accessRequest, err)
 
 		return nil
 	}
@@ -78,13 +78,13 @@ func (h *tokenHandler) Handle(c echo.Context) error {
 	response, err := h.provider.NewAccessResponse(ctx, accessRequest)
 	if err != nil {
 		h.logger.Errorf("Error occurred in NewAccessResponse: %+v", err)
-		h.provider.WriteAccessError(ctx, c.Response().Writer, accessRequest, err)
+		h.provider.WriteAccessError(ctx, c.Response(), accessRequest, err)
 
 		return nil
 	}
 
 	// All done, send the response.
-	h.provider.WriteAccessResponse(ctx, c.Response().Writer, accessRequest, response)
+	h.provider.WriteAccessResponse(ctx, c.Response(), accessRequest, response)
 
 	return nil
 }
