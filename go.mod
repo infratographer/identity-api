@@ -2,7 +2,7 @@ module go.infratographer.com/identity-api
 
 go 1.23
 
-toolchain go1.23.4
+toolchain go1.23.5
 
 require (
 	github.com/MicahParks/keyfunc/v3 v3.3.3
