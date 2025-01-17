@@ -10,7 +10,7 @@ require (
 	github.com/getkin/kin-openapi v0.128.0
 	github.com/go-jose/go-jose/v3 v3.0.3
 	github.com/google/cel-go v0.22.1
-	github.com/labstack/echo-jwt/v4 v4.2.0
+	github.com/labstack/echo-jwt/v4 v4.3.0
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/lib/pq v1.10.9
 	github.com/metal-toolbox/auditevent v0.8.0
