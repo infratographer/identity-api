@@ -134,7 +134,9 @@ func (c *ClientCredentialsGrantHandler) PopulateTokenEndpointResponse(ctx contex
 
 	atLifespan := fosite.GetEffectiveLifespan(request.GetClient(), fosite.GrantTypeClientCredentials, fosite.AccessToken, c.Config.GetAccessTokenLifespan(ctx))
 
-	return c.IssueAccessToken(ctx, atLifespan, request, response)
+	_, err := c.IssueAccessToken(ctx, atLifespan, request, response)
+
+	return err
 }
 
 // CanSkipClientAuth determines if the client must be authenticated to use this handler.
