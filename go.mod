@@ -9,7 +9,7 @@ require (
 	github.com/cockroachdb/cockroach-go/v2 v2.3.8
 	github.com/getkin/kin-openapi v0.128.0
 	github.com/go-jose/go-jose/v3 v3.0.3
-	github.com/google/cel-go v0.22.1
+	github.com/google/cel-go v0.23.2
 	github.com/labstack/echo-jwt/v4 v4.3.0
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/lib/pq v1.10.9
@@ -34,7 +34,7 @@ require (
 )
 
 require (
-	cel.dev/expr v0.18.0 // indirect
+	cel.dev/expr v0.19.1 // indirect
 	github.com/MicahParks/jwkset v0.8.0 // indirect
 	github.com/XSAM/otelsql v0.36.0 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
