@@ -8,7 +8,7 @@ steps:
     key: "lint"
     plugins:
       - docker#v5.12.0:
-          image: "golang:1.22"
+          image: "golang:1.24"
           command: |
             make lint
 
@@ -16,7 +16,7 @@ steps:
     key: "gotest"
     plugins:
       - docker#v5.12.0:
-          image: "golang:1.22"
+          image: "golang:1.24"
           command: |
             make test
 
@@ -25,7 +25,7 @@ steps:
     artifact_paths: "bin/${APP_NAME}"
     plugins:
       - docker#v5.12.0:
-          image: "golang:1.22"
+          image: "golang:1.24"
           environment:
             - APP_NAME
           command: |

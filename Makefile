@@ -32,12 +32,6 @@ COCKROACH_RELEASE_URL = https://binaries.cockroachdb.com/$(COCKROACH_VERSION_FIL
 GCI_REPO = github.com/daixiang0/gci
 GCI_VERSION = v0.13.5
 
-OAPI_CODEGEN_REPO = github.com/deepmap/oapi-codegen/v2
-OAPI_CODEGEN_VERSION = v2.1.0
-
-GOLANGCI_LINT_REPO = github.com/golangci/golangci-lint
-GOLANGCI_LINT_VERSION = v1.63.4
-
 # go files to be checked
 GO_FILES=$(shell git ls-files '*.go')
 
@@ -61,9 +55,8 @@ help: Makefile ## Print help.
 
 all: lint test  ## Runs lint checks and tests.
 
-generate: | $(TOOLS_DIR)/oapi-codegen  ## Runs all code generation.
-	@PATH="$(ROOT_DIR)/$(TOOLS_DIR):$$PATH" \
-		go generate ./...
+generate:  ## Runs all code generation.
+	@go generate ./...
 
 dev-database: | vendor $(TOOLS_DIR)/cockroach  ## Initializes dev database "${DEV_DB}"
 	@$(TOOLS_DIR)/cockroach sql -e "drop database if exists ${DEV_DB}"
@@ -87,9 +80,9 @@ coverage: | $(TOOLS_DIR)/cockroach  ## Runs tests generating coverage output.
 
 lint: golint  ## Runs go lint checks.
 
-golint: | vendor $(TOOLS_DIR)/golangci-lint  ## Runs go lint checks.
+golint: | vendor  ## Runs go lint checks.
 	@echo Linting Go files...
-	@$(TOOLS_DIR)/golangci-lint run --build-tags "-tags testtools"
+	@go tool golangci-lint run --build-tags "-tags testtools"
 
 build: vendor generate  ## Builds a binary stored at bin/${APP_NAME}
 	@echo Building image...
@@ -127,14 +120,3 @@ $(TOOLS_DIR)/cockroach: | $(TOOLS_DIR)
 		| tar -xz --strip-components 1 -C $(TOOLS_DIR) $(COCKROACH_VERSION_FILE)/cockroach
 
 	$@ version
-
-$(TOOLS_DIR)/golangci-lint: | $(TOOLS_DIR)
-	@echo "Installing $(GOLANGCI_LINT_REPO)/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)"
-	@GOBIN=$(ROOT_DIR)/$(TOOLS_DIR) go install $(GOLANGCI_LINT_REPO)/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
-	$@ version
-	$@ linters
-
-$(TOOLS_DIR)/oapi-codegen: | $(TOOLS_DIR)
-	@echo "Installing $(OAPI_CODEGEN_REPO)/cmd/oapi-codegen@$(OAPI_CODEGEN_VERSION)"
-	@GOBIN=$(ROOT_DIR)/$(TOOLS_DIR) go install $(OAPI_CODEGEN_REPO)/cmd/oapi-codegen@$(OAPI_CODEGEN_VERSION)
-	$@ -version
