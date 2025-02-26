@@ -6,7 +6,7 @@ require (
 	github.com/MicahParks/keyfunc/v3 v3.3.10
 	github.com/cockroachdb/cockroach-go/v2 v2.4.0
 	github.com/getkin/kin-openapi v0.129.0
-	github.com/go-jose/go-jose/v3 v3.0.3
+	github.com/go-jose/go-jose/v3 v3.0.4
 	github.com/google/cel-go v0.23.2
 	github.com/labstack/echo-jwt/v4 v4.3.0
 	github.com/labstack/echo/v4 v4.13.3
