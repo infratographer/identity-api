@@ -111,7 +111,7 @@ config:
 audit:
   image:
     repository: ghcr.io/metal-toolbox/audittail
-    tag: v0.8.0
+    tag: v0.9.0
     pullPolicy: IfNotPresent
   resources:
     limits:
