@@ -49,6 +49,10 @@ type Issuer struct {
 	JWKSURI string
 	// ClaimMappings represents a map of claims to a CEL expression that will be evaluated
 	ClaimMappings ClaimsMapping
+	// ClaimConditions A CEL expressions to restrict authentication to a subset of identities
+	// whose claims must match the expressions. By default all identities
+	// issued by the issuer are allowed to authenticate
+	ClaimConditions *ClaimConditions
 }
 
 // ToV1Issuer converts an issuer to an API issuer.
@@ -58,12 +62,28 @@ func (i Issuer) ToV1Issuer() (v1.Issuer, error) {
 		return v1.Issuer{}, err
 	}
 
+	claimConditions := ""
+
+	if i.ClaimConditions != nil {
+		ast := i.ClaimConditions.AST()
+
+		if ast != nil {
+			str, err := cel.AstToString(ast)
+			if err != nil {
+				return v1.Issuer{}, err
+			}
+
+			claimConditions = str
+		}
+	}
+
 	out := v1.Issuer{
-		ID:            i.ID,
-		Name:          i.Name,
-		URI:           i.URI,
-		JWKSURI:       i.JWKSURI,
-		ClaimMappings: claimsMappingRepr,
+		ID:              i.ID,
+		Name:            i.Name,
+		URI:             i.URI,
+		JWKSURI:         i.JWKSURI,
+		ClaimMappings:   claimsMappingRepr,
+		ClaimConditions: claimConditions,
 	}
 
 	return out, nil
@@ -71,10 +91,11 @@ func (i Issuer) ToV1Issuer() (v1.Issuer, error) {
 
 // IssuerUpdate represents an update operation on an issuer.
 type IssuerUpdate struct {
-	Name          *string
-	URI           *string
-	JWKSURI       *string
-	ClaimMappings ClaimsMapping
+	Name            *string
+	URI             *string
+	JWKSURI         *string
+	ClaimMappings   ClaimsMapping
+	ClaimConditions *ClaimConditions
 }
 
 // IssuerService represents a service for managing issuers.
@@ -201,6 +222,57 @@ func (i UserInfos) ToV1Users() ([]v1.User, error) {
 	}
 
 	return users, nil
+}
+
+// ClaimConditions is a CEL expression to evaluate the claims of a token
+type ClaimConditions struct {
+	ast *cel.Ast
+}
+
+// NewClaimConditions creates a ClaimConditions from the given CEL expression.
+func NewClaimConditions(expr string) (*ClaimConditions, error) {
+	ast, err := celutils.ParseCEL(expr)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ClaimConditions{ast: ast}, nil
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+func (c *ClaimConditions) MarshalJSON() ([]byte, error) {
+	if c.ast == nil {
+		return nil, nil
+	}
+
+	expr, err := cel.AstToCheckedExpr(c.ast)
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := prototext.Marshal(expr)
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+func (c *ClaimConditions) UnmarshalJSON(data []byte) error {
+	var expr exprpb.CheckedExpr
+	if err := prototext.Unmarshal(data, &expr); err != nil {
+		return err
+	}
+
+	c.ast = cel.CheckedExprToAst(&expr)
+
+	return nil
+}
+
+// AST returns the underlying *cel.Ast.
+func (c *ClaimConditions) AST() *cel.Ast {
+	return c.ast
 }
 
 // UserInfo contains information about the user from the source OIDC provider.

@@ -28,8 +28,9 @@ func (h *apiHandler) CreateIssuer(ctx context.Context, req CreateIssuerRequestOb
 	}
 
 	var (
-		claimsMapping types.ClaimsMapping
-		err           error
+		claimsMapping   types.ClaimsMapping
+		claimConditions *types.ClaimConditions
+		err             error
 	)
 
 	if createOp.ClaimMappings != nil {
@@ -44,6 +45,20 @@ func (h *apiHandler) CreateIssuer(ctx context.Context, req CreateIssuerRequestOb
 		}
 	}
 
+	if createOp.ClaimConditions != nil {
+		cond, err := types.NewClaimConditions(*createOp.ClaimConditions)
+		if err != nil {
+			err = errorWithStatus{
+				status:  http.StatusBadRequest,
+				message: "error parsing CEL expression",
+			}
+
+			return nil, err
+		}
+
+		claimConditions = cond
+	}
+
 	id, err := gidx.NewID(types.IdentityIssuerIDPrefix)
 	if err != nil {
 		err = errorWithStatus{
@@ -55,12 +70,13 @@ func (h *apiHandler) CreateIssuer(ctx context.Context, req CreateIssuerRequestOb
 	}
 
 	issuerToCreate := types.Issuer{
-		OwnerID:       ownerID,
-		ID:            id,
-		Name:          createOp.Name,
-		URI:           createOp.URI,
-		JWKSURI:       createOp.JWKSURI,
-		ClaimMappings: claimsMapping,
+		OwnerID:         ownerID,
+		ID:              id,
+		Name:            createOp.Name,
+		URI:             createOp.URI,
+		JWKSURI:         createOp.JWKSURI,
+		ClaimMappings:   claimsMapping,
+		ClaimConditions: claimConditions,
 	}
 
 	issuer, err := h.engine.CreateIssuer(ctx, issuerToCreate)
@@ -158,11 +174,26 @@ func (h *apiHandler) UpdateIssuer(ctx context.Context, req UpdateIssuerRequestOb
 		}
 	}
 
+	var claimConditions *types.ClaimConditions
+
+	if updateOp.ClaimConditions != nil && *updateOp.ClaimConditions != "" {
+		claimConditions, err = types.NewClaimConditions(*updateOp.ClaimConditions)
+		if err != nil {
+			err = errorWithStatus{
+				status:  http.StatusBadRequest,
+				message: "error parsing CEL expression",
+			}
+
+			return nil, err
+		}
+	}
+
 	update := types.IssuerUpdate{
-		Name:          updateOp.Name,
-		URI:           updateOp.URI,
-		JWKSURI:       updateOp.JWKSURI,
-		ClaimMappings: claimsMapping,
+		Name:            updateOp.Name,
+		URI:             updateOp.URI,
+		JWKSURI:         updateOp.JWKSURI,
+		ClaimMappings:   claimsMapping,
+		ClaimConditions: claimConditions,
 	}
 
 	issuer, err := h.engine.UpdateIssuer(ctx, req.Id, update)

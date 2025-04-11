@@ -463,6 +463,12 @@ components:
           description: CEL expressions mapping token claims to other claims
           additionalProperties:
             type: string
+        claim_conditions:
+          type: string
+          description: |
+            A CEL expressions to restrict authentication to a subset of identities
+            whose claims must match the expressions. By default all identities
+            issued by the issuer are allowed to authenticate
 
     IssuerUpdate:
       properties:
@@ -482,6 +488,12 @@ components:
           description: CEL expressions mapping token claims to other claims
           additionalProperties:
             type: string
+        claim_conditions:
+          type: string
+          description: |
+            A CEL expressions to restrict authentication to a subset of identities
+            whose claims must match the expressions. By default all identities
+            issued by the issuer are allowed to authenticate
 
     Issuer:
       required:
@@ -490,6 +502,7 @@ components:
         - uri
         - jwks_uri
         - claim_mappings
+        - claim_conditions
       properties:
         id:
           x-go-name: ID
@@ -512,6 +525,12 @@ components:
           description: CEL expressions mapping token claims to other claims
           additionalProperties:
             type: string
+        claim_conditions:
+          type: string
+          description: |
+            A CEL expressions to restrict authentication to a subset of identities
+            whose claims must match the expressions. By default all identities
+            issued by the issuer are allowed to authenticate
 
     CreateOAuthClient:
       required:
