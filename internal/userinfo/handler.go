@@ -9,11 +9,12 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	"go.infratographer.com/x/echojwtx"
+	"go.infratographer.com/x/gidx"
+
 	"go.infratographer.com/identity-api/internal/crdbx"
 	"go.infratographer.com/identity-api/internal/types"
 	v1 "go.infratographer.com/identity-api/pkg/api/v1"
-	"go.infratographer.com/x/echojwtx"
-	"go.infratographer.com/x/gidx"
 )
 
 // Store is an interface providing userinfo and group services

@@ -2,8 +2,9 @@ package types
 
 import (
 	"github.com/ory/fosite"
-	v1 "go.infratographer.com/identity-api/pkg/api/v1"
 	"go.infratographer.com/x/gidx"
+
+	v1 "go.infratographer.com/identity-api/pkg/api/v1"
 )
 
 // OAuthClients represents a list of token issuers.

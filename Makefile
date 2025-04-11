@@ -29,9 +29,6 @@ endif
 COCKROACH_VERSION_FILE = cockroach-$(COCKROACH_VERSION).$(OS_VERSION)-$(ARCH)
 COCKROACH_RELEASE_URL = https://binaries.cockroachdb.com/$(COCKROACH_VERSION_FILE).tgz
 
-GCI_REPO = github.com/daixiang0/gci
-GCI_VERSION = v0.13.5
-
 # go files to be checked
 GO_FILES=$(shell git ls-files '*.go')
 
@@ -83,6 +80,10 @@ lint: golint  ## Runs go lint checks.
 golint: | vendor  ## Runs go lint checks.
 	@echo Linting Go files...
 	@go tool golangci-lint run --build-tags "-tags testtools"
+
+fixlint:
+	@echo Fixing go imports
+	@find . -type f -iname '*.go' | xargs go tool goimports -w -local go.infratographer.com/identity-api
 
 build: vendor generate  ## Builds a binary stored at bin/${APP_NAME}
 	@echo Building image...

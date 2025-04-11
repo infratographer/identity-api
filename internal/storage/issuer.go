@@ -7,9 +7,10 @@ import (
 	"fmt"
 	"strings"
 
+	"go.infratographer.com/x/gidx"
+
 	"go.infratographer.com/identity-api/internal/crdbx"
 	"go.infratographer.com/identity-api/internal/types"
-	"go.infratographer.com/x/gidx"
 )
 
 var issuerCols = struct {
@@ -130,7 +131,7 @@ func (s *issuerService) GetOwnerIssuers(ctx context.Context, id gidx.PrefixedID,
 		return nil, err
 	}
 
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	var issuers types.Issuers
 

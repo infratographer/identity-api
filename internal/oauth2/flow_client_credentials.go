@@ -6,11 +6,12 @@ import (
 	"time"
 
 	"github.com/ory/x/errorsx"
-	"go.infratographer.com/identity-api/internal/fositex"
-	"go.infratographer.com/identity-api/internal/storage"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+
+	"go.infratographer.com/identity-api/internal/fositex"
+	"go.infratographer.com/identity-api/internal/storage"
 
 	"github.com/ory/fosite"
 	"github.com/ory/fosite/handler/oauth2"

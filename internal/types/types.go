@@ -9,10 +9,11 @@ import (
 	exprpb "google.golang.org/genproto/googleapis/api/expr/v1alpha1"
 	"google.golang.org/protobuf/encoding/prototext"
 
+	"go.infratographer.com/x/gidx"
+
 	"go.infratographer.com/identity-api/internal/celutils"
 	"go.infratographer.com/identity-api/internal/crdbx"
 	v1 "go.infratographer.com/identity-api/pkg/api/v1"
-	"go.infratographer.com/x/gidx"
 )
 
 // Issuers represents a list of token issuers.
