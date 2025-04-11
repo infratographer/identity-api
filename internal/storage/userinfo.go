@@ -9,9 +9,10 @@ import (
 	"fmt"
 	"strings"
 
+	"go.infratographer.com/x/gidx"
+
 	"go.infratographer.com/identity-api/internal/crdbx"
 	"go.infratographer.com/identity-api/internal/types"
-	"go.infratographer.com/x/gidx"
 )
 
 const (
@@ -229,7 +230,7 @@ func (s *userInfoService) LookupUserInfosByIssuerID(ctx context.Context, id gidx
 		return nil, err
 	}
 
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	var users types.UserInfos
 

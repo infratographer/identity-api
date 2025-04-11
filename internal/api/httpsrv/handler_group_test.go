@@ -11,16 +11,17 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	"go.infratographer.com/permissions-api/pkg/permissions/mockpermissions"
+	"go.infratographer.com/x/crdbx"
+	eventsx "go.infratographer.com/x/events"
+	"go.infratographer.com/x/gidx"
+
 	pagination "go.infratographer.com/identity-api/internal/crdbx"
 	"go.infratographer.com/identity-api/internal/events"
 	"go.infratographer.com/identity-api/internal/storage"
 	"go.infratographer.com/identity-api/internal/testingx"
 	"go.infratographer.com/identity-api/internal/types"
 	v1 "go.infratographer.com/identity-api/pkg/api/v1"
-	"go.infratographer.com/permissions-api/pkg/permissions/mockpermissions"
-	"go.infratographer.com/x/crdbx"
-	eventsx "go.infratographer.com/x/events"
-	"go.infratographer.com/x/gidx"
 )
 
 func TestGroupAPIHandler(t *testing.T) {
@@ -268,7 +269,7 @@ func TestGroupAPIHandler(t *testing.T) {
 							Relation:  events.GroupParentRelationship,
 							SubjectID: ownerIDFailure,
 						},
-					).Return(fmt.Errorf("you bad bad")) // nolint: goerr113
+					).Return(errBad) // nolint: goerr113
 
 					return setupFn(ctx)
 				},
@@ -722,7 +723,7 @@ func TestGroupAPIHandler(t *testing.T) {
 						events.GroupTopic,
 						theOtherTestGroup.ID,
 						mock.Anything,
-					).Return(fmt.Errorf("you bad bad")) // nolint: goerr113
+					).Return(errBad) // nolint: goerr113
 
 					return setupFn(ctx)
 				},

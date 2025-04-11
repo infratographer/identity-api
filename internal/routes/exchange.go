@@ -8,9 +8,10 @@ import (
 	"github.com/metal-toolbox/auditevent"
 	"github.com/ory/fosite"
 	"github.com/ory/fosite/handler/oauth2"
+	"go.uber.org/zap"
+
 	"go.infratographer.com/identity-api/internal/auditx"
 	"go.infratographer.com/identity-api/internal/types"
-	"go.uber.org/zap"
 )
 
 type tokenHandler struct {

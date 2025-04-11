@@ -7,11 +7,12 @@ import (
 	"github.com/ory/fosite/token/jwt"
 	"github.com/stretchr/testify/assert"
 
+	"go.infratographer.com/x/crdbx"
+	"go.infratographer.com/x/gidx"
+
 	"go.infratographer.com/identity-api/internal/celutils"
 	"go.infratographer.com/identity-api/internal/storage"
 	"go.infratographer.com/identity-api/internal/testingx"
-	"go.infratographer.com/x/crdbx"
-	"go.infratographer.com/x/gidx"
 )
 
 // TestClaimMappingEval checks that claim mapping expressions evaluate correctly.

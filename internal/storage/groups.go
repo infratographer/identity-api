@@ -8,9 +8,10 @@ import (
 	"strings"
 
 	"github.com/lib/pq"
+	"go.infratographer.com/x/gidx"
+
 	"go.infratographer.com/identity-api/internal/crdbx"
 	"go.infratographer.com/identity-api/internal/types"
-	"go.infratographer.com/x/gidx"
 )
 
 var groupCols = struct {
@@ -169,7 +170,7 @@ func (gs *groupService) ListGroupsByOwner(ctx context.Context, ownerID gidx.Pref
 		return nil, err
 	}
 
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	var groups types.Groups
 
@@ -320,7 +321,7 @@ func (gs *groupService) ListGroupMembers(ctx context.Context, groupID gidx.Prefi
 		return nil, err
 	}
 
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	var members []gidx.PrefixedID
 
@@ -438,7 +439,7 @@ func (gs *groupService) ListGroupsBySubject(ctx context.Context, subject gidx.Pr
 		return nil, err
 	}
 
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	var groups types.Groups
 

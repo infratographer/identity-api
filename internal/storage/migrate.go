@@ -29,7 +29,7 @@ func RunMigrations(config crdbx.Config) error {
 		return err
 	}
 
-	defer db.Close()
+	defer db.Close() //nolint:errcheck
 
 	return runMigrations(db)
 }

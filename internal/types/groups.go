@@ -3,9 +3,10 @@ package types
 import (
 	"context"
 
+	"go.infratographer.com/x/gidx"
+
 	"go.infratographer.com/identity-api/internal/crdbx"
 	v1 "go.infratographer.com/identity-api/pkg/api/v1"
-	"go.infratographer.com/x/gidx"
 )
 
 // Group represents a set of subjects

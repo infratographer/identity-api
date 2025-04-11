@@ -8,9 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"go.infratographer.com/x/gidx"
+
 	"go.infratographer.com/identity-api/internal/testingx"
 	"go.infratographer.com/identity-api/internal/types"
-	"go.infratographer.com/x/gidx"
 )
 
 func compareIssuers(t *testing.T, exp types.Issuer, obs types.Issuer) {

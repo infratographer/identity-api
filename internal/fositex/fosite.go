@@ -33,7 +33,7 @@ func readSymmetricKey(path string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer f.Close() //nolint:errcheck
 
 	bytes, err := io.ReadAll(f)
 	if err != nil {
@@ -51,7 +51,7 @@ func readAsymmetricKey[T crypto.Signer](path string) (T, error) {
 		return empty, err
 	}
 
-	defer f.Close()
+	defer f.Close() //nolint:errcheck
 
 	bytes, err := io.ReadAll(f)
 	if err != nil {

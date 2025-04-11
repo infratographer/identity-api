@@ -4,10 +4,11 @@ import (
 	"context"
 	"net/http"
 
-	"go.infratographer.com/identity-api/internal/types"
-	v1 "go.infratographer.com/identity-api/pkg/api/v1"
 	"go.infratographer.com/permissions-api/pkg/permissions"
 	"go.infratographer.com/x/gidx"
+
+	"go.infratographer.com/identity-api/internal/types"
+	v1 "go.infratographer.com/identity-api/pkg/api/v1"
 )
 
 const (

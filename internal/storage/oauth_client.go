@@ -8,9 +8,10 @@ import (
 	"time"
 
 	"github.com/ory/fosite"
+	"go.infratographer.com/x/gidx"
+
 	"go.infratographer.com/identity-api/internal/crdbx"
 	"go.infratographer.com/identity-api/internal/types"
-	"go.infratographer.com/x/gidx"
 )
 
 var oauthClientCols = struct {
@@ -195,7 +196,7 @@ func (s *oauthClientManager) GetOwnerOAuthClients(ctx context.Context, id gidx.P
 		return nil, err
 	}
 
-	defer rows.Close()
+	defer rows.Close() //nolint:errcheck
 
 	var clients types.OAuthClients
 

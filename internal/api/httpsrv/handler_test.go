@@ -8,14 +8,15 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"go.infratographer.com/permissions-api/pkg/permissions"
+	"go.infratographer.com/x/crdbx"
+	"go.infratographer.com/x/gidx"
+
 	pagination "go.infratographer.com/identity-api/internal/crdbx"
 	"go.infratographer.com/identity-api/internal/storage"
 	"go.infratographer.com/identity-api/internal/testingx"
 	"go.infratographer.com/identity-api/internal/types"
 	v1 "go.infratographer.com/identity-api/pkg/api/v1"
-	"go.infratographer.com/permissions-api/pkg/permissions"
-	"go.infratographer.com/x/crdbx"
-	"go.infratographer.com/x/gidx"
 )
 
 func ctxPermsAllow(ctx context.Context) context.Context {

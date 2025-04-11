@@ -2,6 +2,7 @@ package httpsrv
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"testing"
@@ -9,17 +10,20 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"go.infratographer.com/permissions-api/pkg/permissions/mockpermissions"
+	"go.infratographer.com/x/crdbx"
+	eventsx "go.infratographer.com/x/events"
+	"go.infratographer.com/x/gidx"
+
 	pagination "go.infratographer.com/identity-api/internal/crdbx"
 	"go.infratographer.com/identity-api/internal/events"
 	"go.infratographer.com/identity-api/internal/storage"
 	"go.infratographer.com/identity-api/internal/testingx"
 	"go.infratographer.com/identity-api/internal/types"
 	v1 "go.infratographer.com/identity-api/pkg/api/v1"
-	"go.infratographer.com/permissions-api/pkg/permissions/mockpermissions"
-	"go.infratographer.com/x/crdbx"
-	eventsx "go.infratographer.com/x/events"
-	"go.infratographer.com/x/gidx"
 )
+
+var errBad = errors.New("you bad bad")
 
 func TestGroupMembersAPIHandler(t *testing.T) {
 	t.Parallel()
@@ -272,7 +276,7 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 						"CreateAuthRelationships", events.GroupTopic,
 						theOtherTestGroupWithNoMember.ID,
 						mock.Anything,
-					).Return(fmt.Errorf("you bad bad")) // nolint: goerr113
+					).Return(errBad) // nolint: goerr113
 
 					return setupFn(ctx)
 				},
@@ -504,7 +508,7 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 							Relation:  events.DirectMemberRelationship,
 							SubjectID: someMembers[0],
 						},
-					).Return(fmt.Errorf("you bad bad")) // nolint: goerr113
+					).Return(errBad) // nolint: goerr113
 
 					return setupFn(ctx)
 				},
@@ -683,12 +687,12 @@ func TestGroupMembersAPIHandler(t *testing.T) {
 					m.On(
 						"DeleteAuthRelationships", events.GroupTopic,
 						theOtherTestGroup.ID, mock.Anything, mock.Anything, mock.Anything,
-					).Return(fmt.Errorf("you bad bad")) // nolint: goerr113
+					).Return(errBad) // nolint: goerr113
 
 					m.On(
 						"CreateAuthRelationships", events.GroupTopic,
 						theOtherTestGroup.ID, mock.Anything, mock.Anything, mock.Anything,
-					).Return(fmt.Errorf("you bad bad")) // nolint: goerr113
+					).Return(errBad) // nolint: goerr113
 
 					return setupFn(ctx)
 				},

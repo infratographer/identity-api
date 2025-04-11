@@ -30,7 +30,7 @@ func parseSeedData(path string) (SeedData, error) {
 		return SeedData{}, err
 	}
 
-	defer f.Close()
+	defer f.Close() //nolint:errcheck
 
 	bytes, err := io.ReadAll(f)
 	if err != nil {
