@@ -287,9 +287,13 @@ func (s *issuerService) insertIssuer(ctx context.Context, iss types.Issuer) erro
 		return err
 	}
 
-	conditions, err := iss.ClaimConditions.MarshalJSON()
-	if err != nil {
-		return err
+	conditions := []byte{}
+
+	if iss.ClaimConditions != nil {
+		conditions, err = iss.ClaimConditions.MarshalJSON()
+		if err != nil {
+			return err
+		}
 	}
 
 	_, err = tx.ExecContext(

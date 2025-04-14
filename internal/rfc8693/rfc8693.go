@@ -253,6 +253,15 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 		),
 	)
 
+	ok, err := s.config.GetClaimConditionStrategy(ctx).Eval(ctx, claims)
+	if err != nil {
+		return errorsx.WithStack(fosite.ErrInvalidRequest.WithHintf("error evaluating claim conditions: %s", err))
+	}
+
+	if !ok {
+		return errorsx.WithStack(fosite.ErrInvalidRequest.WithHint("claim conditions not satisfied"))
+	}
+
 	mappedClaims, err := s.getMappedSubjectClaims(ctx, claims)
 	if err != nil {
 		return errorsx.WithStack(fosite.ErrInvalidRequest.WithHintf("error mapping claims: %s", err))

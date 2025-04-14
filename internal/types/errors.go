@@ -39,6 +39,9 @@ var (
 
 	// ErrGroupMemberNotFound is returned if the group member doesn't exist.
 	ErrGroupMemberNotFound = fmt.Errorf("%w: group member not found", ErrNotFound)
+
+	// ErrInvalidCEL is returned if the CEL expression is invalid.
+	ErrInvalidCEL = fmt.Errorf("%w: invalid CEL expression", ErrInvalidArgument)
 )
 
 // ErrorInvalidTokenRequest represents an error where an access token request failed.

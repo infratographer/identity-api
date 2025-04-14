@@ -1,6 +1,7 @@
 package rfc8693
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -14,6 +15,9 @@ var (
 	ErrorMissingIss = &ErrorMissingClaim{
 		claim: "iss",
 	}
+
+	// ErrorInvalidClaimCondition represents an error where the claim condition expression is invalid.
+	ErrorInvalidClaimCondition = errors.New("invalid claim condition expression")
 )
 
 // ErrorMissingClaim represents an error where a required claim is missing.

@@ -2,8 +2,10 @@ package httpsrv
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
+	"github.com/labstack/echo/v4"
 	"go.infratographer.com/permissions-api/pkg/permissions"
 	"go.infratographer.com/x/gidx"
 
@@ -48,10 +50,7 @@ func (h *apiHandler) CreateIssuer(ctx context.Context, req CreateIssuerRequestOb
 	if createOp.ClaimConditions != nil {
 		cond, err := types.NewClaimConditions(*createOp.ClaimConditions)
 		if err != nil {
-			err = errorWithStatus{
-				status:  http.StatusBadRequest,
-				message: "error parsing CEL expression",
-			}
+			err = echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("error parsing CEL expression: %w", err))
 
 			return nil, err
 		}
@@ -179,10 +178,7 @@ func (h *apiHandler) UpdateIssuer(ctx context.Context, req UpdateIssuerRequestOb
 	if updateOp.ClaimConditions != nil && *updateOp.ClaimConditions != "" {
 		claimConditions, err = types.NewClaimConditions(*updateOp.ClaimConditions)
 		if err != nil {
-			err = errorWithStatus{
-				status:  http.StatusBadRequest,
-				message: "error parsing CEL expression",
-			}
+			err = echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("error parsing CEL expression: %w", err))
 
 			return nil, err
 		}

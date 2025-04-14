@@ -97,6 +97,7 @@ func serve(ctx context.Context) {
 	}
 
 	mappingStrategy := rfc8693.NewClaimMappingStrategy(storageEngine)
+	conditionStrategy := rfc8693.NewClaimConditionStrategy(storageEngine)
 
 	issuerJWKSURIProvider := jwks.NewIssuerJWKSURIProvider(storageEngine)
 
@@ -107,6 +108,7 @@ func serve(ctx context.Context) {
 
 	oauth2Config.IssuerJWKSURIProvider = issuerJWKSURIProvider
 	oauth2Config.ClaimMappingStrategy = mappingStrategy
+	oauth2Config.ClaimConditionStrategy = conditionStrategy
 	oauth2Config.UserInfoStrategy = storageEngine
 
 	keyGetter := func(ctx context.Context) (any, error) {

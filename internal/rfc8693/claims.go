@@ -4,10 +4,12 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 
 	"github.com/ory/fosite/token/jwt"
 
 	"go.infratographer.com/identity-api/internal/celutils"
+	"go.infratographer.com/identity-api/internal/fositex"
 	"go.infratographer.com/identity-api/internal/types"
 )
 
@@ -67,4 +69,53 @@ func (m ClaimMappingStrategy) MapClaims(ctx context.Context, claims *jwt.JWTClai
 	outputClaims.FromMap(outputMap)
 
 	return &outputClaims, nil
+}
+
+// ClaimConditionStrategy represents a strategy for evaluating claims conditions.
+type ClaimConditionStrategy struct {
+	issuerSvc types.IssuerService
+}
+
+// NewClaimConditionStrategy creates a ClaimConditionStrategy given an issuer service.
+func NewClaimConditionStrategy(issuerSvc types.IssuerService) ClaimConditionStrategy {
+	return ClaimConditionStrategy{
+		issuerSvc: issuerSvc,
+	}
+}
+
+// ClaimConditionStrategy implements fositex.ClaimConditionStrategy
+var _ fositex.ClaimConditionStrategy = (*ClaimConditionStrategy)(nil)
+
+// Eval evaluates the claims conditions for the given claims.
+func (c ClaimConditionStrategy) Eval(ctx context.Context, claims *jwt.JWTClaims) (bool, error) {
+	if claims.Issuer == "" {
+		return false, ErrorMissingIss
+	}
+
+	iss := claims.Issuer
+
+	issuer, err := c.issuerSvc.GetIssuerByURI(ctx, iss)
+	if err != nil {
+		return false, err
+	}
+
+	if issuer.ClaimConditions == nil || issuer.ClaimConditions.AST() == nil {
+		return true, nil
+	}
+
+	inputEnv := map[string]any{
+		celutils.CELVariableClaims: claims.ToMapClaims(),
+	}
+
+	res, err := celutils.Eval(issuer.ClaimConditions.AST(), inputEnv)
+	if err != nil {
+		return false, err
+	}
+
+	result, ok := res.Value().(bool)
+	if !ok {
+		return false, fmt.Errorf("%w: unexpected type for claim condition result: %T", ErrorInvalidClaimCondition, res.Value())
+	}
+
+	return result, nil
 }

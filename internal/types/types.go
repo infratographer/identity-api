@@ -4,6 +4,7 @@ package types
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/google/cel-go/cel"
 	exprpb "google.golang.org/genproto/googleapis/api/expr/v1alpha1"
@@ -236,6 +237,14 @@ func NewClaimConditions(expr string) (*ClaimConditions, error) {
 		return nil, err
 	}
 
+	if ast.OutputType().TypeName() != "bool" {
+		return nil, fmt.Errorf(
+			"%w: expected bool output type, got %s",
+			ErrInvalidCEL,
+			ast.OutputType().TypeName(),
+		)
+	}
+
 	return &ClaimConditions{ast: ast}, nil
 }
 
@@ -260,6 +269,11 @@ func (c *ClaimConditions) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
 func (c *ClaimConditions) UnmarshalJSON(data []byte) error {
+	if string(data) == "" {
+		c.ast = nil
+		return nil
+	}
+
 	var expr exprpb.CheckedExpr
 	if err := prototext.Unmarshal(data, &expr); err != nil {
 		return err
