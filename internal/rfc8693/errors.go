@@ -6,25 +6,25 @@ import (
 )
 
 var (
-	// ErrorMissingSub represents an error where the 'sub' claim is missing from the input claims.
-	ErrorMissingSub = &ErrorMissingClaim{
+	// ErrMissingSub represents an error where the 'sub' claim is missing from the input claims.
+	ErrMissingSub = &ErrMissingClaim{
 		claim: "sub",
 	}
 
-	// ErrorMissingIss represents an error where the 'iss' claim is missing from the input claims.
-	ErrorMissingIss = &ErrorMissingClaim{
+	// ErrMissingIss represents an error where the 'iss' claim is missing from the input claims.
+	ErrMissingIss = &ErrMissingClaim{
 		claim: "iss",
 	}
 
-	// ErrorInvalidClaimCondition represents an error where the claim condition expression is invalid.
-	ErrorInvalidClaimCondition = errors.New("invalid claim condition expression")
+	// ErrInvalidClaimCondition represents an error where the claim condition expression is invalid.
+	ErrInvalidClaimCondition = errors.New("invalid claim condition expression")
 )
 
-// ErrorMissingClaim represents an error where a required claim is missing.
-type ErrorMissingClaim struct {
+// ErrMissingClaim represents an error where a required claim is missing.
+type ErrMissingClaim struct {
 	claim string
 }
 
-func (e *ErrorMissingClaim) Error() string {
+func (e *ErrMissingClaim) Error() string {
 	return fmt.Sprintf("missing required claim '%s'", e.claim)
 }

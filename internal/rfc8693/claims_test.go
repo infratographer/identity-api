@@ -94,7 +94,7 @@ func TestClaimMappingEval(t *testing.T) {
 			},
 			CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[jwt.JWTClaimsContainer]) {
 				assert.NotNil(t, result.Err)
-				assert.ErrorIs(t, result.Err, ErrorMissingSub)
+				assert.ErrorIs(t, result.Err, ErrMissingSub)
 			},
 		},
 		{
@@ -107,7 +107,7 @@ func TestClaimMappingEval(t *testing.T) {
 			},
 			CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[jwt.JWTClaimsContainer]) {
 				assert.NotNil(t, result.Err)
-				assert.ErrorIs(t, result.Err, ErrorMissingIss)
+				assert.ErrorIs(t, result.Err, ErrMissingIss)
 			},
 		},
 		{

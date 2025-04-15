@@ -30,11 +30,11 @@ func NewClaimMappingStrategy(issuerSvc types.IssuerService) ClaimMappingStrategy
 // MapClaims consumes a set of JWT claims and produces a new set of mapped claims.
 func (m ClaimMappingStrategy) MapClaims(ctx context.Context, claims *jwt.JWTClaims) (jwt.JWTClaimsContainer, error) {
 	if claims.Subject == "" {
-		return nil, ErrorMissingSub
+		return nil, ErrMissingSub
 	}
 
 	if claims.Issuer == "" {
-		return nil, ErrorMissingIss
+		return nil, ErrMissingIss
 	}
 
 	iss := claims.Issuer
@@ -89,7 +89,7 @@ var _ fositex.ClaimConditionStrategy = (*ClaimConditionStrategy)(nil)
 // Eval evaluates the claims conditions for the given claims.
 func (c ClaimConditionStrategy) Eval(ctx context.Context, claims *jwt.JWTClaims) (bool, error) {
 	if claims.Issuer == "" {
-		return false, ErrorMissingIss
+		return false, ErrMissingIss
 	}
 
 	iss := claims.Issuer
@@ -114,7 +114,7 @@ func (c ClaimConditionStrategy) Eval(ctx context.Context, claims *jwt.JWTClaims)
 
 	result, ok := res.Value().(bool)
 	if !ok {
-		return false, fmt.Errorf("%w: unexpected type for claim condition result: %T", ErrorInvalidClaimCondition, res.Value())
+		return false, fmt.Errorf("%w: unexpected type for claim condition result: %T", ErrInvalidClaimCondition, res.Value())
 	}
 
 	return result, nil
