@@ -175,7 +175,7 @@ func (h *apiHandler) UpdateIssuer(ctx context.Context, req UpdateIssuerRequestOb
 
 	var claimConditions *types.ClaimConditions
 
-	if updateOp.ClaimConditions != nil && *updateOp.ClaimConditions != "" {
+	if updateOp.ClaimConditions != nil {
 		claimConditions, err = types.NewClaimConditions(*updateOp.ClaimConditions)
 		if err != nil {
 			err = echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("error parsing CEL expression: %w", err))
