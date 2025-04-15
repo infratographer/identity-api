@@ -52,9 +52,22 @@ config:
 
   otel:
     enabled: false
+    # provider is the OpenTelemetry tracing provider to use
     provider: stdout
+    # environment is the OpenTelemetry tracing environment to use
+    environment: ""
+    # sample_ratio sets the ratio of new traces sampled
+    sample_ratio: 1.0
     stdout:
-      prettyPrint: true
+      # pretty_print prettifies the emitted output
+      pretty_print: false
+      # disable_timestamps sets the export stream to not include timestamps
+      disable_timestamps: false
+    otlp:
+      # endpoint is the OpenTelemetry Protocol (OTLP) collector endpoint to send traces to
+      endpoint: ""
+      # insecure is true if TLS should not be required when sending traces
+      insecure: false
 
   storage:
     migrateOnInit: false
