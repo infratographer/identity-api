@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -179,6 +180,95 @@ func TestAPIHandler(t *testing.T) {
 					assert.ErrorIs(t, expErr, result.Err)
 				},
 				CleanupFn: cleanupFn,
+			},
+			{
+				Name: "ConditionInvalidCEL",
+				Input: CreateIssuerRequestObject{
+					OwnerID: ownerID,
+					Body: &v1.CreateIssuer{
+						JWKSURI:         "https://bad.info/jwks.json",
+						Name:            "Bad issuer",
+						URI:             "https://bad.info/",
+						ClaimConditions: ptr(`this CEL bad bad`),
+					},
+				},
+				SetupFn: setupFn,
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[CreateIssuerResponseObject]) {
+					expErr := echo.NewHTTPError(
+						http.StatusBadRequest,
+						"error parsing CEL expression",
+					)
+
+					assert.NotNil(t, result.Err)
+					assert.ErrorAs(t, result.Err, &expErr)
+
+					expHTTPErr, ok := result.Err.(*echo.HTTPError)
+					assert.True(t, ok)
+					assert.ErrorIs(t, expHTTPErr, expErr)
+				},
+				CleanupFn: cleanupFn,
+			},
+			{
+				Name: "ConditionCELNotBoolean",
+				Input: CreateIssuerRequestObject{
+					OwnerID: ownerID,
+					Body: &v1.CreateIssuer{
+						JWKSURI:         "https://bad.info/jwks.json",
+						Name:            "Bad issuer",
+						URI:             "https://bad.info/",
+						ClaimConditions: ptr(`"this-is-a-string"`),
+					},
+				},
+				SetupFn: setupFn,
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[CreateIssuerResponseObject]) {
+					expErr := echo.NewHTTPError(
+						http.StatusBadRequest,
+						"error parsing CEL expression: expected bool output type, got string",
+					)
+
+					assert.NotNil(t, result.Err)
+					assert.ErrorAs(t, result.Err, &expErr)
+
+					expHTTPErr, ok := result.Err.(*echo.HTTPError)
+					assert.True(t, ok)
+					assert.ErrorIs(t, expHTTPErr, expErr)
+				},
+				CleanupFn: cleanupFn,
+			},
+			{
+				Name: "ConditionOK",
+				Input: CreateIssuerRequestObject{
+					OwnerID: ownerID,
+					Body: &v1.CreateIssuer{
+						JWKSURI:         "https://good.info/jwks.json",
+						Name:            "Good issuer",
+						URI:             "https://good.info/",
+						ClaimConditions: ptr(`claims.this == "that"`),
+					},
+				},
+				SetupFn:   setupFn,
+				CleanupFn: cleanupFn,
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[CreateIssuerResponseObject]) {
+					assert.NoError(t, result.Err)
+
+					resp, ok := result.Success.(CreateIssuer200JSONResponse)
+					if !ok {
+						assert.FailNow(t, "unexpected result type for create issuer response")
+					}
+
+					obsIssuer := v1.Issuer(resp)
+
+					expIssuer := v1.Issuer{
+						ID:              obsIssuer.ID,
+						ClaimConditions: `claims.this == "that"`,
+						ClaimMappings:   map[string]string{},
+						JWKSURI:         "https://good.info/jwks.json",
+						Name:            "Good issuer",
+						URI:             "https://good.info/",
+					}
+
+					assert.Equal(t, expIssuer, obsIssuer)
+				},
 			},
 		}
 

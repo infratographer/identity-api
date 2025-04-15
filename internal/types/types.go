@@ -232,6 +232,10 @@ type ClaimConditions struct {
 
 // NewClaimConditions creates a ClaimConditions from the given CEL expression.
 func NewClaimConditions(expr string) (*ClaimConditions, error) {
+	if expr == "" {
+		return &ClaimConditions{}, nil
+	}
+
 	ast, err := celutils.ParseCEL(expr)
 	if err != nil {
 		return nil, err

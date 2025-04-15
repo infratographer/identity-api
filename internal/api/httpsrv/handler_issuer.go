@@ -50,7 +50,7 @@ func (h *apiHandler) CreateIssuer(ctx context.Context, req CreateIssuerRequestOb
 	if createOp.ClaimConditions != nil {
 		cond, err := types.NewClaimConditions(*createOp.ClaimConditions)
 		if err != nil {
-			err = echo.NewHTTPError(http.StatusBadRequest, fmt.Errorf("error parsing CEL expression: %w", err))
+			err = echo.NewHTTPError(http.StatusBadRequest, err.Error())
 
 			return nil, err
 		}

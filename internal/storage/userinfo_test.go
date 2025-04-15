@@ -18,7 +18,7 @@ import (
 func TestUserInfoStore(t *testing.T) {
 	t.Parallel()
 
-	db, shutdown := testserver.NewDBForTest(t)
+	db, shutdown := testserver.NewDBForTest(t, testserver.CustomVersionOpt(TestServerCRDBVersion))
 
 	err := runMigrations(db)
 	if err != nil {

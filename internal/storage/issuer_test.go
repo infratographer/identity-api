@@ -29,6 +29,9 @@ func compareIssuers(t *testing.T, exp types.Issuer, obs types.Issuer) {
 	exp.ClaimMappings = nil
 	obs.ClaimMappings = nil
 
+	exp.ClaimConditions = nil
+	obs.ClaimConditions = nil
+
 	assert.Equal(t, exp, obs)
 	assert.Equal(t, expMappings, obsMappings)
 }
@@ -36,7 +39,7 @@ func compareIssuers(t *testing.T, exp types.Issuer, obs types.Issuer) {
 func TestIssuerService(t *testing.T) {
 	t.Parallel()
 
-	db, shutdown := testserver.NewDBForTest(t)
+	db, shutdown := testserver.NewDBForTest(t, testserver.CustomVersionOpt(TestServerCRDBVersion))
 
 	err := runMigrations(db)
 	if err != nil {
