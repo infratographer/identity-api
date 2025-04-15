@@ -11,12 +11,13 @@ import (
 
 // SeedIssuer represents the seed data for a single issuer.
 type SeedIssuer struct {
-	OwnerID       gidx.PrefixedID   `yaml:"ownerID"`
-	ID            gidx.PrefixedID   `yaml:"id"`
-	Name          string            `yaml:"name"`
-	URI           string            `yaml:"uri"`
-	JWKSURI       string            `yaml:"jwksURI"`
-	ClaimMappings map[string]string `yaml:"claimMappings"`
+	OwnerID         gidx.PrefixedID   `yaml:"ownerID"`
+	ID              gidx.PrefixedID   `yaml:"id"`
+	Name            string            `yaml:"name"`
+	URI             string            `yaml:"uri"`
+	JWKSURI         string            `yaml:"jwksURI"`
+	ClaimMappings   map[string]string `yaml:"claimMappings"`
+	ClaimConditions string            `yaml:"claimConditions"`
 }
 
 // SeedData represents the seed data for an identity-api instance on startup.

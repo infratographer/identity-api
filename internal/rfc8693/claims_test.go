@@ -94,7 +94,7 @@ func TestClaimMappingEval(t *testing.T) {
 			},
 			CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[jwt.JWTClaimsContainer]) {
 				assert.NotNil(t, result.Err)
-				assert.ErrorIs(t, result.Err, ErrorMissingSub)
+				assert.ErrorIs(t, result.Err, ErrMissingSub)
 			},
 		},
 		{
@@ -107,7 +107,7 @@ func TestClaimMappingEval(t *testing.T) {
 			},
 			CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[jwt.JWTClaimsContainer]) {
 				assert.NotNil(t, result.Err)
-				assert.ErrorIs(t, result.Err, ErrorMissingIss)
+				assert.ErrorIs(t, result.Err, ErrMissingIss)
 			},
 		},
 		{
@@ -128,6 +128,119 @@ func TestClaimMappingEval(t *testing.T) {
 					},
 				}
 				assert.Equal(t, expected, result.Success)
+			},
+		},
+	}
+
+	testingx.RunTests(context.Background(), t, testCases, runFn)
+}
+
+func TestClaimConditionsEval(t *testing.T) {
+	t.Parallel()
+
+	testServer, err := storage.InMemoryCRDB()
+	if !assert.NoError(t, err) {
+		assert.FailNow(t, "initialization failed")
+	}
+
+	err = testServer.Start()
+	if !assert.NoError(t, err) {
+		assert.FailNow(t, "initialization failed")
+	}
+
+	t.Cleanup(func() {
+		testServer.Stop()
+	})
+
+	config := crdbx.Config{
+		URI: testServer.PGURL().String(),
+	}
+
+	seedData := storage.SeedData{
+		Issuers: []storage.SeedIssuer{
+			{
+				OwnerID: gidx.MustNewID("testten"),
+				ID:      gidx.MustNewID("testiss"),
+				Name:    "no-conditions",
+				URI:     "https://no-conditions.com/",
+				JWKSURI: "https://no-conditions.com/.well-known/jwks.json",
+			},
+			{
+				OwnerID:         gidx.MustNewID("testten"),
+				ID:              gidx.MustNewID("testiss"),
+				Name:            "yes-conditions",
+				URI:             "https://yes-conditions.com/",
+				JWKSURI:         "https://yes-conditions.com/.well-known/jwks.json",
+				ClaimConditions: `has(claims.hello) && claims.hello == "world"`,
+			},
+		},
+	}
+
+	storageEngine, err := storage.NewEngine(config, storage.WithMigrations(), storage.WithSeedData(seedData))
+	if !assert.NoError(t, err) {
+		assert.FailNow(t, "initialization failed")
+	}
+
+	conditionStrategy := NewClaimConditionStrategy(storageEngine)
+
+	runFn := func(ctx context.Context, claims *jwt.JWTClaims) testingx.TestResult[bool] {
+		out, err := conditionStrategy.Eval(ctx, claims)
+
+		return testingx.TestResult[bool]{
+			Success: out,
+			Err:     err,
+		}
+	}
+
+	testCases := []testingx.TestCase[*jwt.JWTClaims, bool]{
+		{
+			Name: "SuccessWithNoConditions",
+			Input: &jwt.JWTClaims{
+				Subject: "foo",
+				Issuer:  "https://no-conditions.com/",
+			},
+			CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[bool]) {
+				assert.Nil(t, result.Err)
+				assert.True(t, result.Success)
+			},
+		},
+		{
+			Name: "SuccessWithConditions",
+			Input: &jwt.JWTClaims{
+				Subject: "foo",
+				Issuer:  "https://yes-conditions.com/",
+				Extra: map[string]any{
+					"hello": "world",
+				},
+			},
+			CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[bool]) {
+				assert.Nil(t, result.Err)
+				assert.True(t, result.Success)
+			},
+		},
+		{
+			Name: "MissingClaim",
+			Input: &jwt.JWTClaims{
+				Subject: "foo",
+				Issuer:  "https://yes-conditions.com/",
+			},
+			CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[bool]) {
+				assert.Nil(t, result.Err)
+				assert.False(t, result.Success)
+			},
+		},
+		{
+			Name: "ConditionNotSatisfied",
+			Input: &jwt.JWTClaims{
+				Subject: "foo",
+				Issuer:  "https://yes-conditions.com/",
+				Extra: map[string]any{
+					"hello": "notworld",
+				},
+			},
+			CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[bool]) {
+				assert.Nil(t, result.Err)
+				assert.False(t, result.Success)
 			},
 		},
 	}

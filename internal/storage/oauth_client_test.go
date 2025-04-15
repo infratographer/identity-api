@@ -15,13 +15,15 @@ import (
 	"go.infratographer.com/identity-api/internal/types"
 )
 
-var _ types.OAuthClientManager = &oauthClientManager{}
-var _ fosite.ClientManager = &oauthClientManager{}
+var (
+	_ types.OAuthClientManager = &oauthClientManager{}
+	_ fosite.ClientManager     = &oauthClientManager{}
+)
 
 func TestOAuthClientManager(t *testing.T) {
 	t.Parallel()
 
-	db, shutdown := testserver.NewDBForTest(t)
+	db, shutdown := testserver.NewDBForTest(t, testserver.CustomVersionOpt(TestServerCRDBVersion))
 
 	err := runMigrations(db)
 	if err != nil {

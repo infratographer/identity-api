@@ -14,19 +14,21 @@ import (
 )
 
 var issuerCols = struct {
-	OwnerID  string
-	ID       string
-	Name     string
-	URI      string
-	JWKSURI  string
-	Mappings string
+	OwnerID    string
+	ID         string
+	Name       string
+	URI        string
+	JWKSURI    string
+	Mappings   string
+	Conditions string
 }{
-	OwnerID:  "owner_id",
-	ID:       "id",
-	Name:     "name",
-	URI:      "uri",
-	JWKSURI:  "jwksuri",
-	Mappings: "mappings",
+	OwnerID:    "owner_id",
+	ID:         "id",
+	Name:       "name",
+	URI:        "uri",
+	JWKSURI:    "jwksuri",
+	Mappings:   "mappings",
+	Conditions: "conditions",
 }
 
 var (
@@ -37,6 +39,7 @@ var (
 		issuerCols.URI,
 		issuerCols.JWKSURI,
 		issuerCols.Mappings,
+		issuerCols.Conditions,
 	}
 	issuerColumnsStr = strings.Join(issuerColumns, ", ")
 )
@@ -225,11 +228,13 @@ type rowScanner interface {
 }
 
 func (s *issuerService) scanIssuer(row rowScanner) (*types.Issuer, error) {
-	var iss types.Issuer
+	var (
+		iss     types.Issuer
+		mapping sql.NullString
+		cond    sql.NullString
+	)
 
-	var mapping sql.NullString
-
-	err := row.Scan(&iss.OwnerID, &iss.ID, &iss.Name, &iss.URI, &iss.JWKSURI, &mapping)
+	err := row.Scan(&iss.OwnerID, &iss.ID, &iss.Name, &iss.URI, &iss.JWKSURI, &mapping, &cond)
 
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
@@ -240,6 +245,7 @@ func (s *issuerService) scanIssuer(row rowScanner) (*types.Issuer, error) {
 	}
 
 	c := types.ClaimsMapping{}
+	conditions := types.ClaimConditions{}
 
 	if mapping.Valid {
 		err = c.UnmarshalJSON([]byte(mapping.String))
@@ -248,6 +254,14 @@ func (s *issuerService) scanIssuer(row rowScanner) (*types.Issuer, error) {
 		}
 
 		iss.ClaimMappings = c
+	}
+
+	if cond.Valid {
+		if err = conditions.UnmarshalJSON([]byte(cond.String)); err != nil {
+			return nil, err
+		}
+
+		iss.ClaimConditions = &conditions
 	}
 
 	return &iss, nil
@@ -263,7 +277,7 @@ func (s *issuerService) insertIssuer(ctx context.Context, iss types.Issuer) erro
         INSERT INTO issuers (
             %s
         ) VALUES
-        ($1, $2, $3, $4, $5, $6);
+        ($1, $2, $3, $4, $5, $6, $7);
         `
 
 	q = fmt.Sprintf(q, issuerColumnsStr)
@@ -271,6 +285,15 @@ func (s *issuerService) insertIssuer(ctx context.Context, iss types.Issuer) erro
 	mappings, err := iss.ClaimMappings.MarshalJSON()
 	if err != nil {
 		return err
+	}
+
+	conditions := []byte{}
+
+	if iss.ClaimConditions != nil {
+		conditions, err = iss.ClaimConditions.MarshalJSON()
+		if err != nil {
+			return err
+		}
 	}
 
 	_, err = tx.ExecContext(
@@ -282,6 +305,7 @@ func (s *issuerService) insertIssuer(ctx context.Context, iss types.Issuer) erro
 		iss.URI,
 		iss.JWKSURI,
 		string(mappings),
+		string(conditions),
 	)
 
 	return err

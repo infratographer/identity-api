@@ -53,21 +53,31 @@ func buildIssuerFromSeed(seed SeedIssuer) (types.Issuer, error) {
 		return types.Issuer{}, err
 	}
 
+	claimConditions, err := types.NewClaimConditions(seed.ClaimConditions)
+	if err != nil {
+		return types.Issuer{}, err
+	}
+
 	out := types.Issuer{
-		OwnerID:       seed.OwnerID,
-		ID:            seed.ID,
-		Name:          seed.Name,
-		URI:           seed.URI,
-		JWKSURI:       seed.JWKSURI,
-		ClaimMappings: claimMappings,
+		OwnerID:         seed.OwnerID,
+		ID:              seed.ID,
+		Name:            seed.Name,
+		URI:             seed.URI,
+		JWKSURI:         seed.JWKSURI,
+		ClaimMappings:   claimMappings,
+		ClaimConditions: claimConditions,
 	}
 
 	return out, nil
 }
 
+// TestServerCRDBVersion is the version of CockroachDB that the test server is running
+// v24.1.6 is the last version under BSL
+const TestServerCRDBVersion = "v24.1.6"
+
 // InMemoryCRDB creates an in-memory CRDB test server.
 func InMemoryCRDB() (testserver.TestServer, error) {
-	ts, err := testserver.NewTestServer()
+	ts, err := testserver.NewTestServer(testserver.CustomVersionOpt(TestServerCRDBVersion))
 	if err != nil {
 		return nil, err
 	}

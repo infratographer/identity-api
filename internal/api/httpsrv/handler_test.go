@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -58,6 +59,13 @@ func TestAPIHandler(t *testing.T) {
 	}
 
 	mappings, err := types.NewClaimsMapping(mappingStrs)
+	if err != nil {
+		panic(err)
+	}
+
+	conditionStr := `claims.this == "that"`
+
+	conditions, err := types.NewClaimConditions(conditionStr)
 	if err != nil {
 		panic(err)
 	}
@@ -179,6 +187,95 @@ func TestAPIHandler(t *testing.T) {
 					assert.ErrorIs(t, expErr, result.Err)
 				},
 				CleanupFn: cleanupFn,
+			},
+			{
+				Name: "ConditionInvalidCEL",
+				Input: CreateIssuerRequestObject{
+					OwnerID: ownerID,
+					Body: &v1.CreateIssuer{
+						JWKSURI:         "https://bad.info/jwks.json",
+						Name:            "Bad issuer",
+						URI:             "https://bad.info/",
+						ClaimConditions: ptr(`this CEL bad bad`),
+					},
+				},
+				SetupFn: setupFn,
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[CreateIssuerResponseObject]) {
+					expErr := echo.NewHTTPError(
+						http.StatusBadRequest,
+						"error parsing CEL expression",
+					)
+
+					assert.NotNil(t, result.Err)
+					assert.ErrorAs(t, result.Err, &expErr)
+
+					expHTTPErr, ok := result.Err.(*echo.HTTPError)
+					assert.True(t, ok)
+					assert.ErrorIs(t, expHTTPErr, expErr)
+				},
+				CleanupFn: cleanupFn,
+			},
+			{
+				Name: "ConditionCELNotBoolean",
+				Input: CreateIssuerRequestObject{
+					OwnerID: ownerID,
+					Body: &v1.CreateIssuer{
+						JWKSURI:         "https://bad.info/jwks.json",
+						Name:            "Bad issuer",
+						URI:             "https://bad.info/",
+						ClaimConditions: ptr(`"this-is-a-string"`),
+					},
+				},
+				SetupFn: setupFn,
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[CreateIssuerResponseObject]) {
+					expErr := echo.NewHTTPError(
+						http.StatusBadRequest,
+						"error parsing CEL expression: expected bool output type, got string",
+					)
+
+					assert.NotNil(t, result.Err)
+					assert.ErrorAs(t, result.Err, &expErr)
+
+					expHTTPErr, ok := result.Err.(*echo.HTTPError)
+					assert.True(t, ok)
+					assert.ErrorIs(t, expHTTPErr, expErr)
+				},
+				CleanupFn: cleanupFn,
+			},
+			{
+				Name: "ConditionOK",
+				Input: CreateIssuerRequestObject{
+					OwnerID: ownerID,
+					Body: &v1.CreateIssuer{
+						JWKSURI:         "https://good.info/jwks.json",
+						Name:            "Good issuer",
+						URI:             "https://good.info/",
+						ClaimConditions: &conditionStr,
+					},
+				},
+				SetupFn:   setupFn,
+				CleanupFn: cleanupFn,
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[CreateIssuerResponseObject]) {
+					assert.NoError(t, result.Err)
+
+					resp, ok := result.Success.(CreateIssuer200JSONResponse)
+					if !ok {
+						assert.FailNow(t, "unexpected result type for create issuer response")
+					}
+
+					obsIssuer := v1.Issuer(resp)
+
+					expIssuer := v1.Issuer{
+						ID:              obsIssuer.ID,
+						ClaimConditions: conditionStr,
+						ClaimMappings:   map[string]string{},
+						JWKSURI:         "https://good.info/jwks.json",
+						Name:            "Good issuer",
+						URI:             "https://good.info/",
+					}
+
+					assert.Equal(t, expIssuer, obsIssuer)
+				},
 			},
 		}
 
@@ -437,12 +534,13 @@ func TestAPIHandler(t *testing.T) {
 		issuerID := gidx.MustNewID("testiss")
 
 		issuer := types.Issuer{
-			OwnerID:       ownerID,
-			ID:            issuerID,
-			Name:          "Example",
-			URI:           "https://issuer.info/",
-			JWKSURI:       "https://issuer.info/.well-known/jwks.json",
-			ClaimMappings: mappings,
+			OwnerID:         ownerID,
+			ID:              issuerID,
+			Name:            "Example",
+			URI:             "https://issuer.info/",
+			JWKSURI:         "https://issuer.info/.well-known/jwks.json",
+			ClaimMappings:   mappings,
+			ClaimConditions: conditions,
 		}
 
 		newName := "Better issuer"
@@ -482,11 +580,12 @@ func TestAPIHandler(t *testing.T) {
 					}
 
 					expIssuer := v1.Issuer{
-						ID:            issuerID,
-						ClaimMappings: mappingStrs,
-						JWKSURI:       issuer.JWKSURI,
-						Name:          newName,
-						URI:           issuer.URI,
+						ID:              issuerID,
+						ClaimMappings:   mappingStrs,
+						ClaimConditions: conditionStr,
+						JWKSURI:         issuer.JWKSURI,
+						Name:            newName,
+						URI:             issuer.URI,
 					}
 
 					resp, ok := result.Success.(UpdateIssuer200JSONResponse)
@@ -513,6 +612,32 @@ func TestAPIHandler(t *testing.T) {
 					assert.ErrorIs(t, errorNotFound, result.Err)
 				},
 				CleanupFn: cleanupFn,
+			},
+			{
+				// Empty condition CEL should clear the condition
+				Name:      "EmptyConditionCEL",
+				SetupFn:   setupFn,
+				CleanupFn: cleanupFn,
+				CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[UpdateIssuerResponseObject]) {
+					if !assert.NoError(t, result.Err) {
+						return
+					}
+
+					resp, ok := result.Success.(UpdateIssuer200JSONResponse)
+					if !ok {
+						assert.FailNow(t, "unexpected result type for update issuer response")
+					}
+
+					obsIssuer := v1.Issuer(resp)
+
+					assert.Equal(t, "", obsIssuer.ClaimConditions)
+				},
+				Input: UpdateIssuerRequestObject{
+					Id: issuerID,
+					Body: &v1.IssuerUpdate{
+						ClaimConditions: ptr(""),
+					},
+				},
 			},
 		}
 

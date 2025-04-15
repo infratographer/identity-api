@@ -65,6 +65,16 @@ type ClaimMappingStrategyProvider interface {
 	GetClaimMappingStrategy(ctx context.Context) ClaimMappingStrategy
 }
 
+// ClaimConditionStrategyProvider represents a provider of a claims condition eval strategy.
+type ClaimConditionStrategyProvider interface {
+	GetClaimConditionStrategy(ctx context.Context) ClaimConditionStrategy
+}
+
+// ClaimConditionStrategy represents a strategy for evaluating claims conditions.
+type ClaimConditionStrategy interface {
+	Eval(ctx context.Context, claims *jwt.JWTClaims) (bool, error)
+}
+
 // UserInfoStrategy persists user information in the storage backend.
 type UserInfoStrategy interface {
 	types.UserInfoService
@@ -87,6 +97,7 @@ type OAuth2Configurator interface {
 	SigningKeyProvider
 	SigningJWKSProvider
 	ClaimMappingStrategyProvider
+	ClaimConditionStrategyProvider
 	UserInfoStrategyProvider
 	GetIssuerJWKSURIProvider(ctx context.Context) IssuerJWKSURIProvider
 }
@@ -97,8 +108,9 @@ type OAuth2Config struct {
 	SigningKey  *jose.JSONWebKey
 	SigningJWKS *jose.JSONWebKeySet
 
-	ClaimMappingStrategy ClaimMappingStrategy
-	UserInfoStrategy     UserInfoStrategy
+	ClaimMappingStrategy   ClaimMappingStrategy
+	ClaimConditionStrategy ClaimConditionStrategy
+	UserInfoStrategy       UserInfoStrategy
 
 	IssuerJWKSURIProvider IssuerJWKSURIProvider
 	userInfoAudience      string
@@ -122,6 +134,11 @@ func (c *OAuth2Config) GetSigningJWKS(_ context.Context) *jose.JSONWebKeySet {
 // GetClaimMappingStrategy returns the config's claims mapping strategy.
 func (c *OAuth2Config) GetClaimMappingStrategy(_ context.Context) ClaimMappingStrategy {
 	return c.ClaimMappingStrategy
+}
+
+// GetClaimConditionStrategy returns the config's claim condition strategy.
+func (c *OAuth2Config) GetClaimConditionStrategy(_ context.Context) ClaimConditionStrategy {
+	return c.ClaimConditionStrategy
 }
 
 // GetUserInfoStrategy returns the config's user info store strategy.

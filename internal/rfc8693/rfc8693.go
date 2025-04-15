@@ -46,10 +46,8 @@ const (
 	instrumentationName = "go.infratographer.com/identity-api/internal/rfc6893"
 )
 
-var (
-	// ErrJWKSURIProviderNotDefined is returned when the issuer JWKS URI provider is not defined.
-	ErrJWKSURIProviderNotDefined = errors.New("no issuer JWKS URI provider defined")
-)
+// ErrJWKSURIProviderNotDefined is returned when the issuer JWKS URI provider is not defined.
+var ErrJWKSURIProviderNotDefined = errors.New("no issuer JWKS URI provider defined")
 
 func findMatchingKey(ctx context.Context, config fositex.OAuth2Configurator, token *jwt.Token) (interface{}, error) {
 	var claims jwt.JWTClaims
@@ -181,7 +179,6 @@ func (s *TokenExchangeHandler) getSubjectClaims(ctx context.Context, token strin
 	defer span.End()
 
 	validated, err := s.validateJWT(ctx, token)
-
 	if err != nil {
 		return nil, err
 	}
@@ -256,6 +253,15 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 		),
 	)
 
+	ok, err := s.config.GetClaimConditionStrategy(ctx).Eval(ctx, claims)
+	if err != nil {
+		return errorsx.WithStack(fosite.ErrInvalidRequest.WithHintf("error evaluating claim conditions: %s", err))
+	}
+
+	if !ok {
+		return errorsx.WithStack(fosite.ErrInvalidRequest.WithHint("claim conditions not satisfied"))
+	}
+
 	mappedClaims, err := s.getMappedSubjectClaims(ctx, claims)
 	if err != nil {
 		return errorsx.WithStack(fosite.ErrInvalidRequest.WithHintf("error mapping claims: %s", err))
@@ -292,7 +298,6 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 		digest := base64.RawURLEncoding.EncodeToString(issHash[:])
 
 		customPrefixedID, err := gidx.Parse(fmt.Sprintf("%s-%s-%s", types.IdentityUserIDPrefix, digest, subOverride))
-
 		if err != nil {
 			return errorsx.WithStack(fosite.ErrServerError.WithHintf("could not parse overridden subject to prefixed id: %s", err))
 		}
@@ -301,14 +306,12 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 	}
 
 	userInfo, err = userInfoSvc.StoreUserInfo(dbCtx, userInfo)
-
 	if err != nil {
 		rbErr := txManager.RollbackContext(dbCtx)
 		return errorsx.WithStack(fosite.ErrInvalidRequest.WithHintf("unable to store user info: %s / rollback error: %s", err, rbErr))
 	}
 
 	err = txManager.CommitContext(dbCtx)
-
 	if err != nil {
 		return errorsx.WithStack(fosite.ErrServerError.WithHintf("could not commit user info: %s", err))
 	}
