@@ -72,8 +72,8 @@ func buildIssuerFromSeed(seed SeedIssuer) (types.Issuer, error) {
 }
 
 // TestServerCRDBVersion is the version of CockroachDB that the test server is running
-// v23.1.28 is the last version under BSL
-const TestServerCRDBVersion = "v23.1.28"
+// v24.1.6 is the last version under BSL
+const TestServerCRDBVersion = "v24.1.6"
 
 // InMemoryCRDB creates an in-memory CRDB test server.
 func InMemoryCRDB() (testserver.TestServer, error) {
