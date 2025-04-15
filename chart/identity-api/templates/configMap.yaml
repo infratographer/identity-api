@@ -13,16 +13,7 @@ data:
   identity-api.yaml: |
     server:
       listen: "{{ $serverIP }}:{{ $serverPort }}"
-    otel:
-      enabled: {{ .otel.enabled | default false }}
-      {{- if .otel.enabled }}
-      provider: {{ .otel.provider }}
-      stdout:
-        prettyPrint: {{ .otel.stdout.prettyPrint }}
-      otlp:
-        endpoint: {{ .otel.otlp.endpoint }}
-        insecure: {{ .otel.otlp.insecure }}
-      {{- end }}
+    otel: {{- toYaml .otel | nindent 6 }}
     oauth:
       issuer: {{ .oauth.issuer | quote}}
       accessTokenLifespan: {{ .oauth.accessTokenLifespan }}
