@@ -11,7 +11,7 @@ version: v0.0.3
 home: http://github.com/infratographer/identity-api
 dependencies:
   - name: common
-    version: 2.27.0
+    version: 2.31.1
     repository: https://charts.bitnami.com/bitnami
 maintainers:
   - name: Adam Mohammed
