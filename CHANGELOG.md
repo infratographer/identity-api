@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.5.0](https://github.com/infratographer/identity-api/compare/v0.4.0...v0.5.0) (2025-05-29)
+
+
+### Features
+
+* make db migrations postgres compatible ([#407](https://github.com/infratographer/identity-api/issues/407)) ([29e7986](https://github.com/infratographer/identity-api/commit/29e7986db651112d41a7b9e16d0a94bebe38cc68))
+
+
+### Bug Fixes
+
+* **deps:** update google.golang.org/genproto/googleapis/api digest to 200df99 ([#400](https://github.com/infratographer/identity-api/issues/400)) ([18a321b](https://github.com/infratographer/identity-api/commit/18a321b4e772ae10d3a15588cba0024ef567f4cd))
+* **deps:** update module github.com/google/cel-go to v0.25.0 ([#402](https://github.com/infratographer/identity-api/issues/402)) ([43d9569](https://github.com/infratographer/identity-api/commit/43d9569d4b36c297134e0dd4528bb11078694181))
+* **deps:** update module go.infratographer.com/x to v0.10.0 ([#399](https://github.com/infratographer/identity-api/issues/399)) ([b860525](https://github.com/infratographer/identity-api/commit/b8605251f851f9c161d53586aad08fc72f4c16fe))
+
 ## [0.4.0](https://github.com/infratographer/identity-api/compare/v0.3.2...v0.4.0) (2025-04-15)
 
 
