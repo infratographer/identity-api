@@ -1,11 +1,11 @@
 -- +goose Up
 CREATE TABLE group_members (
-  group_id STRING NOT NULL REFERENCES groups(id),
-  subject_id STRING NOT NULL,
-
+  group_id VARCHAR NOT NULL REFERENCES groups(id),
+  subject_id VARCHAR NOT NULL,
   index group_memberships_subject_id_index (subject_id),
   primary key (group_id, subject_id)
 );
-
+CREATE INDEX IF NOT EXISTS group_memberships_subject_id_index ON group_members (subject_id);
 -- +goose Down
+DROP INDEX group_memberships_subject_id_index;
 DROP TABLE group_members;
