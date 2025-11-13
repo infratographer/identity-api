@@ -141,7 +141,6 @@ func (s *TokenExchangeHandler) validateJWT(ctx context.Context, token string) (*
 	}
 
 	parsed, err := jwt.Parse(token, keyfunc)
-
 	if err == nil {
 		return parsed, nil
 	}
@@ -317,6 +316,7 @@ func (s *TokenExchangeHandler) HandleTokenEndpointRequest(ctx context.Context, r
 	}
 
 	var newClaims jwt.JWTClaims
+
 	newClaims.Subject = userInfo.ID.String()
 	newClaims.Issuer = s.config.GetAccessTokenIssuer(ctx)
 
@@ -429,8 +429,8 @@ func (s *TokenExchangeHandler) populateUserInfo(ctx context.Context, claims *jwt
 	defer span.End()
 
 	userInfoSvc := s.config.GetUserInfoStrategy(ctx)
-	userInfo, err := userInfoSvc.LookupUserInfoByClaims(ctx, claims.Issuer, claims.Subject)
 
+	userInfo, err := userInfoSvc.LookupUserInfoByClaims(ctx, claims.Issuer, claims.Subject)
 	if err != nil {
 		// We can handle ErrUserInfoNotFound by hitting the
 		// issuers userinfo endpoint, but if some other error

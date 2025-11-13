@@ -121,6 +121,7 @@ func TestClaimMappingEval(t *testing.T) {
 			},
 			CheckFn: func(_ context.Context, t *testing.T, result testingx.TestResult[jwt.JWTClaimsContainer]) {
 				assert.Nil(t, result.Err)
+
 				expected := &jwt.JWTClaims{
 					Extra: map[string]any{
 						"plusone":            int64(3),

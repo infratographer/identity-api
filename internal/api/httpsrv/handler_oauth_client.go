@@ -25,6 +25,7 @@ const (
 // needs to provide to authenticate when requesting a token.
 func (h *apiHandler) CreateOAuthClient(ctx context.Context, request CreateOAuthClientRequestObject) (CreateOAuthClientResponseObject, error) {
 	var newClient types.OAuthClient
+
 	newClient.OwnerID = request.OwnerID
 	newClient.Name = request.Body.Name
 

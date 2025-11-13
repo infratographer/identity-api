@@ -194,6 +194,7 @@ func TestOAuthClientManager(t *testing.T) {
 				CleanupFn: cleanupWithTx,
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[any]) {
 					assert.NoError(t, res.Err)
+
 					_, err := oauthClientStore.LookupOAuthClientByID(ctx, defaultClient.ID)
 					assert.ErrorIs(t, err, types.ErrOAuthClientNotFound)
 				},
@@ -203,6 +204,7 @@ func TestOAuthClientManager(t *testing.T) {
 				Input: defaultClient.ID,
 				CheckFn: func(ctx context.Context, t *testing.T, res testingx.TestResult[any]) {
 					assert.ErrorIs(t, res.Err, ErrorMissingContextTx)
+
 					c, err := oauthClientStore.LookupOAuthClientByID(ctx, defaultClient.ID)
 					assert.NoError(t, err)
 					assert.NotEmpty(t, c)
