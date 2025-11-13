@@ -20,7 +20,15 @@ linters:
     - noctx
     - revive
     - whitespace
-    - wsl
+    - wsl_v5
+  settings:
+    revive:
+      rules:
+        - name: var-naming
+          arguments:
+            - []
+            - []
+            - - skip-package-name-checks: true
 formatters:
   enable:
     - gofmt
@@ -31,3 +39,4 @@ formatters:
     goimports:
       local-prefixes:
         - go.infratographer.com/identity-api
+

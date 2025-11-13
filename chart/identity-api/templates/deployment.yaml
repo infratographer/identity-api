@@ -36,10 +36,18 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if .Values.deployment.podSecurityContext }}
+      securityContext:
+        {{- toYaml .Values.deployment.podSecurityContext | nindent 8 }}
+      {{- end }}
       initContainers:
         - name: copy-keys
           image: "{{ .Values.copyKeys.repository }}:{{ .Values.copyKeys.tag }}"
           imagePullPolicy: {{ .Values.copyKeys.pullPolicy }}
+          {{- if .Values.deployment.containerSecurityContext }}
+          securityContext:
+            {{- toYaml .Values.deployment.containerSecurityContext | nindent 12 }}
+          {{- end }}
           command:
             - /bin/sh
             - -c
@@ -62,6 +70,10 @@ spec:
           {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy | default "Always" }}
+          {{- if .Values.deployment.containerSecurityContext }}
+          securityContext:
+            {{- toYaml .Values.deployment.containerSecurityContext | nindent 12 }}
+          {{- end }}
           args:
             - migrate
           {{- with .Values.deployment.resources }}
@@ -80,6 +92,10 @@ spec:
         - name: init-audit-logs
           image: {{ .Values.audit.image.repository }}:{{ .Values.audit.image.tag }}
           imagePullPolicy: {{ .Values.audit.image.pullPolicy }}
+          {{- if .Values.deployment.containerSecurityContext }}
+          securityContext:
+            {{- toYaml .Values.deployment.containerSecurityContext | nindent 12 }}
+          {{- end }}
           args:
             - 'init'
             - '-f'
@@ -111,6 +127,10 @@ spec:
             {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy | default "Always" }}
+          {{- if .Values.deployment.containerSecurityContext }}
+          securityContext:
+            {{- toYaml .Values.deployment.containerSecurityContext | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - name: signing-keys
               mountPath: /keys/
@@ -152,6 +172,10 @@ spec:
         - name: audit-logger
           image: {{ .Values.audit.image.repository }}:{{ .Values.audit.image.tag }}
           imagePullPolicy: {{ .Values.audit.image.pullPolicy }}
+          {{- if .Values.deployment.audit.securityContext }}
+          securityContext:
+            {{- toYaml .Values.deployment.audit.securityContext | nindent 12 }}
+          {{- end }}
           args:
             - '-f'
             - '/app-audit/audit.log'

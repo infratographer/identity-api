@@ -21,7 +21,6 @@ type tokenHandler struct {
 
 func getOutcomeFromError(err error) string {
 	rfcErr := fosite.ErrorToRFC6749Error(err)
-
 	if rfcErr == nil {
 		return auditevent.OutcomeFailed
 	}
@@ -60,7 +59,6 @@ func (h *tokenHandler) Handle(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	accessRequest, err := h.provider.NewAccessRequest(ctx, c.Request(), &session)
-
 	if err != nil {
 		setContextFromError(c, err)
 

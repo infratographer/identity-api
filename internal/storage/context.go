@@ -11,7 +11,6 @@ var txKey contextKey
 
 func beginTxContext(ctx context.Context, db *sql.DB) (context.Context, error) {
 	tx, err := db.BeginTx(ctx, nil)
-
 	if err != nil {
 		return nil, err
 	}

@@ -14,7 +14,6 @@ func init() {
 		cel.Variable(CELVariableClaims, cel.MapType(cel.StringType, cel.DynType)),
 		cel.Variable(CELVariableSubSHA256, cel.StringType),
 	)
-
 	if err != nil {
 		panic(err)
 	}
