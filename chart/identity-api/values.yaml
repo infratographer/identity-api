@@ -17,6 +17,19 @@ deployment:
 
   containerUserID: 65532
 
+  podSecurityContext:
+    runAsUser: 65532
+    runAsGroup: 65532
+    fsGroup: 65532
+    runAsNonRoot: true
+
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+
 # config builds the application configuration, non-sensitive pieces
 # end up in the configMap. sensitive things such as oauth secret and
 # private keys are mounted as environment variables or read-only
@@ -141,6 +154,13 @@ audit:
       requests:
         cpu: 100m
         memory: 20Mi
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
     
 ingress:
   enabled: false
