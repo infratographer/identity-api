@@ -172,9 +172,9 @@ spec:
         - name: audit-logger
           image: {{ .Values.audit.image.repository }}:{{ .Values.audit.image.tag }}
           imagePullPolicy: {{ .Values.audit.image.pullPolicy }}
-          {{- if .Values.deployment.audit.securityContext }}
+          {{- if .Values.audit.securityContext }}
           securityContext:
-            {{- toYaml .Values.deployment.audit.securityContext | nindent 12 }}
+            {{- toYaml .Values.audit.securityContext | nindent 12 }}
           {{- end }}
           args:
             - '-f'
