@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/infratographer/identity-api/compare/v0.6.0...v0.6.1) (2025-11-14)
+
+
+### Bug Fixes
+
+* **deployment:** update audit logger security context reference ([#434](https://github.com/infratographer/identity-api/issues/434)) ([4182937](https://github.com/infratographer/identity-api/commit/4182937e5bfad254fe783f57ebe1b5300ee0e99c))
+
 ## [0.6.0](https://github.com/infratographer/identity-api/compare/v0.5.0...v0.6.0) (2025-11-13)
 
 
