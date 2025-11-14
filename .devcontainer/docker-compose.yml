@@ -25,7 +25,7 @@ services:
       idapinet:
 
   cockroachdb:
-    image: cockroachdb/cockroach:v25.2.0
+    image: cockroachdb/cockroach:v25.3.4
     init: true
     volumes:
       - cockroach-data:/cockroach/cockroach-data
